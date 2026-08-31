@@ -167,13 +167,66 @@ export async function addDayAction(templateId: string, formData: FormData) {
 
   const nextOrder = (existingDays?.[0]?.day_order ?? 0) + 1;
 
-  await supabase.from("workout_template_days").insert({
-    template_id: templateId,
-    day_order: nextOrder,
-    name: parsed.data.name,
-    is_rest_day: parsed.data.isRestDay,
-    muscle_group_ids: parsed.data.muscleGroupIds,
-  });
+  const { data: newDay } = await supabase
+    .from("workout_template_days")
+    .insert({
+      template_id: templateId,
+      day_order: nextOrder,
+      name: parsed.data.name,
+      is_rest_day: parsed.data.isRestDay,
+      muscle_group_ids: parsed.data.muscleGroupIds,
+    })
+    .select("id")
+    .single();
+
+  revalidatePath(`/routines/${templateId}`);
+  revalidatePath(`/routines/${templateId}/setup`);
+
+  if (formData.get("fromSetup") === "1" && newDay) {
+    redirect(`/routines/${templateId}/setup?day=${newDay.id}`);
+  }
+}
+
+// Copia los ejercicios de un día ya montado a otro (p. ej. un día que
+// repite el mismo enfoque muscular), como punto de partida editable.
+export async function copyDayExercisesAction(
+  sourceDayId: string,
+  targetDayId: string,
+  templateId: string,
+) {
+  const supabase = await createClient();
+  const [{ data: sourceExercises }, { data: existing }] = await Promise.all([
+    supabase
+      .from("workout_template_exercises")
+      .select("*")
+      .eq("template_day_id", sourceDayId)
+      .order("order_index"),
+    supabase
+      .from("workout_template_exercises")
+      .select("order_index")
+      .eq("template_day_id", targetDayId)
+      .order("order_index", { ascending: false })
+      .limit(1),
+  ]);
+
+  if (!sourceExercises || sourceExercises.length === 0) return;
+
+  let nextOrder = (existing?.[0]?.order_index ?? -1) + 1;
+  const copies = sourceExercises.map((ex) => ({
+    template_day_id: targetDayId,
+    exercise_id: ex.exercise_id,
+    order_index: nextOrder++,
+    target_sets: ex.target_sets,
+    target_reps_min: ex.target_reps_min,
+    target_reps_max: ex.target_reps_max,
+    target_weight_kg: ex.target_weight_kg,
+    target_rir: ex.target_rir,
+    target_rpe: ex.target_rpe,
+    rest_seconds: ex.rest_seconds,
+    notes: ex.notes,
+  }));
+
+  await supabase.from("workout_template_exercises").insert(copies);
 
   revalidatePath(`/routines/${templateId}`);
   revalidatePath(`/routines/${templateId}/setup`);

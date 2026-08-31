@@ -1,10 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { Trash2, ArrowRight, Check, Moon } from "lucide-react";
+import { Trash2, ArrowRight, Check, Moon, Copy } from "lucide-react";
 import { getTemplate } from "@/lib/services/routines";
 import { listMuscleGroups, listExercises } from "@/lib/services/exercises";
 import { requireProfile } from "@/lib/services/profile";
-import { addDayAction, removeTemplateExerciseAction } from "@/lib/actions/routines";
+import {
+  addDayAction,
+  removeTemplateExerciseAction,
+  copyDayExercisesAction,
+} from "@/lib/actions/routines";
 import { ExercisePicker } from "@/components/routines/exercise-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,10 +18,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function RoutineSetupPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ day?: string }>;
 }) {
   const { id } = await params;
+  const { day: dayParam } = await searchParams;
   const profile = await requireProfile();
   const [template, muscleGroups, exercises] = await Promise.all([
     getTemplate(id),
@@ -31,14 +38,30 @@ export default async function RoutineSetupPage({
   const days = [...(template.workout_template_days ?? [])].sort(
     (a, b) => a.day_order - b.day_order,
   );
-  // El día "actual" es el primer día de entreno (no de descanso) que
-  // todavía no tiene ningún ejercicio. Cubre tanto crear días uno a uno
-  // desde cero como rellenar los días vacíos de una plantilla ya copiada.
-  const currentDay = days.find(
-    (day) => !day.is_rest_day && (day.workout_template_exercises?.length ?? 0) === 0,
-  );
-  const isLastDay = currentDay ? days[days.length - 1]?.id === currentDay.id : false;
-  const showAddDayForm = !currentDay || isLastDay;
+
+  // La navegación entre días es explícita (vía ?day=), no automática:
+  // al entrar sin día elegido, vamos siempre al primero.
+  if (days.length > 0 && !dayParam) {
+    redirect(`/routines/${id}/setup?day=${days[0].id}`);
+  }
+
+  const currentDay = dayParam ? (days.find((d) => d.id === dayParam) ?? days[0]) : undefined;
+  const currentIndex = currentDay ? days.findIndex((d) => d.id === currentDay.id) : -1;
+  const nextDay = currentIndex >= 0 ? days[currentIndex + 1] : undefined;
+  const isLastDay = currentDay ? !nextDay : false;
+
+  // Días anteriores con el mismo nombre (p. ej. "Pecho y Espalda" que se
+  // repite en un split), para ofrecer copiar sus ejercicios de partida.
+  const repeatedDay =
+    currentDay && (currentDay.workout_template_exercises?.length ?? 0) === 0
+      ? days.find(
+          (d) =>
+            d.id !== currentDay.id &&
+            d.day_order < currentDay.day_order &&
+            d.name === currentDay.name &&
+            (d.workout_template_exercises?.length ?? 0) > 0,
+        )
+      : undefined;
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
@@ -47,18 +70,15 @@ export default async function RoutineSetupPage({
         <p className="mt-1 text-muted-foreground">
           {currentDay
             ? `${currentDay.name}: añade los ejercicios que vas a entrenar.`
-            : days.length > 0
-              ? "Todos los días tienen ejercicios. Añade otro día o termina la rutina."
-              : "Empieza creando tu primer día de entrenamiento."}
+            : "Empieza creando tu primer día de entrenamiento."}
         </p>
       </div>
 
       {days.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {days
-            .filter((day) => day.id !== currentDay?.id)
-            .map((day) => (
-              <Badge key={day.id} variant="secondary">
+          {days.map((day) => (
+            <Link key={day.id} href={`/routines/${template.id}/setup?day=${day.id}`}>
+              <Badge variant={day.id === currentDay?.id ? "default" : "secondary"}>
                 {day.is_rest_day ? (
                   <Moon className="h-3 w-3" />
                 ) : (day.workout_template_exercises?.length ?? 0) > 0 ? (
@@ -66,7 +86,8 @@ export default async function RoutineSetupPage({
                 ) : null}
                 {day.name}
               </Badge>
-            ))}
+            </Link>
+          ))}
         </div>
       )}
 
@@ -107,18 +128,33 @@ export default async function RoutineSetupPage({
                 </div>
               ))}
 
-            <ExercisePicker dayId={currentDay.id} templateId={template.id} exercises={exercises} />
-
-            {!isLastDay && (
-              <p className="pt-1 text-xs text-muted-foreground">
-                En cuanto añadas un ejercicio, pasamos al siguiente día automáticamente.
-              </p>
+            {repeatedDay && (
+              <form
+                action={copyDayExercisesAction.bind(null, repeatedDay.id, currentDay.id, template.id)}
+              >
+                <Button type="submit" variant="outline" size="sm" className="w-full">
+                  <Copy className="h-3.5 w-3.5" />
+                  Usar los mismos ejercicios que &quot;{repeatedDay.name}&quot;
+                </Button>
+              </form>
             )}
+
+            <ExercisePicker dayId={currentDay.id} templateId={template.id} exercises={exercises} />
           </CardContent>
         </Card>
       )}
 
-      {showAddDayForm && (
+      {currentDay && nextDay && (
+        <Button
+          render={<Link href={`/routines/${template.id}/setup?day=${nextDay.id}`} />}
+          className="w-full"
+        >
+          <ArrowRight className="h-4 w-4" />
+          Pasar al siguiente día ({nextDay.name})
+        </Button>
+      )}
+
+      {(!currentDay || isLastDay) && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
@@ -127,6 +163,7 @@ export default async function RoutineSetupPage({
           </CardHeader>
           <CardContent>
             <form action={addDayAction.bind(null, template.id)} className="space-y-3">
+              <input type="hidden" name="fromSetup" value="1" />
               <div className="space-y-1">
                 <Label htmlFor="dayName" className="text-xs">
                   Nombre del día
@@ -151,7 +188,7 @@ export default async function RoutineSetupPage({
               </div>
               <Button type="submit" className="w-full">
                 <ArrowRight className="h-4 w-4" />
-                {currentDay ? "Guardar y pasar al siguiente día" : "Crear día"}
+                Crear día
               </Button>
             </form>
           </CardContent>
