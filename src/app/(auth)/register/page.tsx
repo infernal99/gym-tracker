@@ -37,19 +37,26 @@ export default function RegisterPage() {
         <form action={formAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="displayName">Nombre</Label>
-            <Input id="displayName" name="displayName" required autoComplete="name" />
+            <Input id="displayName" name="displayName" required placeholder="Nombre y apellidos" autoComplete="name" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="username">Username</Label>
-            <Input id="username" name="username" required placeholder="ian" autoComplete="username" />
+            <Input id="username" name="username" required placeholder="usuario123" autoComplete="username" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" required autoComplete="email" />
+            <Input id="email" name="email" type="email" required placeholder="tu@email.com" autoComplete="email" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Contraseña</Label>
-            <Input id="password" name="password" type="password" required autoComplete="new-password" />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              required
+              placeholder="Mínimo 8 caracteres"
+              autoComplete="new-password"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
@@ -58,6 +65,7 @@ export default function RegisterPage() {
               name="confirmPassword"
               type="password"
               required
+              placeholder="Repite tu contraseña"
               autoComplete="new-password"
             />
           </div>
@@ -81,11 +89,11 @@ export default function RegisterPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="heightCm">Altura (cm)</Label>
-              <Input id="heightCm" name="heightCm" type="number" step="0.1" min="0" />
+              <Input id="heightCm" name="heightCm" type="number" step="0.1" min="0" placeholder="175" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="initialWeightKg">Peso inicial (kg)</Label>
-              <Input id="initialWeightKg" name="initialWeightKg" type="number" step="0.1" min="0" />
+              <Input id="initialWeightKg" name="initialWeightKg" type="number" step="0.1" min="0" placeholder="70" />
             </div>
           </div>
           <div className="space-y-2">
