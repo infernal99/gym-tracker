@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/services/profile";
 import { Sidebar } from "@/components/nav/sidebar";
 import { MobileNav } from "@/components/nav/mobile-nav";
@@ -5,6 +6,10 @@ import { UserMenu } from "@/components/nav/user-menu";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const profile = await requireProfile();
+
+  if (!profile.onboarding_completed) {
+    redirect("/onboarding");
+  }
 
   return (
     <div className="flex min-h-svh">

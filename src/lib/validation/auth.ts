@@ -31,10 +31,6 @@ export const registerSchema = z
     email: z.string().trim().email("Email no válido"),
     password: z.string().min(8, "Mínimo 8 caracteres"),
     confirmPassword: z.string(),
-    dateOfBirth: z.string().optional().or(z.literal("")),
-    heightCm: z.coerce.number().positive().optional().or(z.literal("")),
-    initialWeightKg: z.coerce.number().positive().optional().or(z.literal("")),
-    primaryGoal: z.enum(primaryGoalValues),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden",

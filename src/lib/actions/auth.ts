@@ -26,10 +26,6 @@ export async function registerAction(
     email: formData.get("email"),
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
-    dateOfBirth: formData.get("dateOfBirth") ?? "",
-    heightCm: formData.get("heightCm") || "",
-    initialWeightKg: formData.get("initialWeightKg") || "",
-    primaryGoal: formData.get("primaryGoal"),
   });
 
   if (!parsed.success) {
@@ -47,10 +43,6 @@ export async function registerAction(
       data: {
         display_name: data.displayName,
         username: data.username,
-        date_of_birth: data.dateOfBirth || undefined,
-        height_cm: data.heightCm || undefined,
-        initial_weight_kg: data.initialWeightKg || undefined,
-        primary_goal: data.primaryGoal,
       },
     },
   });
