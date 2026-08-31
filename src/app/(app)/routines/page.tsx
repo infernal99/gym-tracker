@@ -51,7 +51,10 @@ export default async function RoutinesPage() {
                     {template.workout_template_days?.length ?? 0} días
                   </p>
                 </div>
-                {template.is_archived && <Badge variant="secondary">Archivada</Badge>}
+                <div className="flex flex-col items-end gap-1">
+                  {template.is_public && <Badge variant="outline">De serie</Badge>}
+                  {template.is_archived && <Badge variant="secondary">Archivada</Badge>}
+                </div>
               </CardHeader>
               <CardContent className="flex items-center gap-1">
                 <form action={duplicateTemplateAction.bind(null, template.id)}>
@@ -59,31 +62,35 @@ export default async function RoutinesPage() {
                     <Copy className="h-4 w-4" />
                   </Button>
                 </form>
-                <form
-                  action={toggleArchiveTemplateAction.bind(
-                    null,
-                    template.id,
-                    !template.is_archived,
-                  )}
-                >
-                  <Button
-                    type="submit"
-                    variant="ghost"
-                    size="icon-sm"
-                    title={template.is_archived ? "Restaurar" : "Archivar"}
-                  >
-                    {template.is_archived ? (
-                      <ArchiveRestore className="h-4 w-4" />
-                    ) : (
-                      <Archive className="h-4 w-4" />
-                    )}
-                  </Button>
-                </form>
-                <form action={deleteTemplateAction.bind(null, template.id)}>
-                  <Button type="submit" variant="ghost" size="icon-sm" title="Eliminar">
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </form>
+                {!template.is_public && (
+                  <>
+                    <form
+                      action={toggleArchiveTemplateAction.bind(
+                        null,
+                        template.id,
+                        !template.is_archived,
+                      )}
+                    >
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="icon-sm"
+                        title={template.is_archived ? "Restaurar" : "Archivar"}
+                      >
+                        {template.is_archived ? (
+                          <ArchiveRestore className="h-4 w-4" />
+                        ) : (
+                          <Archive className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </form>
+                    <form action={deleteTemplateAction.bind(null, template.id)}>
+                      <Button type="submit" variant="ghost" size="icon-sm" title="Eliminar">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </form>
+                  </>
+                )}
               </CardContent>
             </Card>
           ))}

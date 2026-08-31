@@ -44,7 +44,7 @@ export async function setActiveTemplateAction(templateId: string) {
 
 export async function deleteTemplateAction(templateId: string) {
   const supabase = await createClient();
-  await supabase.from("workout_templates").delete().eq("id", templateId);
+  await supabase.from("workout_templates").delete().eq("id", templateId).eq("is_public", false);
   revalidatePath("/routines");
   redirect("/routines");
 }
