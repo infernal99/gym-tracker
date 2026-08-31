@@ -47,13 +47,7 @@ export default async function ExercisesPage({
         />
         <Select name="muscle" defaultValue={params.muscle ?? "all"}>
           <SelectTrigger className="w-full sm:w-44">
-            <SelectValue placeholder="Músculo">
-              {(value: string) =>
-                value === "all"
-                  ? "Todos los músculos"
-                  : (muscleGroups.find((mg) => mg.id === value)?.name ?? "Músculo")
-              }
-            </SelectValue>
+            <SelectValue placeholder="Músculo" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los músculos</SelectItem>
@@ -66,13 +60,7 @@ export default async function ExercisesPage({
         </Select>
         <Select name="equipment" defaultValue={params.equipment ?? "all"}>
           <SelectTrigger className="w-full sm:w-44">
-            <SelectValue placeholder="Equipamiento">
-              {(value: string) =>
-                value === "all"
-                  ? "Todo el equipamiento"
-                  : (equipment.find((eq) => eq.id === value)?.name ?? "Equipamiento")
-              }
-            </SelectValue>
+            <SelectValue placeholder="Equipamiento" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todo el equipamiento</SelectItem>
