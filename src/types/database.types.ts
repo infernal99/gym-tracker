@@ -722,6 +722,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_template_id: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
@@ -743,6 +744,7 @@ export type Database = {
           xp: number
         }
         Insert: {
+          active_template_id?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -764,6 +766,7 @@ export type Database = {
           xp?: number
         }
         Update: {
+          active_template_id?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -784,7 +787,15 @@ export type Database = {
           workouts_visibility?: Database["public"]["Enums"]["private_visibility_level"]
           xp?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_active_template_id_fkey"
+            columns: ["active_template_id"]
+            isOneToOne: false
+            referencedRelation: "workout_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       progress_photos: {
         Row: {

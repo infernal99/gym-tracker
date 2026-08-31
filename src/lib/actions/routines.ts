@@ -30,6 +30,18 @@ export async function createTemplateAction(formData: FormData) {
   redirect(`/routines/${data.id}/setup`);
 }
 
+export async function setActiveTemplateAction(templateId: string) {
+  const profile = await requireProfile();
+  const supabase = await createClient();
+  await supabase
+    .from("profiles")
+    .update({ active_template_id: templateId })
+    .eq("id", profile.id);
+
+  revalidatePath("/my-routine");
+  redirect("/my-routine");
+}
+
 export async function deleteTemplateAction(templateId: string) {
   const supabase = await createClient();
   await supabase.from("workout_templates").delete().eq("id", templateId);
@@ -43,7 +55,7 @@ export async function toggleArchiveTemplateAction(templateId: string, archived: 
   revalidatePath("/routines");
 }
 
-async function copyTemplate(templateId: string, name: string) {
+async function copyTemplate(templateId: string, name: string, includeExercises: boolean) {
   const profile = await requireProfile();
   const supabase = await createClient();
 
@@ -80,7 +92,7 @@ async function copyTemplate(templateId: string, name: string) {
       .select("id")
       .single();
 
-    if (!newDay) continue;
+    if (!newDay || !includeExercises) continue;
 
     const exercises = (day.workout_template_exercises ?? []).map((ex) => ({
       template_day_id: newDay.id,
@@ -112,13 +124,16 @@ export async function duplicateTemplateAction(templateId: string) {
     .eq("id", templateId)
     .single();
 
-  const copyId = await copyTemplate(templateId, `${original?.name ?? "Rutina"} (copia)`);
+  const copyId = await copyTemplate(templateId, `${original?.name ?? "Rutina"} (copia)`, true);
   if (!copyId) return;
 
   revalidatePath("/routines");
   redirect(`/routines/${copyId}`);
 }
 
+// Plantillas públicas se copian sin ejercicios: solo se toma la estructura
+// de días y grupos musculares, y el usuario añade sus propios ejercicios
+// en el asistente.
 export async function useTemplateAction(templateId: string) {
   const supabase = await createClient();
   const { data: original } = await supabase
@@ -127,11 +142,11 @@ export async function useTemplateAction(templateId: string) {
     .eq("id", templateId)
     .single();
 
-  const copyId = await copyTemplate(templateId, original?.name ?? "Mi rutina");
+  const copyId = await copyTemplate(templateId, original?.name ?? "Mi rutina", false);
   if (!copyId) return;
 
   revalidatePath("/routines");
-  redirect(`/routines/${copyId}`);
+  redirect(`/routines/${copyId}/setup`);
 }
 
 export async function addDayAction(templateId: string, formData: FormData) {
@@ -168,6 +183,7 @@ export async function deleteDayAction(dayId: string, templateId: string) {
   const supabase = await createClient();
   await supabase.from("workout_template_days").delete().eq("id", dayId);
   revalidatePath(`/routines/${templateId}`);
+  revalidatePath(`/routines/${templateId}/setup`);
 }
 
 export async function addTemplateExerciseAction(
@@ -211,10 +227,12 @@ export async function addTemplateExerciseAction(
   });
 
   revalidatePath(`/routines/${templateId}`);
+  revalidatePath(`/routines/${templateId}/setup`);
 }
 
 export async function removeTemplateExerciseAction(rowId: string, templateId: string) {
   const supabase = await createClient();
   await supabase.from("workout_template_exercises").delete().eq("id", rowId);
   revalidatePath(`/routines/${templateId}`);
+  revalidatePath(`/routines/${templateId}/setup`);
 }
