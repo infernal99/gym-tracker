@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ListChecks, Copy, Archive, ArchiveRestore, Trash2 } from "lucide-react";
+import { ListChecks, Plus, Copy, Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { listMyTemplates } from "@/lib/services/routines";
 import {
@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreateRoutineDialog } from "@/components/routines/create-routine-dialog";
 
 export default async function RoutinesPage() {
   const profile = await requireProfile();
@@ -20,7 +19,10 @@ export default async function RoutinesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Rutinas</h1>
-        <CreateRoutineDialog />
+        <Button render={<Link href="/routines/new" />}>
+          <Plus className="h-4 w-4" />
+          Nueva rutina
+        </Button>
       </div>
 
       {templates.length === 0 ? (
@@ -28,7 +30,10 @@ export default async function RoutinesPage() {
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <ListChecks className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">Tu progreso empieza aquí.</p>
-            <CreateRoutineDialog />
+            <Button render={<Link href="/routines/new" />}>
+          <Plus className="h-4 w-4" />
+          Nueva rutina
+        </Button>
           </CardContent>
         </Card>
       ) : (

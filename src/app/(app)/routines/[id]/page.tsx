@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Plus, Trash2, Moon } from "lucide-react";
 import { getTemplate } from "@/lib/services/routines";
-import { listExercises } from "@/lib/services/exercises";
+import { listExercises, listMuscleGroups } from "@/lib/services/exercises";
 import {
   addDayAction,
   deleteDayAction,
@@ -27,7 +27,11 @@ export default async function RoutineDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [template, exercises] = await Promise.all([getTemplate(id), listExercises()]);
+  const [template, exercises, muscleGroups] = await Promise.all([
+    getTemplate(id),
+    listExercises(),
+    listMuscleGroups(),
+  ]);
 
   if (!template) notFound();
 
@@ -48,15 +52,29 @@ export default async function RoutineDetailPage({
         {days.map((day) => (
           <Card key={day.id}>
             <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle className="flex items-center gap-2 text-base">
-                {day.name}
-                {day.is_rest_day && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Moon className="h-3 w-3" />
-                    Descanso
-                  </Badge>
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  {day.name}
+                  {day.is_rest_day && (
+                    <Badge variant="secondary" className="gap-1">
+                      <Moon className="h-3 w-3" />
+                      Descanso
+                    </Badge>
+                  )}
+                </CardTitle>
+                {day.muscle_group_ids.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {day.muscle_group_ids.map((mgId) => {
+                      const group = muscleGroups.find((g) => g.id === mgId);
+                      return group ? (
+                        <Badge key={mgId} variant="outline">
+                          {group.name}
+                        </Badge>
+                      ) : null;
+                    })}
+                  </div>
                 )}
-              </CardTitle>
+              </div>
               <form action={deleteDayAction.bind(null, day.id, template.id)}>
                 <Button type="submit" variant="ghost" size="icon-sm">
                   <Trash2 className="h-4 w-4 text-destructive" />

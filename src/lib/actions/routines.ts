@@ -5,23 +5,17 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/services/profile";
 import { templateSchema, daySchema, templateExerciseSchema } from "@/lib/validation/routines";
-import type { ActionResult } from "@/lib/actions/auth";
 
-export async function createTemplateAction(
-  _prev: ActionResult,
-  formData: FormData,
-): Promise<ActionResult> {
+export async function createTemplateAction(formData: FormData) {
   const parsed = templateSchema.safeParse({
     name: formData.get("name"),
     description: formData.get("description") ?? "",
   });
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos no válidos" };
-  }
+  if (!parsed.success) return;
 
   const profile = await requireProfile();
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("workout_templates")
     .insert({
       user_id: profile.id,
@@ -31,11 +25,9 @@ export async function createTemplateAction(
     .select("id")
     .single();
 
-  if (error || !data) {
-    return { error: "No se pudo crear la rutina" };
-  }
+  if (!data) return;
 
-  redirect(`/routines/${data.id}`);
+  redirect(`/routines/${data.id}/setup`);
 }
 
 export async function deleteTemplateAction(templateId: string) {
@@ -51,7 +43,7 @@ export async function toggleArchiveTemplateAction(templateId: string, archived: 
   revalidatePath("/routines");
 }
 
-export async function duplicateTemplateAction(templateId: string) {
+async function copyTemplate(templateId: string, name: string) {
   const profile = await requireProfile();
   const supabase = await createClient();
 
@@ -61,19 +53,19 @@ export async function duplicateTemplateAction(templateId: string) {
     .eq("id", templateId)
     .single();
 
-  if (!original) return;
+  if (!original) return null;
 
   const { data: copy } = await supabase
     .from("workout_templates")
     .insert({
       user_id: profile.id,
-      name: `${original.name} (copia)`,
+      name,
       description: original.description,
     })
     .select("id")
     .single();
 
-  if (!copy) return;
+  if (!copy) return null;
 
   for (const day of original.workout_template_days ?? []) {
     const { data: newDay } = await supabase
@@ -83,6 +75,7 @@ export async function duplicateTemplateAction(templateId: string) {
         day_order: day.day_order,
         name: day.name,
         is_rest_day: day.is_rest_day,
+        muscle_group_ids: day.muscle_group_ids,
       })
       .select("id")
       .single();
@@ -108,14 +101,44 @@ export async function duplicateTemplateAction(templateId: string) {
     }
   }
 
+  return copy.id;
+}
+
+export async function duplicateTemplateAction(templateId: string) {
+  const supabase = await createClient();
+  const { data: original } = await supabase
+    .from("workout_templates")
+    .select("name")
+    .eq("id", templateId)
+    .single();
+
+  const copyId = await copyTemplate(templateId, `${original?.name ?? "Rutina"} (copia)`);
+  if (!copyId) return;
+
   revalidatePath("/routines");
-  redirect(`/routines/${copy.id}`);
+  redirect(`/routines/${copyId}`);
+}
+
+export async function useTemplateAction(templateId: string) {
+  const supabase = await createClient();
+  const { data: original } = await supabase
+    .from("workout_templates")
+    .select("name")
+    .eq("id", templateId)
+    .single();
+
+  const copyId = await copyTemplate(templateId, original?.name ?? "Mi rutina");
+  if (!copyId) return;
+
+  revalidatePath("/routines");
+  redirect(`/routines/${copyId}`);
 }
 
 export async function addDayAction(templateId: string, formData: FormData) {
   const parsed = daySchema.safeParse({
     name: formData.get("name"),
     isRestDay: formData.get("isRestDay") === "on",
+    muscleGroupIds: formData.getAll("muscleGroupIds"),
   });
   if (!parsed.success) return;
 
@@ -134,9 +157,11 @@ export async function addDayAction(templateId: string, formData: FormData) {
     day_order: nextOrder,
     name: parsed.data.name,
     is_rest_day: parsed.data.isRestDay,
+    muscle_group_ids: parsed.data.muscleGroupIds,
   });
 
   revalidatePath(`/routines/${templateId}`);
+  revalidatePath(`/routines/${templateId}/setup`);
 }
 
 export async function deleteDayAction(dayId: string, templateId: string) {

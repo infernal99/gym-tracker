@@ -10,6 +10,7 @@ export type TemplateInput = z.infer<typeof templateSchema>;
 export const daySchema = z.object({
   name: z.string().trim().min(1, "Ponle un nombre al día").max(40),
   isRestDay: z.coerce.boolean().default(false),
+  muscleGroupIds: z.array(z.string().uuid()).default([]),
 });
 
 export type DayInput = z.infer<typeof daySchema>;

@@ -1058,6 +1058,7 @@ export type Database = {
           day_order: number
           id: string
           is_rest_day: boolean
+          muscle_group_ids: string[]
           name: string
           template_id: string
         }
@@ -1066,6 +1067,7 @@ export type Database = {
           day_order: number
           id?: string
           is_rest_day?: boolean
+          muscle_group_ids?: string[]
           name: string
           template_id: string
         }
@@ -1074,6 +1076,7 @@ export type Database = {
           day_order?: number
           id?: string
           is_rest_day?: boolean
+          muscle_group_ids?: string[]
           name?: string
           template_id?: string
         }

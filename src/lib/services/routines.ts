@@ -12,6 +12,16 @@ export async function listMyTemplates(userId: string) {
   return data ?? [];
 }
 
+export async function listPublicTemplates() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("workout_templates")
+    .select("*, workout_template_days(id, name)")
+    .eq("is_public", true)
+    .order("name");
+  return data ?? [];
+}
+
 export async function getTemplate(templateId: string) {
   const supabase = await createClient();
   const { data } = await supabase
