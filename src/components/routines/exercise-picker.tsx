@@ -20,12 +20,18 @@ export function ExercisePicker({
 }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Exercise | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const results = query.trim()
-    ? exercises
-        .filter((exercise) => exercise.name.toLowerCase().includes(query.trim().toLowerCase()))
-        .slice(0, 8)
-    : [];
+  const normalizedQuery = query.trim().toLowerCase();
+  const results = (
+    normalizedQuery
+      ? exercises.filter(
+          (exercise) =>
+            exercise.name.toLowerCase().includes(normalizedQuery) ||
+            exercise.muscle_groups?.name.toLowerCase().includes(normalizedQuery),
+        )
+      : exercises
+  ).slice(0, 20);
 
   return (
     <div className="space-y-2 rounded-md border p-3">
@@ -37,12 +43,14 @@ export function ExercisePicker({
             setSelected(null);
             setQuery(e.target.value);
           }}
-          placeholder="Buscar ejercicio..."
+          onFocus={() => setIsOpen(true)}
+          onBlur={() => setTimeout(() => setIsOpen(false), 150)}
+          placeholder="Buscar por ejercicio o músculo (p. ej. espalda)..."
           className="pl-8"
         />
       </div>
 
-      {!selected && results.length > 0 && (
+      {!selected && isOpen && results.length > 0 && (
         <div className="max-h-48 overflow-y-auto rounded-md border">
           {results.map((exercise) => (
             <button
@@ -51,6 +59,7 @@ export function ExercisePicker({
               onClick={() => {
                 setSelected(exercise);
                 setQuery("");
+                setIsOpen(false);
               }}
               className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent"
             >
