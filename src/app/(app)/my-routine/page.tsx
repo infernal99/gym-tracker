@@ -43,28 +43,50 @@ export default async function MyRoutinePage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {days.map((day) => (
-          <Card key={day.id}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                {day.name}
-                {day.is_rest_day && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Moon className="h-3 w-3" />
-                    Descanso
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            {!day.is_rest_day && (
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {(day.workout_template_exercises?.length ?? 0)} ejercicios
-                </p>
-              </CardContent>
-            )}
-          </Card>
-        ))}
+        {days.map((day) => {
+          const dayExercises = [...(day.workout_template_exercises ?? [])].sort(
+            (a, b) => a.order_index - b.order_index,
+          );
+          return (
+            <Card key={day.id}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  {day.name}
+                  {day.is_rest_day && (
+                    <Badge variant="secondary" className="gap-1">
+                      <Moon className="h-3 w-3" />
+                      Descanso
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              {!day.is_rest_day && (
+                <CardContent>
+                  <details>
+                    <summary className="cursor-pointer text-sm text-muted-foreground">
+                      {dayExercises.length} ejercicios
+                    </summary>
+                    <div className="mt-3 space-y-2">
+                      {dayExercises.map((ex) => (
+                        <div key={ex.id} className="rounded-md border px-3 py-2">
+                          <p className="text-sm font-medium">{ex.exercises?.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {ex.target_sets} series
+                            {ex.target_reps_min && ex.target_reps_max
+                              ? ` · ${ex.target_reps_min}-${ex.target_reps_max} reps`
+                              : ""}
+                            {ex.target_weight_kg ? ` · ${ex.target_weight_kg} kg` : ""}
+                            {` · ${ex.rest_seconds}s descanso`}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}
       </div>
 
       <Button render={<Link href={`/routines/${template.id}`} />} variant="outline" className="w-full">
