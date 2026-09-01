@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Star, Moon } from "lucide-react";
+import { Star, Moon, ChevronDown } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getTemplate } from "@/lib/services/routines";
 import { Button } from "@/components/ui/button";
@@ -47,44 +47,52 @@ export default async function MyRoutinePage() {
           const dayExercises = [...(day.workout_template_exercises ?? [])].sort(
             (a, b) => a.order_index - b.order_index,
           );
-          return (
-            <Card key={day.id}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  {day.name}
-                  {day.is_rest_day && (
+          if (day.is_rest_day) {
+            return (
+              <Card key={day.id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    {day.name}
                     <Badge variant="secondary" className="gap-1">
                       <Moon className="h-3 w-3" />
                       Descanso
                     </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              {!day.is_rest_day && (
-                <CardContent>
-                  <details>
-                    <summary className="cursor-pointer text-sm text-muted-foreground">
-                      {dayExercises.length} ejercicios
-                    </summary>
-                    <div className="mt-3 space-y-2">
-                      {dayExercises.map((ex) => (
-                        <div key={ex.id} className="rounded-md border px-3 py-2">
-                          <p className="text-sm font-medium">{ex.exercises?.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {ex.target_sets} series
-                            {ex.target_reps_min && ex.target_reps_max
-                              ? ` · ${ex.target_reps_min}-${ex.target_reps_max} reps`
-                              : ""}
-                            {ex.target_weight_kg ? ` · ${ex.target_weight_kg} kg` : ""}
-                            {` · ${ex.rest_seconds}s descanso`}
-                          </p>
-                        </div>
-                      ))}
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+            );
+          }
+
+          return (
+            <div
+              key={day.id}
+              className="overflow-hidden rounded-xl bg-card text-sm text-card-foreground ring-1 ring-foreground/10 [--card-spacing:--spacing(4)]"
+            >
+              <details className="group">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-(--card-spacing) [&::-webkit-details-marker]:hidden">
+                  <span className="font-heading text-base font-medium">{day.name}</span>
+                  <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    {dayExercises.length} ejercicios
+                    <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                  </span>
+                </summary>
+                <div className="space-y-2 px-(--card-spacing) pb-(--card-spacing)">
+                  {dayExercises.map((ex) => (
+                    <div key={ex.id} className="rounded-md border px-3 py-2">
+                      <p className="text-sm font-medium">{ex.exercises?.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {ex.target_sets} series
+                        {ex.target_reps_min && ex.target_reps_max
+                          ? ` · ${ex.target_reps_min}-${ex.target_reps_max} reps`
+                          : ""}
+                        {ex.target_weight_kg ? ` · ${ex.target_weight_kg} kg` : ""}
+                        {` · ${ex.rest_seconds}s descanso`}
+                      </p>
                     </div>
-                  </details>
-                </CardContent>
-              )}
-            </Card>
+                  ))}
+                </div>
+              </details>
+            </div>
           );
         })}
       </div>
