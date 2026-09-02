@@ -272,3 +272,19 @@ export async function listCompletedSessions(userId: string, limit = 30) {
     .limit(limit);
   return data ?? [];
 }
+
+// Every completed session in the last ~year, for the profile's GitHub-style
+// contribution heatmap. One row per session (a day can have more than one).
+export async function listWorkoutActivity(userId: string, days = 371) {
+  const supabase = await createClient();
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const { data } = await supabase
+    .from("workout_sessions")
+    .select("id, name, completed_at, duration_seconds, total_volume_kg")
+    .eq("user_id", userId)
+    .not("completed_at", "is", null)
+    .gte("completed_at", since.toISOString())
+    .order("completed_at", { ascending: true });
+  return data ?? [];
+}
