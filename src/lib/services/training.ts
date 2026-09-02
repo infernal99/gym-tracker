@@ -14,9 +14,32 @@ export async function getActiveSession(userId: string) {
   return data;
 }
 
+function resolveRestDay<T extends { id: string; is_rest_day: boolean }>(
+  days: T[],
+  day: T | null,
+) {
+  if (!day) return { day: null, nextTrainingDay: null };
+  let nextTrainingDay = day;
+  if (day.is_rest_day) {
+    const startIndex = days.findIndex((d) => d.id === day.id);
+    for (let i = 1; i <= days.length; i++) {
+      const candidate = days[(startIndex + i) % days.length];
+      if (!candidate.is_rest_day) {
+        nextTrainingDay = candidate;
+        break;
+      }
+    }
+  }
+  return { day, nextTrainingDay: nextTrainingDay.is_rest_day ? null : nextTrainingDay };
+}
+
 // The routine is a sequence, not a calendar: "next" is whatever comes after
-// the day of the last completed session for this template, wrapping around.
-// If nothing has been completed yet, it starts at day 1.
+// the day of the last completed session for this template, wrapping around
+// (only sessions marked as counting toward the sequence are considered — an
+// "solo por hoy" session is logged but doesn't move the pointer). A manual
+// anchor (profiles.sequence_anchor_day_id) overrides this entirely when set,
+// letting the user realign without training right now; it's cleared the
+// next time a counting session is completed.
 export async function getNextDayInSequence(userId: string, templateId: string) {
   const supabase = await createClient();
   const { data: days } = await supabase
@@ -27,11 +50,23 @@ export async function getNextDayInSequence(userId: string, templateId: string) {
 
   if (!days || days.length === 0) return { day: null, nextTrainingDay: null };
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("sequence_anchor_day_id")
+    .eq("id", userId)
+    .single();
+
+  if (profile?.sequence_anchor_day_id) {
+    const anchored = days.find((d) => d.id === profile.sequence_anchor_day_id);
+    if (anchored) return resolveRestDay(days, anchored);
+  }
+
   const { data: lastSession } = await supabase
     .from("workout_sessions")
     .select("template_day_id")
     .eq("user_id", userId)
     .eq("template_id", templateId)
+    .eq("counts_toward_sequence", true)
     .not("completed_at", "is", null)
     .order("completed_at", { ascending: false })
     .limit(1)
@@ -42,20 +77,18 @@ export async function getNextDayInSequence(userId: string, templateId: string) {
     : -1;
 
   const day = lastIndex === -1 ? days[0] : days[(lastIndex + 1) % days.length];
+  return resolveRestDay(days, day);
+}
 
-  let nextTrainingDay = day;
-  if (day?.is_rest_day) {
-    const startIndex = days.findIndex((d) => d.id === day.id);
-    for (let i = 1; i <= days.length; i++) {
-      const candidate = days[(startIndex + i) % days.length];
-      if (!candidate.is_rest_day) {
-        nextTrainingDay = candidate;
-        break;
-      }
-    }
-  }
-
-  return { day, nextTrainingDay: nextTrainingDay?.is_rest_day ? null : nextTrainingDay };
+export async function listTrainingDays(templateId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("workout_template_days")
+    .select("id, name, day_order, is_rest_day")
+    .eq("template_id", templateId)
+    .eq("is_rest_day", false)
+    .order("day_order");
+  return data ?? [];
 }
 
 export async function getSessionWithDetails(sessionId: string) {

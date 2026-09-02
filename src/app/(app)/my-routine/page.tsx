@@ -1,16 +1,21 @@
 import Link from "next/link";
-import { Star, Moon, ChevronDown } from "lucide-react";
+import { Star, Moon, ChevronDown, Target } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getTemplate } from "@/lib/services/routines";
+import { getNextDayInSequence } from "@/lib/services/training";
+import { setSequenceAnchorAction } from "@/lib/actions/training";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function MyRoutinePage() {
   const profile = await requireProfile();
-  const template = profile.active_template_id
-    ? await getTemplate(profile.active_template_id)
-    : null;
+  const [template, sequence] = await Promise.all([
+    profile.active_template_id ? getTemplate(profile.active_template_id) : Promise.resolve(null),
+    profile.active_template_id
+      ? getNextDayInSequence(profile.id, profile.active_template_id)
+      : Promise.resolve({ day: null, nextTrainingDay: null }),
+  ]);
 
   if (!template) {
     return (
@@ -90,6 +95,19 @@ export default async function MyRoutinePage() {
                       </p>
                     </div>
                   ))}
+                  {sequence.day?.id === day.id ? (
+                    <p className="flex items-center gap-1.5 text-xs text-primary">
+                      <Target className="h-3.5 w-3.5" />
+                      Es tu próximo entrenamiento sugerido
+                    </p>
+                  ) : (
+                    <form action={setSequenceAnchorAction.bind(null, day.id)}>
+                      <Button type="submit" variant="ghost" size="sm" className="w-full">
+                        <Target className="h-3.5 w-3.5" />
+                        Ajustar mis entrenos a este día
+                      </Button>
+                    </form>
+                  )}
                 </div>
               </details>
             </div>

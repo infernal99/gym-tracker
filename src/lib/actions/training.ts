@@ -6,10 +6,14 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/services/profile";
-import { getActiveSession, getNextDayInSequence } from "@/lib/services/training";
+import { getActiveSession } from "@/lib/services/training";
 import type { Database } from "@/types/database.types";
 
-export async function startWorkoutAction() {
+// dayId is required so the caller (the "Hoy" screen) always decides which
+// day to train — the suggested one, or one of the others picked manually.
+// countsTowardSequence controls whether this session becomes the reference
+// point for future "next day" suggestions once completed.
+export async function startWorkoutAction(dayId: string, countsTowardSequence: boolean) {
   const profile = await requireProfile();
   const supabase = await createClient();
 
@@ -18,7 +22,11 @@ export async function startWorkoutAction() {
 
   if (!profile.active_template_id) redirect("/my-routine/choose");
 
-  const { day } = await getNextDayInSequence(profile.id, profile.active_template_id);
+  const { data: day } = await supabase
+    .from("workout_template_days")
+    .select("*")
+    .eq("id", dayId)
+    .single();
   if (!day || day.is_rest_day) redirect("/my-routine");
 
   const { data: templateExercises } = await supabase
@@ -34,6 +42,7 @@ export async function startWorkoutAction() {
       template_id: profile.active_template_id,
       template_day_id: day.id,
       name: day.name,
+      counts_toward_sequence: countsTowardSequence,
     })
     .select("id")
     .single();
@@ -57,6 +66,19 @@ export async function startWorkoutAction() {
   }
 
   redirect(`/train/${session.id}`);
+}
+
+// Manually realign "next suggested day" without training right now.
+export async function setSequenceAnchorAction(dayId: string) {
+  const profile = await requireProfile();
+  const supabase = await createClient();
+  await supabase
+    .from("profiles")
+    .update({ sequence_anchor_day_id: dayId })
+    .eq("id", profile.id);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/my-routine");
 }
 
 const setSchema = z.object({
@@ -180,7 +202,7 @@ export async function finishWorkoutAction(sessionId: string) {
   const supabase = await createClient();
   const { data: session } = await supabase
     .from("workout_sessions")
-    .select("started_at")
+    .select("started_at, user_id, counts_toward_sequence")
     .eq("id", sessionId)
     .single();
 
@@ -195,6 +217,15 @@ export async function finishWorkoutAction(sessionId: string) {
     .from("workout_sessions")
     .update({ completed_at: new Date().toISOString(), duration_seconds: durationSeconds })
     .eq("id", sessionId);
+
+  // A real completion that counts toward the sequence supersedes any manual
+  // realignment — clear it so future suggestions follow this completion.
+  if (session.counts_toward_sequence) {
+    await supabase
+      .from("profiles")
+      .update({ sequence_anchor_day_id: null })
+      .eq("id", session.user_id);
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/train/history");

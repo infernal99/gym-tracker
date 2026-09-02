@@ -2,7 +2,9 @@ import Link from "next/link";
 import { Flame, Moon, Play, TrendingUp, Trophy } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getDashboardStats } from "@/lib/services/dashboard";
+import { listTrainingDays } from "@/lib/services/training";
 import { startWorkoutAction } from "@/lib/actions/training";
+import { AlternateDayCard } from "@/components/training/alternate-day-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -32,7 +34,12 @@ function StatCard({
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  const stats = await getDashboardStats(profile.id, profile.active_template_id);
+  const [stats, trainingDays] = await Promise.all([
+    getDashboardStats(profile.id, profile.active_template_id),
+    profile.active_template_id ? listTrainingDays(profile.active_template_id) : Promise.resolve([]),
+  ]);
+
+  const otherDays = trainingDays.filter((d) => d.id !== stats.pendingDay?.id);
 
   const today = new Date().toLocaleDateString("es-ES", {
     weekday: "long",
@@ -88,13 +95,13 @@ export default async function DashboardPage() {
           ) : (
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Entrenamiento pendiente</p>
+                <p className="text-sm text-muted-foreground">Hoy vas a entrenar</p>
                 <p className="text-xl font-semibold">{stats.pendingDay.name}</p>
                 {stats.activeTemplateName && (
                   <p className="text-sm text-muted-foreground">{stats.activeTemplateName}</p>
                 )}
               </div>
-              <form action={startWorkoutAction}>
+              <form action={startWorkoutAction.bind(null, stats.pendingDay.id, true)}>
                 <Button type="submit" className="w-full sm:w-auto">
                   <Play className="h-4 w-4" />
                   Empezar entrenamiento
@@ -104,6 +111,17 @@ export default async function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {otherDays.length > 0 && (
+        <div>
+          <p className="mb-2 text-sm text-muted-foreground">Otros días de tu rutina</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {otherDays.map((day) => (
+              <AlternateDayCard key={day.id} day={day} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {stats.lastSession && (
         <Card>

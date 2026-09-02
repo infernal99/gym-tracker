@@ -736,6 +736,7 @@ export type Database = {
           primary_goal: Database["public"]["Enums"]["primary_goal"]
           profile_visibility: Database["public"]["Enums"]["visibility_level"]
           prs_visibility: Database["public"]["Enums"]["private_visibility_level"]
+          sequence_anchor_day_id: string | null
           sex: Database["public"]["Enums"]["biological_sex"] | null
           updated_at: string
           username: string
@@ -758,6 +759,7 @@ export type Database = {
           primary_goal?: Database["public"]["Enums"]["primary_goal"]
           profile_visibility?: Database["public"]["Enums"]["visibility_level"]
           prs_visibility?: Database["public"]["Enums"]["private_visibility_level"]
+          sequence_anchor_day_id?: string | null
           sex?: Database["public"]["Enums"]["biological_sex"] | null
           updated_at?: string
           username: string
@@ -780,6 +782,7 @@ export type Database = {
           primary_goal?: Database["public"]["Enums"]["primary_goal"]
           profile_visibility?: Database["public"]["Enums"]["visibility_level"]
           prs_visibility?: Database["public"]["Enums"]["private_visibility_level"]
+          sequence_anchor_day_id?: string | null
           sex?: Database["public"]["Enums"]["biological_sex"] | null
           updated_at?: string
           username?: string
@@ -793,6 +796,13 @@ export type Database = {
             columns: ["active_template_id"]
             isOneToOne: false
             referencedRelation: "workout_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_sequence_anchor_day_id_fkey"
+            columns: ["sequence_anchor_day_id"]
+            isOneToOne: false
+            referencedRelation: "workout_template_days"
             referencedColumns: ["id"]
           },
         ]
@@ -1020,6 +1030,7 @@ export type Database = {
       workout_sessions: {
         Row: {
           completed_at: string | null
+          counts_toward_sequence: boolean
           created_at: string
           duration_seconds: number | null
           id: string
@@ -1033,6 +1044,7 @@ export type Database = {
         }
         Insert: {
           completed_at?: string | null
+          counts_toward_sequence?: boolean
           created_at?: string
           duration_seconds?: number | null
           id?: string
@@ -1046,6 +1058,7 @@ export type Database = {
         }
         Update: {
           completed_at?: string | null
+          counts_toward_sequence?: boolean
           created_at?: string
           duration_seconds?: number | null
           id?: string
