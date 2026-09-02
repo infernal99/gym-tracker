@@ -88,7 +88,7 @@ export default async function RoutineDetailPage({
                   .map((ex) => (
                     <div
                       key={ex.id}
-                      className="flex items-center justify-between rounded-md border px-3 py-2"
+                      className="flex items-center justify-between rounded-xl border px-3 py-2"
                     >
                       <div>
                         <p className="text-sm font-medium">{ex.exercises?.name}</p>
@@ -110,7 +110,7 @@ export default async function RoutineDetailPage({
                     </div>
                   ))}
 
-                <details className="rounded-md border px-3 py-2">
+                <details className="rounded-xl border px-3 py-2">
                   <summary className="cursor-pointer text-sm text-muted-foreground">
                     + Añadir ejercicio
                   </summary>

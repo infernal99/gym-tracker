@@ -59,7 +59,7 @@ export function ExerciseInfoDialog({ exercise }: { exercise: ExerciseInfo }) {
             <img
               src={exercise.image_url}
               alt={exercise.name}
-              className="w-full rounded-md border object-cover"
+              className="w-full rounded-xl border object-cover"
             />
           )}
           <div className="flex flex-wrap gap-1.5">

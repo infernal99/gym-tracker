@@ -35,7 +35,7 @@ export function ExerciseChart({ points }: { points: ExerciseProgressPoint[] }) {
             key={m.key}
             type="button"
             onClick={() => setMetric(m.key)}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+            className={`rounded-xl px-2.5 py-1 text-xs font-medium transition-colors ${
               metric === m.key
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground hover:bg-accent"

@@ -34,7 +34,7 @@ export function ExercisePicker({
   ).slice(0, 20);
 
   return (
-    <div className="space-y-2 rounded-md border p-3">
+    <div className="space-y-2 rounded-xl border p-3">
       <div className="relative">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -51,7 +51,7 @@ export function ExercisePicker({
       </div>
 
       {!selected && isOpen && results.length > 0 && (
-        <div className="max-h-48 overflow-y-auto rounded-md border">
+        <div className="max-h-48 overflow-y-auto rounded-xl border">
           {results.map((exercise) => (
             <button
               key={exercise.id}

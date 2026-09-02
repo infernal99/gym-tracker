@@ -83,7 +83,7 @@ export default async function MyRoutinePage() {
                 </summary>
                 <div className="space-y-2 px-(--card-spacing) pb-(--card-spacing)">
                   {dayExercises.map((ex) => (
-                    <div key={ex.id} className="rounded-md border px-3 py-2">
+                    <div key={ex.id} className="rounded-xl border px-3 py-2">
                       <p className="text-sm font-medium">{ex.exercises?.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {ex.target_sets} series

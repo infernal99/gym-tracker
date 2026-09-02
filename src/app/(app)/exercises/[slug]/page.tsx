@@ -164,7 +164,7 @@ export default async function ExerciseDetailPage({
               <Link
                 key={alt.id}
                 href={`/exercises/${alt.slug}`}
-                className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
+                className="rounded-xl border px-3 py-1.5 text-sm hover:bg-accent"
               >
                 {alt.name}
               </Link>
@@ -298,7 +298,7 @@ export default async function ExerciseDetailPage({
                 .map((p, i) => (
                   <div
                     key={`${p.date}-${i}`}
-                    className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+                    className="flex items-center justify-between rounded-xl border px-3 py-2 text-sm"
                   >
                     <span className="text-muted-foreground">
                       {new Date(p.date).toLocaleDateString("es-ES")}

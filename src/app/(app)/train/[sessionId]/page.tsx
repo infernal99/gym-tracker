@@ -18,10 +18,10 @@ export default async function TrainSessionPage({
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ exercise?: string }>;
+  searchParams: Promise<{ exercise?: string; set?: string }>;
 }) {
   const { sessionId } = await params;
-  const { exercise: exerciseParam } = await searchParams;
+  const { exercise: exerciseParam, set: setParam } = await searchParams;
   const profile = await requireProfile();
   const session = await getSessionWithDetails(sessionId);
 
@@ -58,6 +58,22 @@ export default async function TrainSessionPage({
   const currentSets = [...current.sets].sort((a, b) => a.set_number - b.set_number);
   const slotCount = Math.max(current.target_sets ?? 3, currentSets.length, 1);
   const slots = Array.from({ length: slotCount }, (_, i) => i + 1);
+
+  const firstIncomplete = slots.find(
+    (n) => !currentSets.some((s) => s.set_number === n),
+  );
+  const activeSet = Number(setParam) || firstIncomplete || slotCount;
+  const existing = currentSets.find((s) => s.set_number === activeSet);
+  const lastSet = lastPerformance?.sets[activeSet - 1];
+  const isPR = existing && prSetIds.has(existing.id);
+  const weightDelta =
+    existing?.weight_kg != null && lastSet?.weight_kg != null
+      ? existing.weight_kg - lastSet.weight_kg
+      : null;
+
+  function setHref(n: number) {
+    return `/train/${sessionId}?exercise=${current.id}&set=${n}`;
+  }
 
   return (
     <div className="mx-auto max-w-xl space-y-4 pb-24">
@@ -102,7 +118,7 @@ export default async function TrainSessionPage({
         </CardHeader>
         <CardContent className="space-y-4">
           {lastPerformance && lastPerformance.sets.length > 0 && (
-            <div className="rounded-md border bg-muted/30 px-3 py-2">
+            <div className="rounded-xl border bg-muted/30 px-3 py-2">
               <p className="text-xs font-medium text-muted-foreground">
                 Última vez ({new Date(lastPerformance.completedAt).toLocaleDateString("es-ES")})
               </p>
@@ -114,91 +130,101 @@ export default async function TrainSessionPage({
             </div>
           )}
 
-          <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
             {slots.map((setNumber) => {
-              const existing = currentSets.find((s) => s.set_number === setNumber);
-              const lastSet = lastPerformance?.sets[setNumber - 1];
-              const isPR = existing && prSetIds.has(existing.id);
-              const weightDelta =
-                existing?.weight_kg != null && lastSet?.weight_kg != null
-                  ? existing.weight_kg - lastSet.weight_kg
-                  : null;
-
+              const slotSet = currentSets.find((s) => s.set_number === setNumber);
+              const slotDone = !!slotSet;
+              const isActive = setNumber === activeSet;
               return (
-                <div key={setNumber} className="rounded-md border p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <p className="text-sm font-medium">Serie {setNumber}</p>
-                    <div className="flex items-center gap-2">
-                      {isPR && (
-                        <Badge className="gap-1 bg-success text-success-foreground">
-                          <Flame className="h-3 w-3" />
-                          Nuevo PR
-                        </Badge>
-                      )}
-                      {!isPR && weightDelta !== null && weightDelta !== 0 && (
-                        <span
-                          className={`text-xs font-medium ${weightDelta > 0 ? "text-success" : "text-muted-foreground"}`}
-                        >
-                          {weightDelta > 0 ? "↑" : "↓"} {Math.abs(weightDelta)} kg
-                        </span>
-                      )}
-                      {existing && (
-                        <form action={deleteSetAction.bind(null, sessionId, existing.id)}>
-                          <Button type="submit" variant="ghost" size="icon-sm">
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
-                        </form>
-                      )}
-                    </div>
-                  </div>
-                  <form
-                    action={logSetAction.bind(
-                      null,
-                      sessionId,
-                      current.id,
-                      current.exercise_id,
-                      setNumber,
-                    )}
-                    className="grid grid-cols-3 gap-2"
+                <Link key={setNumber} href={setHref(setNumber)} scroll={false}>
+                  <span
+                    className={`flex h-9 min-w-9 items-center justify-center rounded-full border px-2 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : slotDone
+                          ? "border-success/40 bg-success/10 text-success"
+                          : "border-border text-muted-foreground hover:bg-accent"
+                    }`}
                   >
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">Peso (kg)</label>
-                      <Input
-                        name="weightKg"
-                        type="number"
-                        step="0.5"
-                        min="0"
-                        defaultValue={existing?.weight_kg ?? ""}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">Reps</label>
-                      <Input
-                        name="reps"
-                        type="number"
-                        min="0"
-                        defaultValue={existing?.reps ?? ""}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">RIR (opcional)</label>
-                      <Input
-                        name="rir"
-                        type="number"
-                        min="0"
-                        max="10"
-                        defaultValue={existing?.rir ?? ""}
-                      />
-                    </div>
-                    <Button type="submit" size="sm" className="col-span-3">
-                      <Check className="h-3.5 w-3.5" />
-                      {existing ? "Guardar cambios" : "Completar serie"}
-                    </Button>
-                  </form>
-                </div>
+                    {slotDone ? <Check className="h-4 w-4" /> : setNumber}
+                  </span>
+                </Link>
               );
             })}
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Serie {activeSet} de {slotCount}
+              </p>
+              <div className="flex items-center gap-2">
+                {isPR && (
+                  <Badge className="gap-1 bg-success text-success-foreground">
+                    <Flame className="h-3 w-3" />
+                    Nuevo PR
+                  </Badge>
+                )}
+                {!isPR && weightDelta !== null && weightDelta !== 0 && (
+                  <span
+                    className={`text-xs font-medium ${weightDelta > 0 ? "text-success" : "text-muted-foreground"}`}
+                  >
+                    {weightDelta > 0 ? "↑" : "↓"} {Math.abs(weightDelta)} kg
+                  </span>
+                )}
+                {existing && (
+                  <form action={deleteSetAction.bind(null, sessionId, existing.id)}>
+                    <Button type="submit" variant="ghost" size="icon-sm">
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  </form>
+                )}
+              </div>
+            </div>
+            <form
+              action={logSetAction.bind(null, sessionId, current.id, current.exercise_id, activeSet)}
+              className="space-y-3"
+            >
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Peso (kg)</label>
+                  <Input
+                    name="weightKg"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    defaultValue={existing?.weight_kg ?? ""}
+                    placeholder="0"
+                    className="h-14 text-center text-2xl font-semibold tabular-nums"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Repeticiones</label>
+                  <Input
+                    name="reps"
+                    type="number"
+                    min="0"
+                    defaultValue={existing?.reps ?? ""}
+                    className="h-14 text-center text-2xl font-semibold tabular-nums"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">RIR (opcional)</label>
+                  <Input
+                    name="rir"
+                    type="number"
+                    min="0"
+                    max="10"
+                    defaultValue={existing?.rir ?? ""}
+                    className="h-14 text-center text-2xl font-semibold tabular-nums"
+                  />
+                </div>
+              </div>
+              <Button type="submit" size="lg" className="w-full">
+                <Check className="h-4 w-4" />
+                {existing ? "Guardar cambios" : "Completar serie"}
+              </Button>
+            </form>
           </div>
 
           {currentSets.length > 0 && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Dumbbell } from "lucide-react";
 import { startWorkoutAction } from "@/lib/actions/training";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,10 +17,11 @@ export function AlternateDayCard({ day }: { day: { id: string; name: string } })
     <Dialog>
       <DialogTrigger
         render={
-          <button className="rounded-md border px-3 py-2 text-left text-sm hover:bg-accent" />
+          <button className="flex w-full flex-col gap-1.5 rounded-xl border bg-card px-3 py-2.5 text-left transition-colors hover:bg-accent" />
         }
       >
-        <p className="font-medium">{day.name}</p>
+        <Dumbbell className="h-4 w-4 text-muted-foreground" />
+        <p className="truncate text-sm font-medium">{day.name}</p>
         <p className="text-xs text-muted-foreground">Entrenar en su lugar</p>
       </DialogTrigger>
       <DialogContent>

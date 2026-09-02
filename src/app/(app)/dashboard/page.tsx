@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Flame, Moon, Play, TrendingUp, Trophy } from "lucide-react";
+import { Dumbbell, Flame, Moon, Play, TrendingUp, Trophy } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getDashboardStats } from "@/lib/services/dashboard";
 import { listTrainingDays } from "@/lib/services/training";
@@ -20,12 +20,12 @@ function StatCard({
   return (
     <Card>
       <CardContent className="flex items-center gap-3 pt-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Icon className="h-5 w-5" />
         </div>
-        <div>
-          <p className="text-2xl font-semibold leading-none">{value}</p>
-          <p className="text-sm text-muted-foreground">{label}</p>
+        <div className="min-w-0">
+          <p className="text-2xl font-semibold leading-none tabular-nums">{value}</p>
+          <p className="truncate text-sm text-muted-foreground">{label}</p>
         </div>
       </CardContent>
     </Card>
@@ -93,16 +93,23 @@ export default async function DashboardPage() {
               )}
             </div>
           ) : (
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Hoy vas a entrenar</p>
-                <p className="text-xl font-semibold">{stats.pendingDay.name}</p>
-                {stats.activeTemplateName && (
-                  <p className="text-sm text-muted-foreground">{stats.activeTemplateName}</p>
-                )}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Dumbbell className="h-6 w-6" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm text-muted-foreground">Entrenamiento pendiente</p>
+                  <p className="truncate text-2xl font-semibold tracking-tight">
+                    {stats.pendingDay.name}
+                  </p>
+                  {stats.activeTemplateName && (
+                    <p className="text-sm text-muted-foreground">{stats.activeTemplateName}</p>
+                  )}
+                </div>
               </div>
               <form action={startWorkoutAction.bind(null, stats.pendingDay.id, true)}>
-                <Button type="submit" className="w-full sm:w-auto">
+                <Button type="submit" size="lg" className="w-full">
                   <Play className="h-4 w-4" />
                   Empezar entrenamiento
                 </Button>
@@ -143,25 +150,35 @@ export default async function DashboardPage() {
         <CardHeader>
           <CardTitle className="text-base">Progreso reciente</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-1.5 text-sm">
-          <p className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-success" />
+        <CardContent className="space-y-2">
+          <div className="flex items-center gap-3 text-sm">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success">
+              <Trophy className="h-4 w-4" />
+            </span>
             {stats.prsThisWeek} PR{stats.prsThisWeek === 1 ? "" : "s"} esta semana
-          </p>
+          </div>
           {stats.volumeChangePct !== null && (
-            <p className="flex items-center gap-2">
-              <TrendingUp
-                className={`h-4 w-4 ${stats.volumeChangePct >= 0 ? "text-success" : "text-muted-foreground"}`}
-              />
+            <div className="flex items-center gap-3 text-sm">
+              <span
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                  stats.volumeChangePct >= 0
+                    ? "bg-success/10 text-success"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                <TrendingUp className="h-4 w-4" />
+              </span>
               {stats.volumeChangePct >= 0 ? "+" : ""}
               {stats.volumeChangePct.toFixed(1)}% de volumen esta semana
-            </p>
+            </div>
           )}
-          <p className="flex items-center gap-2">
-            <Flame className="h-4 w-4 text-primary" />
+          <div className="flex items-center gap-3 text-sm">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Flame className="h-4 w-4" />
+            </span>
             {stats.workoutsThisWeek} entrenamiento{stats.workoutsThisWeek === 1 ? "" : "s"} esta
             semana · racha de {stats.currentStreak}d
-          </p>
+          </div>
         </CardContent>
       </Card>
 
