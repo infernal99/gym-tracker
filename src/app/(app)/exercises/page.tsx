@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Dumbbell, Search, Star } from "lucide-react";
+import { Dumbbell, Star } from "lucide-react";
 import {
   listExercises,
   listMuscleGroups,
@@ -12,7 +12,7 @@ import { muscleDotClass } from "@/lib/muscle-colors";
 import { ExerciseInfoDialog } from "@/components/exercises/exercise-info-dialog";
 import { FavoriteButton } from "@/components/exercises/favorite-button";
 import { ExerciseFiltersSheet } from "@/components/exercises/exercise-filters-sheet";
-import { Input } from "@/components/ui/input";
+import { ExerciseSearchInput } from "@/components/exercises/exercise-search-input";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function ExercisesPage({
@@ -94,26 +94,7 @@ export default async function ExercisesPage({
       </div>
 
       <div className="flex items-center gap-2">
-        <form className="relative flex-1" method="get">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            name="search"
-            placeholder="Buscar ejercicio..."
-            defaultValue={params.search}
-            className="pl-9"
-          />
-          {activeMuscle && <input type="hidden" name="muscle" value={activeMuscle} />}
-          {params.equipment && params.equipment !== "all" && (
-            <input type="hidden" name="equipment" value={params.equipment} />
-          )}
-          {params.difficulty && params.difficulty !== "all" && (
-            <input type="hidden" name="difficulty" value={params.difficulty} />
-          )}
-          {params.type && params.type !== "all" && (
-            <input type="hidden" name="type" value={params.type} />
-          )}
-          {onlyFavorites && <input type="hidden" name="favorites" value="1" />}
-        </form>
+        <ExerciseSearchInput defaultValue={params.search} />
         <ExerciseFiltersSheet equipment={equipment} />
       </div>
 
