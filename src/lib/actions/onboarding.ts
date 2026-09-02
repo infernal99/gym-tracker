@@ -13,6 +13,7 @@ export async function onboardingAction(
   const parsed = onboardingSchema.safeParse({
     sex: formData.get("sex"),
     primaryGoal: formData.get("primaryGoal"),
+    activityLevel: formData.get("activityLevel"),
     heightCm: formData.get("heightCm") || "",
     initialWeightKg: formData.get("initialWeightKg") || "",
     dateOfBirth: formData.get("dateOfBirth") ?? "",
@@ -31,6 +32,7 @@ export async function onboardingAction(
     .update({
       sex: data.sex,
       primary_goal: data.primaryGoal,
+      activity_level: data.activityLevel as typeof profile.activity_level,
       height_cm: data.heightCm || null,
       initial_weight_kg: data.initialWeightKg || null,
       date_of_birth: data.dateOfBirth || null,
@@ -42,5 +44,5 @@ export async function onboardingAction(
     return { error: "No se pudo guardar la información" };
   }
 
-  redirect("/dashboard");
+  redirect("/onboarding/results");
 }

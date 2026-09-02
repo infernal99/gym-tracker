@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { onboardingAction } from "@/lib/actions/onboarding";
 import { primaryGoalLabels, primaryGoalValues } from "@/lib/validation/auth";
 import { sexLabels, sexValues } from "@/lib/validation/onboarding";
+import { activityLevelLabels, activityLevelValues } from "@/lib/calculations/harris-benedict";
 import type { ActionResult } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,23 @@ export function OnboardingForm() {
                 {primaryGoalValues.map((goal) => (
                   <SelectItem key={goal} value={goal}>
                     {primaryGoalLabels[goal]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="activityLevel">Nivel de actividad</Label>
+            <Select name="activityLevel" defaultValue="moderate" required>
+              <SelectTrigger id="activityLevel" className="w-full">
+                <SelectValue>
+                  {(value: (typeof activityLevelValues)[number]) => activityLevelLabels[value]}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {activityLevelValues.map((level) => (
+                  <SelectItem key={level} value={level}>
+                    {activityLevelLabels[level]}
                   </SelectItem>
                 ))}
               </SelectContent>

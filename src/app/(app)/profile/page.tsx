@@ -2,6 +2,7 @@ import { requireProfile } from "@/lib/services/profile";
 import { listWorkoutActivity } from "@/lib/services/training";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { WorkoutHeatmap } from "@/components/profile/workout-heatmap";
+import { CalorieCalculatorButton } from "@/components/profile/calorie-calculator-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,8 @@ export default async function ProfilePage() {
           Nivel {profile.level} · {profile.xp} XP
         </Badge>
       </div>
+
+      <CalorieCalculatorButton profile={profile} />
 
       <Card>
         <CardHeader>

@@ -813,6 +813,7 @@ export type Database = {
       profiles: {
         Row: {
           active_template_id: string | null
+          activity_level: Database["public"]["Enums"]["activity_level"]
           avatar_url: string | null
           bio: string | null
           created_at: string
@@ -836,6 +837,7 @@ export type Database = {
         }
         Insert: {
           active_template_id?: string | null
+          activity_level?: Database["public"]["Enums"]["activity_level"]
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -859,6 +861,7 @@ export type Database = {
         }
         Update: {
           active_template_id?: string | null
+          activity_level?: Database["public"]["Enums"]["activity_level"]
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -1384,6 +1387,12 @@ export type Database = {
       owns_template_day: { Args: { day_id: string }; Returns: boolean }
     }
     Enums: {
+      activity_level:
+        | "sedentary"
+        | "light"
+        | "moderate"
+        | "active"
+        | "very_active"
       activity_type:
         | "workout_completed"
         | "new_pr"
@@ -1559,6 +1568,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activity_level: [
+        "sedentary",
+        "light",
+        "moderate",
+        "active",
+        "very_active",
+      ],
       activity_type: [
         "workout_completed",
         "new_pr",
