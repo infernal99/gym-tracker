@@ -8,7 +8,7 @@ import {
   duplicateTemplateAction,
 } from "@/lib/actions/routines";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default async function RoutinesPage() {
@@ -16,7 +16,7 @@ export default async function RoutinesPage() {
   const templates = await listMyTemplates(profile.id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Rutinas</h1>
         <Button render={<Link href="/routines/new" />}>
@@ -31,32 +31,34 @@ export default async function RoutinesPage() {
             <ListChecks className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">Tu progreso empieza aquí.</p>
             <Button render={<Link href="/routines/new" />}>
-          <Plus className="h-4 w-4" />
-          Nueva rutina
-        </Button>
+              <Plus className="h-4 w-4" />
+              Nueva rutina
+            </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="divide-y divide-border overflow-hidden py-0">
           {templates.map((template) => (
-            <Card key={template.id}>
-              <CardHeader className="flex-row items-start justify-between space-y-0">
-                <div>
-                  <CardTitle className="text-base">
-                    <Link href={`/routines/${template.id}`} className="hover:underline">
-                      {template.name}
-                    </Link>
-                  </CardTitle>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {template.workout_template_days?.length ?? 0} días
-                  </p>
+            <div key={template.id} className="flex items-center gap-3 px-4 py-3">
+              <Link href={`/routines/${template.id}`} className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="truncate font-medium hover:underline">{template.name}</p>
+                  {template.is_public && (
+                    <Badge variant="outline" className="shrink-0">
+                      De serie
+                    </Badge>
+                  )}
+                  {template.is_archived && (
+                    <Badge variant="secondary" className="shrink-0">
+                      Archivada
+                    </Badge>
+                  )}
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                  {template.is_public && <Badge variant="outline">De serie</Badge>}
-                  {template.is_archived && <Badge variant="secondary">Archivada</Badge>}
-                </div>
-              </CardHeader>
-              <CardContent className="flex items-center gap-1">
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  {template.workout_template_days?.length ?? 0} días
+                </p>
+              </Link>
+              <div className="flex shrink-0 items-center gap-0.5">
                 <form action={duplicateTemplateAction.bind(null, template.id)}>
                   <Button type="submit" variant="ghost" size="icon-sm" title="Duplicar">
                     <Copy className="h-4 w-4" />
@@ -91,10 +93,10 @@ export default async function RoutinesPage() {
                     </form>
                   </>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
-        </div>
+        </Card>
       )}
     </div>
   );
