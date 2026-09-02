@@ -191,6 +191,7 @@ type ExerciseListItem = {
   tips: string[] | null;
   common_mistakes: string[] | null;
   thumbnail_url?: string | null;
+  alternate_names?: string[] | null;
   muscle_groups: { name: string; slug: string } | null;
   equipment: { name: string } | null;
 };
@@ -238,7 +239,12 @@ function ExerciseRow({
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium">{exercise.name}</p>
+          <p className="truncate font-medium">
+            {exercise.name}
+            {exercise.alternate_names?.[0] && (
+              <span className="font-normal text-muted-foreground"> ({exercise.alternate_names[0]})</span>
+            )}
+          </p>
           <p className="mt-0.5 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
             {exercise.muscle_groups && (
               <span

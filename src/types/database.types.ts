@@ -456,6 +456,7 @@ export type Database = {
           movement_type: Database["public"]["Enums"]["movement_type"]
           name: string
           primary_muscle_group_id: string
+          search_text: string | null
           secondary_muscle_group_ids: string[]
           slug: string
           technique_notes: string | null
@@ -482,6 +483,7 @@ export type Database = {
           movement_type?: Database["public"]["Enums"]["movement_type"]
           name: string
           primary_muscle_group_id: string
+          search_text?: string | null
           secondary_muscle_group_ids?: string[]
           slug: string
           technique_notes?: string | null
@@ -508,6 +510,7 @@ export type Database = {
           movement_type?: Database["public"]["Enums"]["movement_type"]
           name?: string
           primary_muscle_group_id?: string
+          search_text?: string | null
           secondary_muscle_group_ids?: string[]
           slug?: string
           technique_notes?: string | null

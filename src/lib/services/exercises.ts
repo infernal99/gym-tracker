@@ -33,7 +33,9 @@ export async function listExercises(filters: ExerciseFilters = {}) {
     .order("name");
 
   if (filters.search) {
-    query = query.ilike("name", `%${filters.search}%`);
+    // search_text = lower(name + alternate_names), so "bench press" also
+    // finds "Press banca" and vice versa.
+    query = query.ilike("search_text", `%${filters.search.toLowerCase()}%`);
   }
   if (filters.muscleGroupId) {
     query = query.eq("primary_muscle_group_id", filters.muscleGroupId);

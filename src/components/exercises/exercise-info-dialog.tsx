@@ -37,6 +37,7 @@ export type ExerciseInfo = {
   tips: string[] | null;
   common_mistakes: string[] | null;
   image_url?: string | null;
+  alternate_names?: string[] | null;
   muscle_groups: { name: string; slug?: string } | null;
   equipment: { name: string } | null;
 };
@@ -50,6 +51,9 @@ export function ExerciseInfoDialog({ exercise }: { exercise: ExerciseInfo }) {
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{exercise.name}</DialogTitle>
+          {exercise.alternate_names?.[0] && (
+            <p className="text-sm text-muted-foreground">{exercise.alternate_names[0]}</p>
+          )}
           {exercise.description && <DialogDescription>{exercise.description}</DialogDescription>}
         </DialogHeader>
 

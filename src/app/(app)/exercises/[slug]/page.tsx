@@ -97,6 +97,9 @@ export default async function ExerciseDetailPage({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{exercise.name}</h1>
+          {exercise.alternate_names?.[0] && (
+            <p className="text-sm text-muted-foreground">{exercise.alternate_names[0]}</p>
+          )}
           <div className="mt-2 flex flex-wrap gap-1.5">
             {exercise.muscle_groups && (
               <Badge className={muscleBadgeClass(exercise.muscle_groups.slug)}>
