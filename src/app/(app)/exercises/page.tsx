@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Dumbbell, Star } from "lucide-react";
+import { Dumbbell, Search, Star } from "lucide-react";
 import {
   listExercises,
   listMuscleGroups,
@@ -8,33 +8,12 @@ import {
   listFavoriteExerciseIds,
 } from "@/lib/services/exercises";
 import { requireProfile } from "@/lib/services/profile";
-import { muscleBadgeClass } from "@/lib/muscle-colors";
+import { muscleDotClass } from "@/lib/muscle-colors";
 import { ExerciseInfoDialog } from "@/components/exercises/exercise-info-dialog";
 import { FavoriteButton } from "@/components/exercises/favorite-button";
+import { ExerciseFiltersSheet } from "@/components/exercises/exercise-filters-sheet";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-const difficultyLabels: Record<string, string> = {
-  beginner: "Principiante",
-  intermediate: "Intermedio",
-  advanced: "Avanzado",
-};
-
-const movementTypeLabels: Record<string, string> = {
-  compound: "Compuesto",
-  isolation: "Aislado",
-  cardio: "Cardio",
-  mobility: "Movilidad",
-};
 
 export default async function ExercisesPage({
   searchParams,
@@ -51,11 +30,12 @@ export default async function ExercisesPage({
   const params = await searchParams;
   const profile = await requireProfile();
   const onlyFavorites = params.favorites === "1";
+  const activeMuscle = params.muscle && params.muscle !== "all" ? params.muscle : undefined;
 
   const [exercises, muscleGroups, equipment, usedExerciseIds, favoriteIds] = await Promise.all([
     listExercises({
       search: params.search,
-      muscleGroupId: params.muscle === "all" ? undefined : params.muscle,
+      muscleGroupId: activeMuscle,
       equipmentId: params.equipment === "all" ? undefined : params.equipment,
       difficulty:
         params.difficulty && params.difficulty !== "all"
@@ -80,83 +60,88 @@ export default async function ExercisesPage({
   const myExercises = visibleExercises.filter((ex) => usedExerciseIds.has(ex.id));
   const otherExercises = visibleExercises.filter((ex) => !usedExerciseIds.has(ex.id));
 
+  // Preserve every filter except "muscle" when building the pill links, and
+  // "favorites" always stays off the muscle pills (it has its own toggle).
+  const muscleLinkParams = new URLSearchParams();
+  if (params.search) muscleLinkParams.set("search", params.search);
+  if (params.equipment && params.equipment !== "all") muscleLinkParams.set("equipment", params.equipment);
+  if (params.difficulty && params.difficulty !== "all") muscleLinkParams.set("difficulty", params.difficulty);
+  if (params.type && params.type !== "all") muscleLinkParams.set("type", params.type);
+  if (onlyFavorites) muscleLinkParams.set("favorites", "1");
+
+  function muscleHref(muscleId?: string) {
+    const p = new URLSearchParams(muscleLinkParams);
+    if (muscleId) p.set("muscle", muscleId);
+    const qs = p.toString();
+    return qs ? `/exercises?${qs}` : "/exercises";
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Ejercicios</h1>
         <Link
           href={onlyFavorites ? "/exercises" : "/exercises?favorites=1"}
-          className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium ${
-            onlyFavorites ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+          className={`flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-medium transition-colors ${
+            onlyFavorites
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border hover:bg-accent"
           }`}
         >
-          <Star className="h-4 w-4" />
+          <Star className={`h-4 w-4 ${onlyFavorites ? "fill-current" : ""}`} />
           Favoritos
         </Link>
       </div>
 
-      <form className="flex flex-col gap-2 sm:flex-row sm:flex-wrap" method="get">
-        <Input
-          name="search"
-          placeholder="Buscar ejercicio..."
-          defaultValue={params.search}
-          className="sm:max-w-xs"
-        />
-        <Select name="muscle" defaultValue={params.muscle ?? "all"}>
-          <SelectTrigger className="w-full sm:w-40">
-            <SelectValue placeholder="Músculo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los músculos</SelectItem>
-            {muscleGroups.map((mg) => (
-              <SelectItem key={mg.id} value={mg.id}>
-                {mg.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select name="equipment" defaultValue={params.equipment ?? "all"}>
-          <SelectTrigger className="w-full sm:w-40">
-            <SelectValue placeholder="Equipamiento" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todo el equipamiento</SelectItem>
-            {equipment.map((eq) => (
-              <SelectItem key={eq.id} value={eq.id}>
-                {eq.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select name="difficulty" defaultValue={params.difficulty ?? "all"}>
-          <SelectTrigger className="w-full sm:w-36">
-            <SelectValue placeholder="Dificultad" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toda dificultad</SelectItem>
-            {Object.entries(difficultyLabels).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select name="type" defaultValue={params.type ?? "all"}>
-          <SelectTrigger className="w-full sm:w-36">
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todo tipo</SelectItem>
-            {Object.entries(movementTypeLabels).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {onlyFavorites && <input type="hidden" name="favorites" value="1" />}
-        <Button type="submit">Filtrar</Button>
-      </form>
+      <div className="flex items-center gap-2">
+        <form className="relative flex-1" method="get">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            name="search"
+            placeholder="Buscar ejercicio..."
+            defaultValue={params.search}
+            className="pl-9"
+          />
+          {activeMuscle && <input type="hidden" name="muscle" value={activeMuscle} />}
+          {params.equipment && params.equipment !== "all" && (
+            <input type="hidden" name="equipment" value={params.equipment} />
+          )}
+          {params.difficulty && params.difficulty !== "all" && (
+            <input type="hidden" name="difficulty" value={params.difficulty} />
+          )}
+          {params.type && params.type !== "all" && (
+            <input type="hidden" name="type" value={params.type} />
+          )}
+          {onlyFavorites && <input type="hidden" name="favorites" value="1" />}
+        </form>
+        <ExerciseFiltersSheet equipment={equipment} />
+      </div>
+
+      <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        <Link
+          href={muscleHref()}
+          className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+            !activeMuscle
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+          }`}
+        >
+          Todos
+        </Link>
+        {muscleGroups.map((mg) => (
+          <Link
+            key={mg.id}
+            href={muscleHref(mg.id)}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+              activeMuscle === mg.id
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            {mg.name}
+          </Link>
+        ))}
+      </div>
 
       {visibleExercises.length === 0 ? (
         <Card>
@@ -170,39 +155,23 @@ export default async function ExercisesPage({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {myExercises.length > 0 && (
-            <div className="space-y-3">
-              <h2 className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-                <Star className="h-4 w-4" />
+            <div className="space-y-1">
+              <h2 className="flex items-center gap-1.5 px-1 text-sm font-medium text-muted-foreground">
+                <Star className="h-3.5 w-3.5" />
                 En tu rutina
               </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {myExercises.map((exercise) => (
-                  <ExerciseCard
-                    key={exercise.id}
-                    exercise={exercise}
-                    isFavorite={favoriteIds.has(exercise.id)}
-                  />
-                ))}
-              </div>
+              <ExerciseList exercises={myExercises} favoriteIds={favoriteIds} />
             </div>
           )}
 
           {otherExercises.length > 0 && (
-            <div className="space-y-3">
-              <h2 className="text-sm font-medium text-muted-foreground">
+            <div className="space-y-1">
+              <h2 className="px-1 text-sm font-medium text-muted-foreground">
                 {myExercises.length > 0 ? "Otros ejercicios" : "Todos los ejercicios"}
               </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {otherExercises.map((exercise) => (
-                  <ExerciseCard
-                    key={exercise.id}
-                    exercise={exercise}
-                    isFavorite={favoriteIds.has(exercise.id)}
-                  />
-                ))}
-              </div>
+              <ExerciseList exercises={otherExercises} favoriteIds={favoriteIds} />
             </div>
           )}
         </div>
@@ -211,65 +180,80 @@ export default async function ExercisesPage({
   );
 }
 
-function ExerciseCard({
+type ExerciseListItem = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  difficulty: string;
+  movement_type: string;
+  instructions: string[] | null;
+  tips: string[] | null;
+  common_mistakes: string[] | null;
+  thumbnail_url?: string | null;
+  muscle_groups: { name: string; slug: string } | null;
+  equipment: { name: string } | null;
+};
+
+function ExerciseList({
+  exercises,
+  favoriteIds,
+}: {
+  exercises: ExerciseListItem[];
+  favoriteIds: Set<string>;
+}) {
+  return (
+    <Card className="divide-y divide-border overflow-hidden py-0">
+      {exercises.map((exercise) => (
+        <ExerciseRow
+          key={exercise.id}
+          exercise={exercise}
+          isFavorite={favoriteIds.has(exercise.id)}
+        />
+      ))}
+    </Card>
+  );
+}
+
+function ExerciseRow({
   exercise,
   isFavorite,
 }: {
-  exercise: {
-    id: string;
-    slug: string;
-    name: string;
-    description: string | null;
-    difficulty: string;
-    movement_type: string;
-    instructions: string[] | null;
-    tips: string[] | null;
-    common_mistakes: string[] | null;
-    thumbnail_url?: string | null;
-    muscle_groups: { name: string; slug: string } | null;
-    equipment: { name: string } | null;
-  };
+  exercise: ExerciseListItem;
   isFavorite: boolean;
 }) {
   return (
-    <Card className="transition-colors hover:bg-accent/50">
-      <CardContent className="space-y-2 pt-6">
-        <Link href={`/exercises/${exercise.slug}`} className="flex items-start gap-3">
-          {exercise.thumbnail_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={exercise.thumbnail_url}
-              alt={exercise.name}
-              className="h-12 w-12 shrink-0 rounded-md object-cover"
-            />
-          ) : (
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-muted">
-              <Dumbbell className="h-5 w-5 text-muted-foreground" />
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="font-medium hover:underline">{exercise.name}</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {exercise.muscle_groups && (
-                <Badge className={muscleBadgeClass(exercise.muscle_groups.slug)}>
-                  {exercise.muscle_groups.name}
-                </Badge>
-              )}
-              {exercise.equipment?.name && (
-                <Badge variant="outline">{exercise.equipment.name}</Badge>
-              )}
-              <Badge variant="outline">{difficultyLabels[exercise.difficulty]}</Badge>
-            </div>
-            {exercise.description && (
-              <p className="mt-2 text-sm text-muted-foreground">{exercise.description}</p>
-            )}
+    <div className="flex items-center gap-3 px-3 py-2.5">
+      <Link href={`/exercises/${exercise.slug}`} className="flex min-w-0 flex-1 items-center gap-3">
+        {exercise.thumbnail_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={exercise.thumbnail_url}
+            alt={exercise.name}
+            className="h-12 w-12 shrink-0 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted">
+            <Dumbbell className="h-5 w-5 text-muted-foreground" />
           </div>
-        </Link>
-        <div className="flex items-center gap-1 pt-1">
-          <ExerciseInfoDialog exercise={exercise} />
-          <FavoriteButton exerciseId={exercise.id} isFavorite={isFavorite} />
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium">{exercise.name}</p>
+          <p className="mt-0.5 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
+            {exercise.muscle_groups && (
+              <span
+                className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${muscleDotClass(exercise.muscle_groups.slug)}`}
+              />
+            )}
+            {exercise.muscle_groups?.name}
+            {exercise.equipment?.name ? ` · ${exercise.equipment.name}` : ""}
+          </p>
         </div>
-      </CardContent>
-    </Card>
+      </Link>
+      <div className="flex shrink-0 items-center gap-0.5">
+        <ExerciseInfoDialog exercise={exercise} />
+        <FavoriteButton exerciseId={exercise.id} isFavorite={isFavorite} />
+      </div>
+    </div>
   );
 }

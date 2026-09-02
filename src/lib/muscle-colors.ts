@@ -34,3 +34,18 @@ export function muscleBadgeClass(slug: string | null | undefined) {
   const zone = ZONE_BY_SLUG[slug];
   return zone ? CLASSES_BY_ZONE[zone] : "bg-secondary text-secondary-foreground";
 }
+
+const DOT_BY_ZONE: Record<string, string> = {
+  chest: "bg-muscle-chest",
+  back: "bg-muscle-back",
+  legs: "bg-muscle-legs",
+  shoulders: "bg-muscle-shoulders",
+  arms: "bg-muscle-arms",
+  core: "bg-muscle-core",
+};
+
+export function muscleDotClass(slug: string | null | undefined) {
+  if (!slug) return "bg-muted-foreground";
+  const zone = ZONE_BY_SLUG[slug];
+  return zone ? DOT_BY_ZONE[zone] : "bg-muted-foreground";
+}
