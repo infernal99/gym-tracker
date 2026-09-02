@@ -176,7 +176,7 @@ export default async function ExercisesPage({
                 <Star className="h-4 w-4" />
                 En tu rutina
               </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {myExercises.map((exercise) => (
                   <ExerciseCard
                     key={exercise.id}
@@ -193,7 +193,7 @@ export default async function ExercisesPage({
               <h2 className="text-sm font-medium text-muted-foreground">
                 {myExercises.length > 0 ? "Otros ejercicios" : "Todos los ejercicios"}
               </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {otherExercises.map((exercise) => (
                   <ExerciseCard
                     key={exercise.id}
@@ -231,30 +231,34 @@ function ExerciseCard({
   isFavorite: boolean;
 }) {
   return (
-    <Card className="overflow-hidden transition-colors hover:bg-accent/50">
-      {exercise.thumbnail_url && (
-        <Link href={`/exercises/${exercise.slug}`}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={exercise.thumbnail_url}
-            alt={exercise.name}
-            className="aspect-video w-full object-cover"
-          />
-        </Link>
-      )}
+    <Card className="transition-colors hover:bg-accent/50">
       <CardContent className="space-y-2 pt-6">
-        <Link href={`/exercises/${exercise.slug}`}>
-          <p className="font-medium hover:underline">{exercise.name}</p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            <Badge variant="secondary">{exercise.muscle_groups?.name}</Badge>
-            {exercise.equipment?.name && (
-              <Badge variant="outline">{exercise.equipment.name}</Badge>
-            )}
-            <Badge variant="outline">{difficultyLabels[exercise.difficulty]}</Badge>
-          </div>
-          {exercise.description && (
-            <p className="mt-2 text-sm text-muted-foreground">{exercise.description}</p>
+        <Link href={`/exercises/${exercise.slug}`} className="flex items-start gap-3">
+          {exercise.thumbnail_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={exercise.thumbnail_url}
+              alt={exercise.name}
+              className="h-12 w-12 shrink-0 rounded-md object-cover"
+            />
+          ) : (
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-muted">
+              <Dumbbell className="h-5 w-5 text-muted-foreground" />
+            </div>
           )}
+          <div className="min-w-0 flex-1">
+            <p className="font-medium hover:underline">{exercise.name}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Badge variant="secondary">{exercise.muscle_groups?.name}</Badge>
+              {exercise.equipment?.name && (
+                <Badge variant="outline">{exercise.equipment.name}</Badge>
+              )}
+              <Badge variant="outline">{difficultyLabels[exercise.difficulty]}</Badge>
+            </div>
+            {exercise.description && (
+              <p className="mt-2 text-sm text-muted-foreground">{exercise.description}</p>
+            )}
+          </div>
         </Link>
         <div className="flex items-center gap-1 pt-1">
           <ExerciseInfoDialog exercise={exercise} />
