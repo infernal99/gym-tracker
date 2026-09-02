@@ -169,6 +169,94 @@ export async function getPrSetIds(setIds: string[]) {
   return new Set((data ?? []).map((r) => r.session_set_id).filter((id): id is string => !!id));
 }
 
+function startOfWeek(date: Date) {
+  const d = new Date(date);
+  const day = (d.getDay() + 6) % 7; // Monday = 0
+  d.setDate(d.getDate() - day);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export type ExerciseProgressPoint = {
+  date: string;
+  weightKg: number;
+  reps: number;
+  e1rm: number;
+  volumeKg: number;
+};
+
+// One point per completed session that includes this exercise: the set with
+// the best estimated 1RM (Epley) that session represents that day's top
+// performance, plus that session's total volume for the exercise.
+export async function getExerciseProgress(userId: string, exerciseId: string) {
+  const supabase = await createClient();
+  const [{ data: sessions }, { data: personalRecords }] = await Promise.all([
+    supabase
+      .from("workout_sessions")
+      .select("id, completed_at, workout_session_exercises!inner(id, exercise_id, sets(*))")
+      .eq("user_id", userId)
+      .eq("workout_session_exercises.exercise_id", exerciseId)
+      .not("completed_at", "is", null)
+      .order("completed_at", { ascending: true }),
+    supabase
+      .from("personal_records")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("exercise_id", exerciseId)
+      .order("achieved_at", { ascending: false }),
+  ]);
+
+  const points: ExerciseProgressPoint[] = [];
+  for (const session of sessions ?? []) {
+    const sessionExercise = session.workout_session_exercises[0];
+    const validSets = (sessionExercise?.sets ?? []).filter(
+      (s): s is typeof s & { weight_kg: number; reps: number } =>
+        s.weight_kg != null && s.reps != null,
+    );
+    if (validSets.length === 0) continue;
+
+    const volumeKg = validSets.reduce((sum, s) => sum + s.weight_kg * s.reps, 0);
+    const best = validSets.reduce((a, b) =>
+      b.weight_kg * (1 + b.reps / 30) > a.weight_kg * (1 + a.reps / 30) ? b : a,
+    );
+
+    points.push({
+      date: session.completed_at as string,
+      weightKg: best.weight_kg,
+      reps: best.reps,
+      e1rm: Math.round(best.weight_kg * (1 + best.reps / 30) * 10) / 10,
+      volumeKg,
+    });
+  }
+
+  const now = new Date();
+  const thisWeekStart = startOfWeek(now);
+  const lastWeekStart = new Date(thisWeekStart);
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+  const bestE1rmIn = (from: Date, to?: Date) => {
+    const inRange = points.filter((p) => {
+      const d = new Date(p.date);
+      return d >= from && (!to || d < to);
+    });
+    return inRange.length > 0 ? Math.max(...inRange.map((p) => p.e1rm)) : null;
+  };
+
+  const bestThisWeek = bestE1rmIn(thisWeekStart);
+  const bestLastWeek = bestE1rmIn(lastWeekStart, thisWeekStart);
+
+  return {
+    points,
+    personalRecords: personalRecords ?? [],
+    weekOverWeek: {
+      bestThisWeek,
+      bestLastWeek,
+      changePct:
+        bestThisWeek !== null && bestLastWeek ? ((bestThisWeek - bestLastWeek) / bestLastWeek) * 100 : null,
+    },
+  };
+}
+
 export async function listCompletedSessions(userId: string, limit = 30) {
   const supabase = await createClient();
   const { data } = await supabase

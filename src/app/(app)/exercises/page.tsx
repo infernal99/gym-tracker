@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Dumbbell, Star } from "lucide-react";
 import {
   listExercises,
@@ -133,6 +134,7 @@ function ExerciseCard({
 }: {
   exercise: {
     id: string;
+    slug: string;
     name: string;
     description: string | null;
     difficulty: string;
@@ -141,18 +143,22 @@ function ExerciseCard({
   };
 }) {
   return (
-    <Card>
-      <CardContent className="space-y-2 pt-6">
-        <p className="font-medium">{exercise.name}</p>
-        <div className="flex flex-wrap gap-1.5">
-          <Badge variant="secondary">{exercise.muscle_groups?.name}</Badge>
-          {exercise.equipment?.name && <Badge variant="outline">{exercise.equipment.name}</Badge>}
-          <Badge variant="outline">{difficultyLabels[exercise.difficulty]}</Badge>
-        </div>
-        {exercise.description && (
-          <p className="text-sm text-muted-foreground">{exercise.description}</p>
-        )}
-      </CardContent>
-    </Card>
+    <Link href={`/exercises/${exercise.slug}`}>
+      <Card className="transition-colors hover:bg-accent/50">
+        <CardContent className="space-y-2 pt-6">
+          <p className="font-medium">{exercise.name}</p>
+          <div className="flex flex-wrap gap-1.5">
+            <Badge variant="secondary">{exercise.muscle_groups?.name}</Badge>
+            {exercise.equipment?.name && (
+              <Badge variant="outline">{exercise.equipment.name}</Badge>
+            )}
+            <Badge variant="outline">{difficultyLabels[exercise.difficulty]}</Badge>
+          </div>
+          {exercise.description && (
+            <p className="text-sm text-muted-foreground">{exercise.description}</p>
+          )}
+        </CardContent>
+      </Card>
+    </Link>
   );
 }
