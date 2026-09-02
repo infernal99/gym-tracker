@@ -37,6 +37,18 @@ export default async function ProfilePage() {
           <ProfileForm profile={profile} />
         </CardContent>
       </Card>
+
+      <p className="text-center text-xs text-muted-foreground">
+        Datos e imágenes de ejercicios por{" "}
+        <a
+          href="https://repdb.co"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline"
+        >
+          RepDB
+        </a>
+      </p>
     </div>
   );
 }

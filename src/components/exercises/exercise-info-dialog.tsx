@@ -35,6 +35,7 @@ export type ExerciseInfo = {
   instructions: string[] | null;
   tips: string[] | null;
   common_mistakes: string[] | null;
+  image_url?: string | null;
   muscle_groups: { name: string } | null;
   equipment: { name: string } | null;
 };
@@ -52,6 +53,14 @@ export function ExerciseInfoDialog({ exercise }: { exercise: ExerciseInfo }) {
         </DialogHeader>
 
         <div className="space-y-4 text-sm">
+          {exercise.image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={exercise.image_url}
+              alt={exercise.name}
+              className="w-full rounded-md border object-cover"
+            />
+          )}
           <div className="flex flex-wrap gap-1.5">
             {exercise.muscle_groups && <Badge variant="secondary">{exercise.muscle_groups.name}</Badge>}
             {exercise.equipment && <Badge variant="outline">{exercise.equipment.name}</Badge>}

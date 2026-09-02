@@ -224,13 +224,24 @@ function ExerciseCard({
     instructions: string[] | null;
     tips: string[] | null;
     common_mistakes: string[] | null;
+    thumbnail_url?: string | null;
     muscle_groups: { name: string } | null;
     equipment: { name: string } | null;
   };
   isFavorite: boolean;
 }) {
   return (
-    <Card className="transition-colors hover:bg-accent/50">
+    <Card className="overflow-hidden transition-colors hover:bg-accent/50">
+      {exercise.thumbnail_url && (
+        <Link href={`/exercises/${exercise.slug}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={exercise.thumbnail_url}
+            alt={exercise.name}
+            className="aspect-video w-full object-cover"
+          />
+        </Link>
+      )}
       <CardContent className="space-y-2 pt-6">
         <Link href={`/exercises/${exercise.slug}`}>
           <p className="font-medium hover:underline">{exercise.name}</p>

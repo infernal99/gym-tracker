@@ -85,6 +85,14 @@ export default async function ExerciseDetailPage({
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {exercise.image_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={exercise.image_url}
+          alt={exercise.name}
+          className="aspect-video w-full rounded-lg border object-cover"
+        />
+      )}
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{exercise.name}</h1>
