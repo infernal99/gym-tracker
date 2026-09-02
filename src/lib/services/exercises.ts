@@ -45,6 +45,26 @@ export async function listExercises(filters: ExerciseFilters = {}) {
   return data ?? [];
 }
 
+// Exercise ids used anywhere in a routine's days, to let /exercises put
+// "your" exercises first.
+export async function listUsedExerciseIds(templateId: string) {
+  const supabase = await createClient();
+  const { data: days } = await supabase
+    .from("workout_template_days")
+    .select("id")
+    .eq("template_id", templateId);
+
+  const dayIds = (days ?? []).map((d) => d.id);
+  if (dayIds.length === 0) return new Set<string>();
+
+  const { data } = await supabase
+    .from("workout_template_exercises")
+    .select("exercise_id")
+    .in("template_day_id", dayIds);
+
+  return new Set((data ?? []).map((r) => r.exercise_id));
+}
+
 export async function getExerciseBySlug(slug: string) {
   const supabase = await createClient();
   const { data } = await supabase

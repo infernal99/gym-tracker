@@ -1,5 +1,11 @@
-import { Dumbbell } from "lucide-react";
-import { listExercises, listMuscleGroups, listEquipment } from "@/lib/services/exercises";
+import { Dumbbell, Star } from "lucide-react";
+import {
+  listExercises,
+  listMuscleGroups,
+  listEquipment,
+  listUsedExerciseIds,
+} from "@/lib/services/exercises";
+import { requireProfile } from "@/lib/services/profile";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +30,8 @@ export default async function ExercisesPage({
   searchParams: Promise<{ search?: string; muscle?: string; equipment?: string }>;
 }) {
   const params = await searchParams;
-  const [exercises, muscleGroups, equipment] = await Promise.all([
+  const profile = await requireProfile();
+  const [exercises, muscleGroups, equipment, usedExerciseIds] = await Promise.all([
     listExercises({
       search: params.search,
       muscleGroupId: params.muscle === "all" ? undefined : params.muscle,
@@ -32,7 +39,13 @@ export default async function ExercisesPage({
     }),
     listMuscleGroups(),
     listEquipment(),
+    profile.active_template_id
+      ? listUsedExerciseIds(profile.active_template_id)
+      : Promise.resolve(new Set<string>()),
   ]);
+
+  const myExercises = exercises.filter((ex) => usedExerciseIds.has(ex.id));
+  const otherExercises = exercises.filter((ex) => !usedExerciseIds.has(ex.id));
 
   return (
     <div className="space-y-6">
@@ -82,26 +95,64 @@ export default async function ExercisesPage({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {exercises.map((exercise) => (
-            <Card key={exercise.id}>
-              <CardContent className="space-y-2 pt-6">
-                <p className="font-medium">{exercise.name}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge variant="secondary">{exercise.muscle_groups?.name}</Badge>
-                  {exercise.equipment?.name && (
-                    <Badge variant="outline">{exercise.equipment.name}</Badge>
-                  )}
-                  <Badge variant="outline">{difficultyLabels[exercise.difficulty]}</Badge>
-                </div>
-                {exercise.description && (
-                  <p className="text-sm text-muted-foreground">{exercise.description}</p>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+        <div className="space-y-8">
+          {myExercises.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                <Star className="h-4 w-4" />
+                En tu rutina
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {myExercises.map((exercise) => (
+                  <ExerciseCard key={exercise.id} exercise={exercise} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {otherExercises.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-medium text-muted-foreground">
+                {myExercises.length > 0 ? "Otros ejercicios" : "Todos los ejercicios"}
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {otherExercises.map((exercise) => (
+                  <ExerciseCard key={exercise.id} exercise={exercise} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
+  );
+}
+
+function ExerciseCard({
+  exercise,
+}: {
+  exercise: {
+    id: string;
+    name: string;
+    description: string | null;
+    difficulty: string;
+    muscle_groups: { name: string } | null;
+    equipment: { name: string } | null;
+  };
+}) {
+  return (
+    <Card>
+      <CardContent className="space-y-2 pt-6">
+        <p className="font-medium">{exercise.name}</p>
+        <div className="flex flex-wrap gap-1.5">
+          <Badge variant="secondary">{exercise.muscle_groups?.name}</Badge>
+          {exercise.equipment?.name && <Badge variant="outline">{exercise.equipment.name}</Badge>}
+          <Badge variant="outline">{difficultyLabels[exercise.difficulty]}</Badge>
+        </div>
+        {exercise.description && (
+          <p className="text-sm text-muted-foreground">{exercise.description}</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
