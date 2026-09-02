@@ -1,6 +1,9 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { ExerciseDifficulty } from "@/types/database.types";
+import type { Database } from "@/types/database.types";
+
+type MovementType = Database["public"]["Enums"]["movement_type"];
 
 export async function listMuscleGroups() {
   const supabase = await createClient();
@@ -19,6 +22,7 @@ export type ExerciseFilters = {
   muscleGroupId?: string;
   equipmentId?: string;
   difficulty?: ExerciseDifficulty;
+  movementType?: MovementType;
 };
 
 export async function listExercises(filters: ExerciseFilters = {}) {
@@ -40,8 +44,41 @@ export async function listExercises(filters: ExerciseFilters = {}) {
   if (filters.difficulty) {
     query = query.eq("difficulty", filters.difficulty);
   }
+  if (filters.movementType) {
+    query = query.eq("movement_type", filters.movementType);
+  }
 
   const { data } = await query;
+  return data ?? [];
+}
+
+export async function listFavoriteExerciseIds(userId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("exercise_favorites")
+    .select("exercise_id")
+    .eq("user_id", userId);
+  return new Set((data ?? []).map((r) => r.exercise_id));
+}
+
+export async function getExerciseNote(userId: string, exerciseId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("exercise_notes")
+    .select("note")
+    .eq("user_id", userId)
+    .eq("exercise_id", exerciseId)
+    .maybeSingle();
+  return data?.note ?? "";
+}
+
+export async function listExercisesByIds(ids: string[]) {
+  if (ids.length === 0) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("exercises")
+    .select("id, name, slug, primary_muscle_group_id, muscle_groups(name)")
+    .in("id", ids);
   return data ?? [];
 }
 

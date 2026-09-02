@@ -7,6 +7,7 @@ import { logSetAction, deleteSetAction, finishWorkoutAction } from "@/lib/action
 import { ElapsedClock } from "@/components/training/elapsed-clock";
 import { RestTimer } from "@/components/training/rest-timer";
 import { CancelWorkoutButton } from "@/components/training/cancel-workout-button";
+import { ExerciseInfoDialog } from "@/components/exercises/exercise-info-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -86,7 +87,10 @@ export default async function TrainSessionPage({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{current.exercises?.name}</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">{current.exercises?.name}</CardTitle>
+            {current.exercises && <ExerciseInfoDialog exercise={current.exercises} />}
+          </div>
           {current.target_sets && (
             <p className="text-sm text-muted-foreground">
               Objetivo de rutina: {current.target_sets} series

@@ -97,7 +97,11 @@ export async function getSessionWithDetails(sessionId: string) {
     .from("workout_sessions")
     .select(
       `*, workout_session_exercises(
-        *, exercises(id, name, slug), sets(*)
+        *, exercises(
+          id, name, slug, description, difficulty, movement_type,
+          instructions, tips, common_mistakes,
+          muscle_groups(name), equipment(name)
+        ), sets(*)
       )`,
     )
     .eq("id", sessionId)

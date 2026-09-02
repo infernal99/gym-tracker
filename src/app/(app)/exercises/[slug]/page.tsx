@@ -1,16 +1,33 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { Dumbbell, Flame, TrendingUp, Trophy } from "lucide-react";
-import { getExerciseBySlug } from "@/lib/services/exercises";
+import {
+  getExerciseBySlug,
+  listFavoriteExerciseIds,
+  getExerciseNote,
+  listExercisesByIds,
+} from "@/lib/services/exercises";
 import { getExerciseProgress } from "@/lib/services/training";
 import { requireProfile } from "@/lib/services/profile";
+import { saveExerciseNoteAction } from "@/lib/actions/exercises";
 import { ExerciseChart } from "@/components/exercises/exercise-chart";
+import { FavoriteButton } from "@/components/exercises/favorite-button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const difficultyLabels: Record<string, string> = {
   beginner: "Principiante",
   intermediate: "Intermedio",
   advanced: "Avanzado",
+};
+
+const movementTypeLabels: Record<string, string> = {
+  compound: "Compuesto",
+  isolation: "Aislado",
+  cardio: "Cardio",
+  mobility: "Movilidad",
 };
 
 function StatCard({
@@ -47,11 +64,15 @@ export default async function ExerciseDetailPage({
   const exercise = await getExerciseBySlug(slug);
   if (!exercise) notFound();
 
-  const { points, personalRecords, weekOverWeek } = await getExerciseProgress(
-    profile.id,
-    exercise.id,
-  );
+  const [{ points, personalRecords, weekOverWeek }, favoriteIds, note, alternatives] =
+    await Promise.all([
+      getExerciseProgress(profile.id, exercise.id),
+      listFavoriteExerciseIds(profile.id),
+      getExerciseNote(profile.id, exercise.id),
+      listExercisesByIds(exercise.alternative_exercise_ids),
+    ]);
 
+  const isFavorite = favoriteIds.has(exercise.id);
   const bestWeightPR = personalRecords.find((pr) => pr.record_type === "max_weight");
   const best1rmPR = personalRecords.find((pr) => pr.record_type === "best_1rm");
   const totalVolume = points.reduce((sum, p) => sum + p.volumeKg, 0);
@@ -64,17 +85,100 @@ export default async function ExerciseDetailPage({
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{exercise.name}</h1>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {exercise.muscle_groups && <Badge variant="secondary">{exercise.muscle_groups.name}</Badge>}
-          {exercise.equipment && <Badge variant="outline">{exercise.equipment.name}</Badge>}
-          <Badge variant="outline">{difficultyLabels[exercise.difficulty]}</Badge>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{exercise.name}</h1>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {exercise.muscle_groups && <Badge variant="secondary">{exercise.muscle_groups.name}</Badge>}
+            {exercise.equipment && <Badge variant="outline">{exercise.equipment.name}</Badge>}
+            <Badge variant="outline">{difficultyLabels[exercise.difficulty]}</Badge>
+            <Badge variant="outline">{movementTypeLabels[exercise.movement_type]}</Badge>
+          </div>
+          {exercise.description && (
+            <p className="mt-2 text-sm text-muted-foreground">{exercise.description}</p>
+          )}
         </div>
-        {exercise.description && (
-          <p className="mt-2 text-sm text-muted-foreground">{exercise.description}</p>
-        )}
+        <FavoriteButton exerciseId={exercise.id} isFavorite={isFavorite} />
       </div>
+
+      {(exercise.instructions?.length || exercise.tips?.length || exercise.common_mistakes?.length) ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Información</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            {exercise.instructions && exercise.instructions.length > 0 && (
+              <div>
+                <p className="mb-1 font-medium">Cómo hacerlo</p>
+                <ol className="list-decimal space-y-1 pl-4">
+                  {exercise.instructions.map((step, i) => (
+                    <li key={i}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {exercise.tips && exercise.tips.length > 0 && (
+              <div>
+                <p className="mb-1 font-medium">Consejos</p>
+                <ul className="list-disc space-y-1 pl-4 text-muted-foreground">
+                  {exercise.tips.map((tip, i) => (
+                    <li key={i}>{tip}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {exercise.common_mistakes && exercise.common_mistakes.length > 0 && (
+              <div>
+                <p className="mb-1 font-medium">Errores comunes</p>
+                <ul className="list-disc space-y-1 pl-4 text-muted-foreground">
+                  {exercise.common_mistakes.map((mistake, i) => (
+                    <li key={i}>{mistake}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {alternatives.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Ejercicios similares</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {alternatives.map((alt) => (
+              <Link
+                key={alt.id}
+                href={`/exercises/${alt.slug}`}
+                className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
+              >
+                {alt.name}
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Mi nota</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={saveExerciseNoteAction.bind(null, exercise.id)} className="space-y-2">
+            <Textarea
+              name="note"
+              rows={2}
+              maxLength={500}
+              defaultValue={note}
+              placeholder="Ej: me resulta más cómodo con agarre estrecho..."
+            />
+            <Button type="submit" size="sm">
+              Guardar nota
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {points.length === 0 ? (
         <Card>

@@ -5,8 +5,11 @@ import {
   listMuscleGroups,
   listEquipment,
   listUsedExerciseIds,
+  listFavoriteExerciseIds,
 } from "@/lib/services/exercises";
 import { requireProfile } from "@/lib/services/profile";
+import { ExerciseInfoDialog } from "@/components/exercises/exercise-info-dialog";
+import { FavoriteButton } from "@/components/exercises/favorite-button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,34 +28,73 @@ const difficultyLabels: Record<string, string> = {
   advanced: "Avanzado",
 };
 
+const movementTypeLabels: Record<string, string> = {
+  compound: "Compuesto",
+  isolation: "Aislado",
+  cardio: "Cardio",
+  mobility: "Movilidad",
+};
+
 export default async function ExercisesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; muscle?: string; equipment?: string }>;
+  searchParams: Promise<{
+    search?: string;
+    muscle?: string;
+    equipment?: string;
+    difficulty?: string;
+    type?: string;
+    favorites?: string;
+  }>;
 }) {
   const params = await searchParams;
   const profile = await requireProfile();
-  const [exercises, muscleGroups, equipment, usedExerciseIds] = await Promise.all([
+  const onlyFavorites = params.favorites === "1";
+
+  const [exercises, muscleGroups, equipment, usedExerciseIds, favoriteIds] = await Promise.all([
     listExercises({
       search: params.search,
       muscleGroupId: params.muscle === "all" ? undefined : params.muscle,
       equipmentId: params.equipment === "all" ? undefined : params.equipment,
+      difficulty:
+        params.difficulty && params.difficulty !== "all"
+          ? (params.difficulty as "beginner" | "intermediate" | "advanced")
+          : undefined,
+      movementType:
+        params.type && params.type !== "all"
+          ? (params.type as "compound" | "isolation" | "cardio" | "mobility")
+          : undefined,
     }),
     listMuscleGroups(),
     listEquipment(),
     profile.active_template_id
       ? listUsedExerciseIds(profile.active_template_id)
       : Promise.resolve(new Set<string>()),
+    listFavoriteExerciseIds(profile.id),
   ]);
 
-  const myExercises = exercises.filter((ex) => usedExerciseIds.has(ex.id));
-  const otherExercises = exercises.filter((ex) => !usedExerciseIds.has(ex.id));
+  const visibleExercises = onlyFavorites
+    ? exercises.filter((ex) => favoriteIds.has(ex.id))
+    : exercises;
+  const myExercises = visibleExercises.filter((ex) => usedExerciseIds.has(ex.id));
+  const otherExercises = visibleExercises.filter((ex) => !usedExerciseIds.has(ex.id));
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Ejercicios</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight">Ejercicios</h1>
+        <Link
+          href={onlyFavorites ? "/exercises" : "/exercises?favorites=1"}
+          className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium ${
+            onlyFavorites ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+          }`}
+        >
+          <Star className="h-4 w-4" />
+          Favoritos
+        </Link>
+      </div>
 
-      <form className="flex flex-col gap-2 sm:flex-row" method="get">
+      <form className="flex flex-col gap-2 sm:flex-row sm:flex-wrap" method="get">
         <Input
           name="search"
           placeholder="Buscar ejercicio..."
@@ -60,7 +102,7 @@ export default async function ExercisesPage({
           className="sm:max-w-xs"
         />
         <Select name="muscle" defaultValue={params.muscle ?? "all"}>
-          <SelectTrigger className="w-full sm:w-44">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Músculo" />
           </SelectTrigger>
           <SelectContent>
@@ -73,7 +115,7 @@ export default async function ExercisesPage({
           </SelectContent>
         </Select>
         <Select name="equipment" defaultValue={params.equipment ?? "all"}>
-          <SelectTrigger className="w-full sm:w-44">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Equipamiento" />
           </SelectTrigger>
           <SelectContent>
@@ -85,14 +127,45 @@ export default async function ExercisesPage({
             ))}
           </SelectContent>
         </Select>
+        <Select name="difficulty" defaultValue={params.difficulty ?? "all"}>
+          <SelectTrigger className="w-full sm:w-36">
+            <SelectValue placeholder="Dificultad" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toda dificultad</SelectItem>
+            {Object.entries(difficultyLabels).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select name="type" defaultValue={params.type ?? "all"}>
+          <SelectTrigger className="w-full sm:w-36">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todo tipo</SelectItem>
+            {Object.entries(movementTypeLabels).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {onlyFavorites && <input type="hidden" name="favorites" value="1" />}
         <Button type="submit">Filtrar</Button>
       </form>
 
-      {exercises.length === 0 ? (
+      {visibleExercises.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <Dumbbell className="h-10 w-10 text-muted-foreground" />
-            <p className="text-muted-foreground">No se encontraron ejercicios.</p>
+            <p className="text-muted-foreground">
+              {onlyFavorites
+                ? "Todavía no has marcado ningún ejercicio como favorito."
+                : "No se encontraron ejercicios."}
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -105,7 +178,11 @@ export default async function ExercisesPage({
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {myExercises.map((exercise) => (
-                  <ExerciseCard key={exercise.id} exercise={exercise} />
+                  <ExerciseCard
+                    key={exercise.id}
+                    exercise={exercise}
+                    isFavorite={favoriteIds.has(exercise.id)}
+                  />
                 ))}
               </div>
             </div>
@@ -118,7 +195,11 @@ export default async function ExercisesPage({
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {otherExercises.map((exercise) => (
-                  <ExerciseCard key={exercise.id} exercise={exercise} />
+                  <ExerciseCard
+                    key={exercise.id}
+                    exercise={exercise}
+                    isFavorite={favoriteIds.has(exercise.id)}
+                  />
                 ))}
               </div>
             </div>
@@ -131,6 +212,7 @@ export default async function ExercisesPage({
 
 function ExerciseCard({
   exercise,
+  isFavorite,
 }: {
   exercise: {
     id: string;
@@ -138,16 +220,21 @@ function ExerciseCard({
     name: string;
     description: string | null;
     difficulty: string;
+    movement_type: string;
+    instructions: string[] | null;
+    tips: string[] | null;
+    common_mistakes: string[] | null;
     muscle_groups: { name: string } | null;
     equipment: { name: string } | null;
   };
+  isFavorite: boolean;
 }) {
   return (
-    <Link href={`/exercises/${exercise.slug}`}>
-      <Card className="transition-colors hover:bg-accent/50">
-        <CardContent className="space-y-2 pt-6">
-          <p className="font-medium">{exercise.name}</p>
-          <div className="flex flex-wrap gap-1.5">
+    <Card className="transition-colors hover:bg-accent/50">
+      <CardContent className="space-y-2 pt-6">
+        <Link href={`/exercises/${exercise.slug}`}>
+          <p className="font-medium hover:underline">{exercise.name}</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
             <Badge variant="secondary">{exercise.muscle_groups?.name}</Badge>
             {exercise.equipment?.name && (
               <Badge variant="outline">{exercise.equipment.name}</Badge>
@@ -155,10 +242,14 @@ function ExerciseCard({
             <Badge variant="outline">{difficultyLabels[exercise.difficulty]}</Badge>
           </div>
           {exercise.description && (
-            <p className="text-sm text-muted-foreground">{exercise.description}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{exercise.description}</p>
           )}
-        </CardContent>
-      </Card>
-    </Link>
+        </Link>
+        <div className="flex items-center gap-1 pt-1">
+          <ExerciseInfoDialog exercise={exercise} />
+          <FavoriteButton exerciseId={exercise.id} isFavorite={isFavorite} />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
