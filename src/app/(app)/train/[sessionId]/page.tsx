@@ -130,14 +130,14 @@ export default async function TrainSessionPage({
                     <p className="text-sm font-medium">Serie {setNumber}</p>
                     <div className="flex items-center gap-2">
                       {isPR && (
-                        <Badge variant="default" className="gap-1">
+                        <Badge className="gap-1 bg-success text-success-foreground">
                           <Flame className="h-3 w-3" />
                           Nuevo PR
                         </Badge>
                       )}
                       {!isPR && weightDelta !== null && weightDelta !== 0 && (
                         <span
-                          className={`text-xs font-medium ${weightDelta > 0 ? "text-primary" : "text-muted-foreground"}`}
+                          className={`text-xs font-medium ${weightDelta > 0 ? "text-success" : "text-muted-foreground"}`}
                         >
                           {weightDelta > 0 ? "↑" : "↓"} {Math.abs(weightDelta)} kg
                         </span>

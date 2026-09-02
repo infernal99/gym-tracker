@@ -8,6 +8,7 @@ import {
   listFavoriteExerciseIds,
 } from "@/lib/services/exercises";
 import { requireProfile } from "@/lib/services/profile";
+import { muscleBadgeClass } from "@/lib/muscle-colors";
 import { ExerciseInfoDialog } from "@/components/exercises/exercise-info-dialog";
 import { FavoriteButton } from "@/components/exercises/favorite-button";
 import { Input } from "@/components/ui/input";
@@ -225,7 +226,7 @@ function ExerciseCard({
     tips: string[] | null;
     common_mistakes: string[] | null;
     thumbnail_url?: string | null;
-    muscle_groups: { name: string } | null;
+    muscle_groups: { name: string; slug: string } | null;
     equipment: { name: string } | null;
   };
   isFavorite: boolean;
@@ -249,7 +250,11 @@ function ExerciseCard({
           <div className="min-w-0 flex-1">
             <p className="font-medium hover:underline">{exercise.name}</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
-              <Badge variant="secondary">{exercise.muscle_groups?.name}</Badge>
+              {exercise.muscle_groups && (
+                <Badge className={muscleBadgeClass(exercise.muscle_groups.slug)}>
+                  {exercise.muscle_groups.name}
+                </Badge>
+              )}
               {exercise.equipment?.name && (
                 <Badge variant="outline">{exercise.equipment.name}</Badge>
               )}

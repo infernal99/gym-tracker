@@ -63,7 +63,7 @@ export default async function TrainSummaryPage({
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <div className="text-center">
-        <Trophy className="mx-auto h-10 w-10 text-primary" />
+        <Trophy className="mx-auto h-10 w-10 text-success" />
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">Entrenamiento completado</h1>
         <p className="text-muted-foreground">{session.name}</p>
       </div>
@@ -88,7 +88,7 @@ export default async function TrainSummaryPage({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Flame className="h-4 w-4 text-primary" />
+              <Flame className="h-4 w-4 text-success" />
               Nuevos récords
             </CardTitle>
           </CardHeader>
@@ -114,7 +114,7 @@ export default async function TrainSummaryPage({
               {volumeDelta === null ? (
                 "—"
               ) : (
-                <span className={volumeDelta >= 0 ? "text-primary" : "text-muted-foreground"}>
+                <span className={volumeDelta >= 0 ? "text-success" : "text-muted-foreground"}>
                   {volumeDelta >= 0 ? "+" : ""}
                   {volumeDelta.toFixed(1)}%
                 </span>

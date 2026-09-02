@@ -9,6 +9,7 @@ import {
 } from "@/lib/services/exercises";
 import { getExerciseProgress } from "@/lib/services/training";
 import { requireProfile } from "@/lib/services/profile";
+import { muscleBadgeClass } from "@/lib/muscle-colors";
 import { saveExerciseNoteAction } from "@/lib/actions/exercises";
 import { ExerciseChart } from "@/components/exercises/exercise-chart";
 import { FavoriteButton } from "@/components/exercises/favorite-button";
@@ -97,7 +98,11 @@ export default async function ExerciseDetailPage({
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{exercise.name}</h1>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {exercise.muscle_groups && <Badge variant="secondary">{exercise.muscle_groups.name}</Badge>}
+            {exercise.muscle_groups && (
+              <Badge className={muscleBadgeClass(exercise.muscle_groups.slug)}>
+                {exercise.muscle_groups.name}
+              </Badge>
+            )}
             {exercise.equipment && <Badge variant="outline">{exercise.equipment.name}</Badge>}
             <Badge variant="outline">{difficultyLabels[exercise.difficulty]}</Badge>
             <Badge variant="outline">{movementTypeLabels[exercise.movement_type]}</Badge>
@@ -241,7 +246,7 @@ export default async function ExerciseDetailPage({
                     {weekOverWeek.bestThisWeek} kg vs {weekOverWeek.bestLastWeek} kg ·{" "}
                     <span
                       className={
-                        (weekOverWeek.changePct ?? 0) >= 0 ? "text-primary" : "text-muted-foreground"
+                        (weekOverWeek.changePct ?? 0) >= 0 ? "text-success" : "text-muted-foreground"
                       }
                     >
                       {(weekOverWeek.changePct ?? 0) >= 0 ? "+" : ""}
@@ -265,7 +270,7 @@ export default async function ExerciseDetailPage({
                   <p>
                     {first.weightKg} kg × {first.reps} ({new Date(first.date).toLocaleDateString("es-ES")}) →{" "}
                     {latest.weightKg} kg × {latest.reps} ·{" "}
-                    <span className={(weightChangeSinceFirst ?? 0) >= 0 ? "text-primary" : "text-muted-foreground"}>
+                    <span className={(weightChangeSinceFirst ?? 0) >= 0 ? "text-success" : "text-muted-foreground"}>
                       {(weightChangeSinceFirst ?? 0) >= 0 ? "+" : ""}
                       {weightChangeSinceFirst} kg
                     </span>

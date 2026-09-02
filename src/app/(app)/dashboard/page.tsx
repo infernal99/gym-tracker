@@ -145,12 +145,14 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent className="space-y-1.5 text-sm">
           <p className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-primary" />
+            <Trophy className="h-4 w-4 text-success" />
             {stats.prsThisWeek} PR{stats.prsThisWeek === 1 ? "" : "s"} esta semana
           </p>
           {stats.volumeChangePct !== null && (
             <p className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
+              <TrendingUp
+                className={`h-4 w-4 ${stats.volumeChangePct >= 0 ? "text-success" : "text-muted-foreground"}`}
+              />
               {stats.volumeChangePct >= 0 ? "+" : ""}
               {stats.volumeChangePct.toFixed(1)}% de volumen esta semana
             </p>

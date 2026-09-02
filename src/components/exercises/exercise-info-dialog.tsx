@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Info } from "lucide-react";
+import { muscleBadgeClass } from "@/lib/muscle-colors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +37,7 @@ export type ExerciseInfo = {
   tips: string[] | null;
   common_mistakes: string[] | null;
   image_url?: string | null;
-  muscle_groups: { name: string } | null;
+  muscle_groups: { name: string; slug?: string } | null;
   equipment: { name: string } | null;
 };
 
@@ -62,7 +63,11 @@ export function ExerciseInfoDialog({ exercise }: { exercise: ExerciseInfo }) {
             />
           )}
           <div className="flex flex-wrap gap-1.5">
-            {exercise.muscle_groups && <Badge variant="secondary">{exercise.muscle_groups.name}</Badge>}
+            {exercise.muscle_groups && (
+              <Badge className={muscleBadgeClass(exercise.muscle_groups.slug)}>
+                {exercise.muscle_groups.name}
+              </Badge>
+            )}
             {exercise.equipment && <Badge variant="outline">{exercise.equipment.name}</Badge>}
             <Badge variant="outline">{difficultyLabels[exercise.difficulty]}</Badge>
             <Badge variant="outline">{movementTypeLabels[exercise.movement_type]}</Badge>
