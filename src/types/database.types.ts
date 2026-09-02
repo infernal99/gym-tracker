@@ -966,21 +966,39 @@ export type Database = {
           id: string
           notes: string | null
           order_index: number
+          rest_seconds: number | null
           session_id: string
+          target_reps_max: number | null
+          target_reps_min: number | null
+          target_rir: number | null
+          target_sets: number | null
+          target_weight_kg: number | null
         }
         Insert: {
           exercise_id: string
           id?: string
           notes?: string | null
           order_index: number
+          rest_seconds?: number | null
           session_id: string
+          target_reps_max?: number | null
+          target_reps_min?: number | null
+          target_rir?: number | null
+          target_sets?: number | null
+          target_weight_kg?: number | null
         }
         Update: {
           exercise_id?: string
           id?: string
           notes?: string | null
           order_index?: number
+          rest_seconds?: number | null
           session_id?: string
+          target_reps_max?: number | null
+          target_reps_min?: number | null
+          target_rir?: number | null
+          target_sets?: number | null
+          target_weight_kg?: number | null
         }
         Relationships: [
           {

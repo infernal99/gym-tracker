@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Flame, Dumbbell, ListChecks, TrendingUp } from "lucide-react";
+import { Flame, Moon, Play, TrendingUp, Trophy } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getDashboardStats } from "@/lib/services/dashboard";
-import { primaryGoalLabels } from "@/lib/validation/auth";
+import { startWorkoutAction } from "@/lib/actions/training";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -32,51 +32,74 @@ function StatCard({
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  const stats = await getDashboardStats(profile.id);
+  const stats = await getDashboardStats(profile.id, profile.active_template_id);
 
-  const nextDay = stats.activeTemplate?.workout_template_days
-    ?.filter((d) => !d.is_rest_day)
-    .sort((a, b) => a.day_order - b.day_order)[0];
+  const today = new Date().toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Hola, {profile.display_name.split(" ")[0]}
-        </h1>
-        <p className="text-muted-foreground">{primaryGoalLabels[profile.primary_goal]}</p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard icon={Dumbbell} label="Entrenamientos totales" value={stats.totalWorkouts} />
-        <StatCard icon={ListChecks} label="Esta semana" value={stats.workoutsThisWeek} />
-        <StatCard icon={TrendingUp} label="Este mes" value={stats.workoutsThisMonth} />
-        <StatCard icon={Flame} label="Racha actual" value={`${stats.currentStreak}d`} />
+        <h1 className="text-2xl font-semibold tracking-tight">Hoy</h1>
+        <p className="capitalize text-muted-foreground">{today}</p>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Entrenamiento</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {stats.activeTemplate && nextDay ? (
+        <CardContent className="pt-6">
+          {stats.activeSession ? (
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Hoy toca</p>
-                <p className="text-xl font-semibold">{nextDay.name}</p>
-                <p className="text-sm text-muted-foreground">{stats.activeTemplate.name}</p>
+                <p className="text-sm text-muted-foreground">Entrenamiento en curso</p>
+                <p className="text-xl font-semibold">{stats.activeSession.name}</p>
               </div>
               <Button
-                render={<Link href={`/routines/${stats.activeTemplate.id}`} />}
+                render={<Link href={`/train/${stats.activeSession.id}`} />}
                 className="w-full sm:w-auto"
               >
-                Ver rutina
+                <Play className="h-4 w-4" />
+                Continuar
               </Button>
             </div>
-          ) : (
+          ) : !profile.active_template_id ? (
             <div className="flex flex-col items-start gap-3">
-              <p className="text-muted-foreground">Aún no tienes una rutina activa.</p>
-              <Button render={<Link href="/routines" />}>Crear rutina</Button>
+              <p className="text-muted-foreground">Todavía no tienes ninguna rutina activa.</p>
+              <Button render={<Link href="/my-routine/choose" />}>Elegir rutina</Button>
+            </div>
+          ) : !stats.pendingDay ? (
+            <div className="flex flex-col items-start gap-3">
+              <p className="text-muted-foreground">Tu rutina activa todavía no tiene días.</p>
+              <Button render={<Link href="/my-routine" />}>Ver mi rutina</Button>
+            </div>
+          ) : stats.pendingDay.is_rest_day ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Moon className="h-5 w-5 text-muted-foreground" />
+                <p className="text-xl font-semibold">Día de descanso</p>
+              </div>
+              {stats.nextTrainingDayIfResting && (
+                <p className="text-sm text-muted-foreground">
+                  Tu siguiente entrenamiento: {stats.nextTrainingDayIfResting.name}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Entrenamiento pendiente</p>
+                <p className="text-xl font-semibold">{stats.pendingDay.name}</p>
+                {stats.activeTemplateName && (
+                  <p className="text-sm text-muted-foreground">{stats.activeTemplateName}</p>
+                )}
+              </div>
+              <form action={startWorkoutAction}>
+                <Button type="submit" className="w-full sm:w-auto">
+                  <Play className="h-4 w-4" />
+                  Empezar entrenamiento
+                </Button>
+              </form>
             </div>
           )}
         </CardContent>
@@ -85,15 +108,48 @@ export default async function DashboardPage() {
       {stats.lastSession && (
         <Card>
           <CardHeader>
-            <CardTitle>Último entrenamiento</CardTitle>
+            <CardTitle className="text-base">Último entrenamiento</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             {stats.lastSession.name} ·{" "}
-            {new Date(stats.lastSession.completed_at!).toLocaleDateString("es-ES")} ·{" "}
-            {stats.lastSession.total_volume_kg} kg de volumen
+            {new Date(stats.lastSession.completed_at!).toLocaleDateString("es-ES")}
+            {stats.lastSession.duration_seconds
+              ? ` · ${Math.round(stats.lastSession.duration_seconds / 60)}min`
+              : ""}{" "}
+            · {stats.lastSession.total_volume_kg} kg de volumen
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Progreso reciente</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1.5 text-sm">
+          <p className="flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-primary" />
+            {stats.prsThisWeek} PR{stats.prsThisWeek === 1 ? "" : "s"} esta semana
+          </p>
+          {stats.volumeChangePct !== null && (
+            <p className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              {stats.volumeChangePct >= 0 ? "+" : ""}
+              {stats.volumeChangePct.toFixed(1)}% de volumen esta semana
+            </p>
+          )}
+          <p className="flex items-center gap-2">
+            <Flame className="h-4 w-4 text-primary" />
+            {stats.workoutsThisWeek} entrenamiento{stats.workoutsThisWeek === 1 ? "" : "s"} esta
+            semana · racha de {stats.currentStreak}d
+          </p>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <StatCard icon={Trophy} label="Entrenamientos totales" value={stats.totalWorkouts} />
+        <StatCard icon={Flame} label="Este mes" value={stats.workoutsThisMonth} />
+        <StatCard icon={TrendingUp} label="Racha actual" value={`${stats.currentStreak}d`} />
+      </div>
     </div>
   );
 }

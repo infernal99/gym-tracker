@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveSession, getNextDayInSequence } from "@/lib/services/training";
 
 function startOfWeek(date: Date) {
   const d = new Date(date);
@@ -13,9 +14,12 @@ function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-export async function getDashboardStats(userId: string) {
+export async function getDashboardStats(userId: string, activeTemplateId: string | null) {
   const supabase = await createClient();
   const now = new Date();
+  const weekStart = startOfWeek(now);
+  const lastWeekStart = new Date(weekStart);
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
   const { count: totalWorkouts } = await supabase
     .from("workout_sessions")
@@ -28,7 +32,7 @@ export async function getDashboardStats(userId: string) {
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
     .not("completed_at", "is", null)
-    .gte("completed_at", startOfWeek(now).toISOString());
+    .gte("completed_at", weekStart.toISOString());
 
   const { count: workoutsThisMonth } = await supabase
     .from("workout_sessions")
@@ -39,7 +43,7 @@ export async function getDashboardStats(userId: string) {
 
   const { data: lastSession } = await supabase
     .from("workout_sessions")
-    .select("id, name, completed_at, total_volume_kg")
+    .select("id, name, completed_at, duration_seconds, total_volume_kg")
     .eq("user_id", userId)
     .not("completed_at", "is", null)
     .order("completed_at", { ascending: false })
@@ -58,14 +62,40 @@ export async function getDashboardStats(userId: string) {
     (recentCompletedDates ?? []).map((s) => s.completed_at as string),
   );
 
-  const { data: activeTemplate } = await supabase
-    .from("workout_templates")
-    .select("id, name, workout_template_days(id, name, day_order, is_rest_day)")
+  const { count: prsThisWeek } = await supabase
+    .from("personal_records")
+    .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
-    .eq("is_archived", false)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .gte("achieved_at", weekStart.toISOString());
+
+  const { data: volumeThisWeekRows } = await supabase
+    .from("workout_sessions")
+    .select("total_volume_kg")
+    .eq("user_id", userId)
+    .not("completed_at", "is", null)
+    .gte("completed_at", weekStart.toISOString());
+
+  const { data: volumeLastWeekRows } = await supabase
+    .from("workout_sessions")
+    .select("total_volume_kg")
+    .eq("user_id", userId)
+    .not("completed_at", "is", null)
+    .gte("completed_at", lastWeekStart.toISOString())
+    .lt("completed_at", weekStart.toISOString());
+
+  const volumeThisWeek = (volumeThisWeekRows ?? []).reduce((s, r) => s + r.total_volume_kg, 0);
+  const volumeLastWeek = (volumeLastWeekRows ?? []).reduce((s, r) => s + r.total_volume_kg, 0);
+  const volumeChangePct = volumeLastWeek > 0 ? ((volumeThisWeek - volumeLastWeek) / volumeLastWeek) * 100 : null;
+
+  const [activeSession, sequence, activeTemplateRow] = await Promise.all([
+    getActiveSession(userId),
+    activeTemplateId
+      ? getNextDayInSequence(userId, activeTemplateId)
+      : Promise.resolve({ day: null, nextTrainingDay: null }),
+    activeTemplateId
+      ? supabase.from("workout_templates").select("id, name").eq("id", activeTemplateId).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
   return {
     totalWorkouts: totalWorkouts ?? 0,
@@ -73,7 +103,12 @@ export async function getDashboardStats(userId: string) {
     workoutsThisMonth: workoutsThisMonth ?? 0,
     lastSession,
     currentStreak,
-    activeTemplate,
+    prsThisWeek: prsThisWeek ?? 0,
+    volumeChangePct,
+    activeSession,
+    activeTemplateName: activeTemplateRow.data?.name ?? null,
+    pendingDay: sequence.day,
+    nextTrainingDayIfResting: sequence.nextTrainingDay,
   };
 }
 
