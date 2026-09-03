@@ -34,24 +34,22 @@ export default async function ExerciseDetailPage({
   const exercise = await getExerciseBySlug(slug);
   if (!exercise) notFound();
 
-  const [{ points, sessionPoints, personalRecords, weekOverWeek }, favoriteIds, note, alternatives] =
-    await Promise.all([
-      getExerciseProgress(profile.id, exercise.id),
-      listFavoriteExerciseIds(profile.id),
-      getExerciseNote(profile.id, exercise.id),
-      listExercisesByIds(exercise.alternative_exercise_ids),
-    ]);
+  const [
+    { points, sessionPoints, personalRecords, weekOverWeek, combinedWeekOverWeek, combinedSinceFirst },
+    favoriteIds,
+    note,
+    alternatives,
+  ] = await Promise.all([
+    getExerciseProgress(profile.id, exercise.id),
+    listFavoriteExerciseIds(profile.id),
+    getExerciseNote(profile.id, exercise.id),
+    listExercisesByIds(exercise.alternative_exercise_ids),
+  ]);
 
   const isFavorite = favoriteIds.has(exercise.id);
   const bestWeightPR = personalRecords.find((pr) => pr.record_type === "max_weight");
   const best1rmPR = personalRecords.find((pr) => pr.record_type === "best_1rm");
   const totalVolume = points.reduce((sum, p) => sum + p.volumeKg, 0);
-
-  const first = points[0];
-  const latest = points[points.length - 1];
-  const weightChangeSinceFirst = points.length > 1 ? latest.weightKg - first.weightKg : null;
-  const e1rmChangePctSinceFirst =
-    points.length > 1 && first.e1rm > 0 ? ((latest.e1rm - first.e1rm) / first.e1rm) * 100 : null;
 
   // Working weights should follow current form, not a record set months ago,
   // so the 1RM table is built from the best of the last three sessions; the
@@ -132,7 +130,7 @@ export default async function ExerciseDetailPage({
               <CardTitle className="text-base">Evolución</CardTitle>
             </CardHeader>
             <CardContent>
-              <ExerciseChart points={points} sessionPoints={sessionPoints} />
+              <ExerciseChart points={points} sessionPoints={sessionPoints} weekOverWeek={weekOverWeek} />
             </CardContent>
           </Card>
 
@@ -146,54 +144,44 @@ export default async function ExerciseDetailPage({
 
           <PlateauCard analysis={plateau} alternatives={alternatives} />
 
-          <div className="grid gap-2.5">
+          <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="rounded-xl border bg-card p-4 text-sm">
               <p className="stat-label mb-1.5">Esta semana vs la anterior</p>
-              {weekOverWeek.bestThisWeek === null ? (
-                <p className="text-muted-foreground">No has entrenado esto esta semana.</p>
-              ) : weekOverWeek.bestLastWeek === null ? (
-                <p>
-                  Mejor 1RM esta semana:{" "}
-                  <span className="font-semibold tabular-nums">{weekOverWeek.bestThisWeek} kg</span>
-                </p>
+              {combinedWeekOverWeek.changePct === null ? (
+                <p className="text-muted-foreground">Todavía no hay series comparables esta semana.</p>
               ) : (
-                <p className="tabular-nums">
-                  {weekOverWeek.bestThisWeek} kg vs {weekOverWeek.bestLastWeek} kg ·{" "}
-                  <span
-                    className={`font-semibold ${(weekOverWeek.changePct ?? 0) >= 0 ? "text-success" : "text-muted-foreground"}`}
+                <>
+                  <p
+                    className={`text-2xl font-bold tabular-nums ${combinedWeekOverWeek.changePct >= 0 ? "text-success" : "text-muted-foreground"}`}
                   >
-                    {(weekOverWeek.changePct ?? 0) >= 0 ? "+" : ""}
-                    {weekOverWeek.changePct?.toFixed(1)}%
-                  </span>
-                </p>
+                    {combinedWeekOverWeek.changePct >= 0 ? "+" : ""}
+                    {combinedWeekOverWeek.changePct.toFixed(1)}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    1RM estimado, media de {combinedWeekOverWeek.setCount} serie
+                    {combinedWeekOverWeek.setCount === 1 ? "" : "s"}
+                  </p>
+                </>
               )}
             </div>
 
             <div className="rounded-xl border bg-card p-4 text-sm">
               <p className="stat-label mb-1.5">Desde tu primer registro</p>
-              {points.length < 2 ? (
-                <p className="text-muted-foreground">Solo hay una sesión registrada todavía.</p>
+              {combinedSinceFirst.changePct === null ? (
+                <p className="text-muted-foreground">Todavía no hay series comparables.</p>
               ) : (
-                <p className="tabular-nums">
-                  {first.weightKg} kg × {first.reps} →{" "}
-                  <span className="font-semibold">
-                    {latest.weightKg} kg × {latest.reps}
-                  </span>{" "}
-                  ·{" "}
-                  <span
-                    className={`font-semibold ${(weightChangeSinceFirst ?? 0) >= 0 ? "text-success" : "text-muted-foreground"}`}
+                <>
+                  <p
+                    className={`text-2xl font-bold tabular-nums ${combinedSinceFirst.changePct >= 0 ? "text-success" : "text-muted-foreground"}`}
                   >
-                    {(weightChangeSinceFirst ?? 0) >= 0 ? "+" : ""}
-                    {weightChangeSinceFirst} kg
-                  </span>
-                  {e1rmChangePctSinceFirst !== null && (
-                    <>
-                      {" "}
-                      (1RM {e1rmChangePctSinceFirst >= 0 ? "+" : ""}
-                      {e1rmChangePctSinceFirst.toFixed(1)}%)
-                    </>
-                  )}
-                </p>
+                    {combinedSinceFirst.changePct >= 0 ? "+" : ""}
+                    {combinedSinceFirst.changePct.toFixed(1)}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    1RM estimado, media de {combinedSinceFirst.setCount} serie
+                    {combinedSinceFirst.setCount === 1 ? "" : "s"}
+                  </p>
+                </>
               )}
             </div>
           </div>

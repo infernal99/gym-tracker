@@ -304,6 +304,59 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
   const bestThisWeek = bestE1rmIn(thisWeekStart);
   const bestLastWeek = bestE1rmIn(lastWeekStart, thisWeekStart);
 
+  // Best estimated 1RM per set number per week — the basis for the two
+  // "combined" figures below. Kept separate from `points` (that session's
+  // single best set, whichever number it was) because set 1 and set 3
+  // usually sit at different absolute weights; averaging their raw e1RM
+  // together would just track whichever set happens to be heaviest, so
+  // instead each set number's own % change is computed first and only
+  // those percentages are averaged.
+  const setNumberWeekly = new Map<number, Map<string, number>>();
+  for (const sp of sessionPoints) {
+    const weekKey = startOfWeek(new Date(sp.date)).toISOString();
+    for (const s of sp.sets) {
+      const weekly = setNumberWeekly.get(s.setNumber) ?? new Map<string, number>();
+      const existing = weekly.get(weekKey) ?? 0;
+      if (s.e1rm > existing) weekly.set(weekKey, s.e1rm);
+      setNumberWeekly.set(s.setNumber, weekly);
+    }
+  }
+
+  const thisWeekKey = thisWeekStart.toISOString();
+  const lastWeekKey = lastWeekStart.toISOString();
+
+  function averageChangeAcrossSets(baselineFor: (weekly: Map<string, number>) => number | null) {
+    const changes: number[] = [];
+    for (const weekly of setNumberWeekly.values()) {
+      const current = weekly.get(thisWeekKey);
+      if (current == null) continue;
+      const baseline = baselineFor(weekly);
+      if (baseline == null || baseline <= 0) continue;
+      changes.push(((current - baseline) / baseline) * 100);
+    }
+    if (changes.length === 0) return { changePct: null, setCount: 0 };
+    return {
+      changePct: changes.reduce((sum, c) => sum + c, 0) / changes.length,
+      setCount: changes.length,
+    };
+  }
+
+  const combinedWeekOverWeek = averageChangeAcrossSets((weekly) => weekly.get(lastWeekKey) ?? null);
+
+  // "Since first record" here is a true all-time first (unlike the muscle
+  // stats page, this query already fetches full history, not a 12-week
+  // window) — the earliest week that set number appears, excluding this
+  // week itself so a set trained for the first time ever this week reads
+  // as having no baseline yet rather than a 0% change.
+  const combinedSinceFirst = averageChangeAcrossSets((weekly) => {
+    let firstKey: string | null = null;
+    for (const key of weekly.keys()) {
+      if (key === thisWeekKey) continue;
+      if (firstKey === null || key < firstKey) firstKey = key;
+    }
+    return firstKey === null ? null : weekly.get(firstKey)!;
+  });
+
   return {
     points,
     sessionPoints,
@@ -314,6 +367,8 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
       changePct:
         bestThisWeek !== null && bestLastWeek ? ((bestThisWeek - bestLastWeek) / bestLastWeek) * 100 : null,
     },
+    combinedWeekOverWeek,
+    combinedSinceFirst,
   };
 }
 

@@ -12,6 +12,13 @@ import {
 } from "recharts";
 import type { ExerciseProgressPoint, ExerciseSessionSets } from "@/lib/services/training";
 
+function startOfWeek(date: Date) {
+  const d = new Date(date);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // Monday = 0
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 const metrics = [
   { key: "e1rm", label: "1RM estimado", unit: "kg" },
   { key: "weightKg", label: "Peso", unit: "kg" },
@@ -29,9 +36,11 @@ const periods = [
 export function ExerciseChart({
   points,
   sessionPoints,
+  weekOverWeek,
 }: {
   points: ExerciseProgressPoint[];
   sessionPoints: ExerciseSessionSets[];
+  weekOverWeek: { changePct: number | null };
 }) {
   const [metric, setMetric] = useState<(typeof metrics)[number]["key"]>("e1rm");
   const [period, setPeriod] = useState<(typeof periods)[number]["key"]>("all");
@@ -61,6 +70,34 @@ export function ExerciseChart({
       })
       .filter((p): p is ExerciseProgressPoint => p !== null);
   }, [points, sessionPoints, setNumber]);
+
+  // The selected serie's own % change in estimated 1RM vs last week — kept
+  // separate from the "combined" figure shown above the chart (which
+  // averages every set number together) so picking S2 here shows S2's own
+  // trend, not the exercise-wide average.
+  const serieChangePct = useMemo(() => {
+    if (setNumber === "best") return weekOverWeek.changePct;
+
+    const now = new Date();
+    const thisWeekStart = startOfWeek(now);
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+    let bestThisWeek = 0;
+    let bestLastWeek = 0;
+    for (const sp of sessionPoints) {
+      const set = sp.sets.find((s) => s.setNumber === setNumber);
+      if (!set) continue;
+      const d = new Date(sp.date);
+      if (d >= thisWeekStart) {
+        if (set.e1rm > bestThisWeek) bestThisWeek = set.e1rm;
+      } else if (d >= lastWeekStart) {
+        if (set.e1rm > bestLastWeek) bestLastWeek = set.e1rm;
+      }
+    }
+    if (bestThisWeek === 0 || bestLastWeek === 0) return null;
+    return ((bestThisWeek - bestLastWeek) / bestLastWeek) * 100;
+  }, [setNumber, sessionPoints, weekOverWeek]);
 
   const cutoff =
     activePeriod.days !== null ? Date.now() - activePeriod.days * 86_400_000 : null;
@@ -150,6 +187,16 @@ export function ExerciseChart({
               S{n}
             </button>
           ))}
+          <span className="ml-auto shrink-0 text-xs">
+            {serieChangePct === null ? (
+              <span className="text-muted-foreground">Sin datos vs. semana pasada</span>
+            ) : (
+              <span className={`font-medium ${serieChangePct >= 0 ? "text-success" : "text-muted-foreground"}`}>
+                {serieChangePct >= 0 ? "+" : ""}
+                {serieChangePct.toFixed(1)}% vs. semana pasada
+              </span>
+            )}
+          </span>
         </div>
       )}
       <div className="h-56 w-full" key={`${metric}-${period}-${setNumber}`}>
