@@ -163,6 +163,23 @@ export default async function ExerciseDetailPage({
                   </p>
                 </>
               )}
+              {combinedWeekOverWeek.perSet.length > 1 && (
+                <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1 border-t pt-2 text-xs">
+                  {combinedWeekOverWeek.perSet.map((s) => (
+                    <span key={s.setNumber} className="text-muted-foreground">
+                      S{s.setNumber}:{" "}
+                      {s.changePct === null ? (
+                        "—"
+                      ) : (
+                        <span className={`font-medium ${s.changePct >= 0 ? "text-success" : "text-foreground"}`}>
+                          {s.changePct >= 0 ? "+" : ""}
+                          {s.changePct.toFixed(1)}%
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl border bg-card p-4 text-sm">
@@ -182,6 +199,23 @@ export default async function ExerciseDetailPage({
                     {combinedSinceFirst.setCount === 1 ? "" : "s"}
                   </p>
                 </>
+              )}
+              {combinedSinceFirst.perSet.length > 1 && (
+                <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1 border-t pt-2 text-xs">
+                  {combinedSinceFirst.perSet.map((s) => (
+                    <span key={s.setNumber} className="text-muted-foreground">
+                      S{s.setNumber}:{" "}
+                      {s.changePct === null ? (
+                        "—"
+                      ) : (
+                        <span className={`font-medium ${s.changePct >= 0 ? "text-success" : "text-foreground"}`}>
+                          {s.changePct >= 0 ? "+" : ""}
+                          {s.changePct.toFixed(1)}%
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
           </div>

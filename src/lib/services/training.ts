@@ -327,17 +327,24 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
 
   function averageChangeAcrossSets(baselineFor: (weekly: Map<string, number>) => number | null) {
     const changes: number[] = [];
-    for (const weekly of setNumberWeekly.values()) {
+    const perSet: { setNumber: number; changePct: number | null }[] = [];
+    for (const [setNumber, weekly] of setNumberWeekly.entries()) {
       const current = weekly.get(thisWeekKey);
-      if (current == null) continue;
-      const baseline = baselineFor(weekly);
-      if (baseline == null || baseline <= 0) continue;
-      changes.push(((current - baseline) / baseline) * 100);
+      const baseline = current == null ? null : baselineFor(weekly);
+      if (current == null || baseline == null || baseline <= 0) {
+        perSet.push({ setNumber, changePct: null });
+        continue;
+      }
+      const changePct = ((current - baseline) / baseline) * 100;
+      changes.push(changePct);
+      perSet.push({ setNumber, changePct });
     }
-    if (changes.length === 0) return { changePct: null, setCount: 0 };
+    perSet.sort((a, b) => a.setNumber - b.setNumber);
+    if (changes.length === 0) return { changePct: null, setCount: 0, perSet };
     return {
       changePct: changes.reduce((sum, c) => sum + c, 0) / changes.length,
       setCount: changes.length,
+      perSet,
     };
   }
 
