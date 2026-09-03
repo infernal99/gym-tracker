@@ -7,6 +7,7 @@ import { listAchievementsWithProgress } from "@/lib/services/achievements";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { WorkoutHeatmap } from "@/components/profile/workout-heatmap";
 import { CalorieCalculatorButton } from "@/components/profile/calorie-calculator-button";
+import { InstallAppCard } from "@/components/pwa/install-app-card";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,6 +141,15 @@ export default async function ProfilePage() {
         </CardHeader>
         <CardContent>
           <ProfileForm profile={profile} />
+        </CardContent>
+      </Card>
+
+      <Card className="fade-up [animation-delay:200ms]">
+        <CardHeader>
+          <CardTitle>Ajustes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <InstallAppCard />
         </CardContent>
       </Card>
 

@@ -5,6 +5,7 @@ import { getDashboardStats } from "@/lib/services/dashboard";
 import { listTrainingDays } from "@/lib/services/training";
 import { startWorkoutAction } from "@/lib/actions/training";
 import { AlternateDayCard } from "@/components/training/alternate-day-card";
+import { InstallBanner } from "@/components/pwa/install-banner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -34,6 +35,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      <InstallBanner />
       <div className="fade-up">
         <p className="text-muted-foreground">
           {greeting}, {firstName} 👋
