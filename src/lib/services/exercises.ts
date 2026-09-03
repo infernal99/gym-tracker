@@ -34,8 +34,14 @@ export async function listExercises(filters: ExerciseFilters = {}) {
 
   if (filters.search) {
     // search_text = lower(name + alternate_names), so "bench press" also
-    // finds "Press banca" and vice versa.
-    query = query.ilike("search_text", `%${filters.search.toLowerCase()}%`);
+    // finds "Press banca" and vice versa. Matched word-by-word (not as one
+    // contiguous substring) so word order doesn't matter either — someone
+    // typing "press mancuernas" should still find "Press banca con
+    // mancuernas" even though "mancuernas" isn't right after "press".
+    const tokens = filters.search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    for (const token of tokens) {
+      query = query.ilike("search_text", `%${token}%`);
+    }
   }
   if (filters.muscleGroupId) {
     query = query.eq("primary_muscle_group_id", filters.muscleGroupId);

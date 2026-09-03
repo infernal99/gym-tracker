@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useState } from "react";
 import { ChevronDown, ChevronUp, GripVertical, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { matchesExerciseQuery } from "@/lib/exercise-search";
 import {
   addTemplateExerciseAction,
   removeTemplateExerciseAction,
@@ -270,7 +271,7 @@ function AddExerciseForm({
   const matches =
     !selected && query.trim()
       ? exercises
-          .filter((e) => e.name.toLowerCase().includes(query.trim().toLowerCase()))
+          .filter((e) => matchesExerciseQuery(e.name, query))
           .slice(0, 8)
       : [];
 

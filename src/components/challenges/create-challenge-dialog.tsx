@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { createChallengeAction } from "@/lib/actions/challenges";
 import { challengeTypeLabels, challengeTypeValues, type ChallengeTypeOption } from "@/lib/validation/challenges";
+import { matchesExerciseQuery } from "@/lib/exercise-search";
 import type { ActionResult } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,7 @@ export function CreateChallengeDialog({ exercises }: { exercises: ExerciseOption
   const matches =
     type === "exercise" && exerciseQuery.trim()
       ? exercises
-          .filter((e) => e.name.toLowerCase().includes(exerciseQuery.trim().toLowerCase()))
+          .filter((e) => matchesExerciseQuery(e.name, exerciseQuery))
           .slice(0, 8)
       : [];
 

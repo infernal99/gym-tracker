@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Search, Plus } from "lucide-react";
 import { addTemplateExerciseAction } from "@/lib/actions/routines";
 import type { listExercises } from "@/lib/services/exercises";
+import { matchesExerciseQuery } from "@/lib/exercise-search";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -27,7 +28,7 @@ export function ExercisePicker({
     normalizedQuery
       ? exercises.filter(
           (exercise) =>
-            exercise.name.toLowerCase().includes(normalizedQuery) ||
+            matchesExerciseQuery(exercise.name, query) ||
             exercise.muscle_groups?.name.toLowerCase().includes(normalizedQuery),
         )
       : exercises

@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { createGoalAction } from "@/lib/actions/goals";
 import { goalTypeLabels, goalTypeValues } from "@/lib/validation/goals";
+import { matchesExerciseQuery } from "@/lib/exercise-search";
 import type { ActionResult } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,7 @@ export function CreateGoalDialog({ exercises }: { exercises: ExerciseOption[] })
   const matches =
     type === "strength" && exerciseQuery.trim()
       ? exercises
-          .filter((e) => e.name.toLowerCase().includes(exerciseQuery.trim().toLowerCase()))
+          .filter((e) => matchesExerciseQuery(e.name, exerciseQuery))
           .slice(0, 8)
       : [];
 
