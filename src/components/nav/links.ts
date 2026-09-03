@@ -11,6 +11,7 @@ import {
   Trophy,
   Users,
   Swords,
+  BarChart3,
 } from "lucide-react";
 
 export type NavLink = {
@@ -26,6 +27,7 @@ export const navLinks: NavLink[] = [
   { href: "/my-routine", label: "Mi rutina", icon: Star },
   { href: "/routines", label: "Rutinas", icon: ListChecks },
   { href: "/train/history", label: "Historial", icon: History },
+  { href: "/stats", label: "Estadísticas", icon: BarChart3 },
   { href: "/exercises", label: "Ejercicios", icon: Dumbbell },
   { href: "/goals", label: "Objetivos", icon: Target },
   { href: "/body", label: "Peso", icon: Scale },

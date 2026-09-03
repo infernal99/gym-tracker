@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Dumbbell, Flame, Scale, Trophy, Weight } from "lucide-react";
+import { BarChart3, ChevronRight, Dumbbell, Flame, Scale, Trophy, Weight } from "lucide-react";
 import { requireProfile, getProfileStats } from "@/lib/services/profile";
 import { listWorkoutActivity } from "@/lib/services/training";
 import { listWeightEntries } from "@/lib/services/body";
@@ -100,6 +100,22 @@ export default async function ProfilePage() {
                   </span>
                 )}
               </p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Link>
+
+        <Link
+          href="/stats"
+          className="card-interactive flex items-center justify-between rounded-xl border bg-card p-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muscle-legs/10 text-muscle-legs">
+              <BarChart3 className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="stat-label">Estadísticas</p>
+              <p className="font-semibold">Volumen y exportar</p>
             </div>
           </div>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />

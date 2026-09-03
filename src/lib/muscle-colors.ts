@@ -49,3 +49,26 @@ export function muscleDotClass(slug: string | null | undefined) {
   const zone = ZONE_BY_SLUG[slug];
   return zone ? DOT_BY_ZONE[zone] : "bg-muted-foreground";
 }
+
+export type MuscleZone = (typeof ZONE_BY_SLUG)[keyof typeof ZONE_BY_SLUG];
+
+export const MUSCLE_ZONES: MuscleZone[] = ["chest", "back", "legs", "shoulders", "arms", "core"];
+
+export const ZONE_LABELS: Record<MuscleZone, string> = {
+  chest: "Pecho",
+  back: "Espalda",
+  legs: "Piernas",
+  shoulders: "Hombros",
+  arms: "Brazos",
+  core: "Core",
+};
+
+export function muscleZone(slug: string | null | undefined): MuscleZone | null {
+  return slug ? (ZONE_BY_SLUG[slug] ?? null) : null;
+}
+
+// Charts need a real color value rather than a Tailwind class, and the
+// tokens are already defined as CSS variables so both stay in sync.
+export function muscleZoneColor(zone: MuscleZone) {
+  return `var(--muscle-${zone})`;
+}
