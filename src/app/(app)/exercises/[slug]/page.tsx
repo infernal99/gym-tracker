@@ -12,7 +12,10 @@ import { requireProfile } from "@/lib/services/profile";
 import { muscleBadgeClass } from "@/lib/muscle-colors";
 import { difficultyLabels, movementTypeLabels } from "@/lib/exercise-labels";
 import { saveExerciseNoteAction } from "@/lib/actions/exercises";
+import { analyzePlateau } from "@/lib/calculations/strength";
 import { ExerciseChart } from "@/components/exercises/exercise-chart";
+import { OneRepMaxCard } from "@/components/exercises/one-rep-max-card";
+import { PlateauCard } from "@/components/exercises/plateau-card";
 import { FavoriteButton } from "@/components/exercises/favorite-button";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +52,15 @@ export default async function ExerciseDetailPage({
   const weightChangeSinceFirst = points.length > 1 ? latest.weightKg - first.weightKg : null;
   const e1rmChangePctSinceFirst =
     points.length > 1 && first.e1rm > 0 ? ((latest.e1rm - first.e1rm) / first.e1rm) * 100 : null;
+
+  // Working weights should follow current form, not a record set months ago,
+  // so the 1RM table is built from the best of the last three sessions; the
+  // all-time best is shown next to it as a reference.
+  const recentBest = points
+    .slice(-3)
+    .reduce<(typeof points)[number] | null>((best, p) => (!best || p.e1rm > best.e1rm ? p : best), null);
+  const allTimeBestE1rm = points.length > 0 ? Math.max(...points.map((p) => p.e1rm)) : 0;
+  const plateau = analyzePlateau(points);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -123,6 +135,16 @@ export default async function ExerciseDetailPage({
               <ExerciseChart points={points} sessionPoints={sessionPoints} />
             </CardContent>
           </Card>
+
+          {recentBest && (
+            <OneRepMaxCard
+              oneRepMaxKg={recentBest.e1rm}
+              allTimeBestKg={allTimeBestE1rm}
+              basedOn={{ weightKg: recentBest.weightKg, reps: recentBest.reps }}
+            />
+          )}
+
+          <PlateauCard analysis={plateau} alternatives={alternatives} />
 
           <div className="grid gap-2.5">
             <div className="rounded-xl border bg-card p-4 text-sm">
