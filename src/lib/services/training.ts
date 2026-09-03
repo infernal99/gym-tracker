@@ -219,6 +219,13 @@ export type ExerciseSessionSets = {
   sets: ExerciseSetPoint[];
 };
 
+export type SideBalance = {
+  leftE1rm: number;
+  rightE1rm: number;
+  diffPct: number;
+  strongerSide: "left" | "right" | null;
+};
+
 // One point per completed session that includes this exercise: the set with
 // the best estimated 1RM (Epley) that session represents that day's top
 // performance, plus that session's total volume for the exercise.
@@ -286,6 +293,49 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
           e1rm: Math.round(s.weight_kg * (1 + s.reps / 30) * 10) / 10,
         })),
     });
+  }
+
+  // Left/right balance for unilateral exercises, from the last 5 sessions
+  // that actually logged separate sides (a session logged as 'both' — or
+  // an exercise that was never done unilaterally — contributes nothing
+  // here). Recent-only on purpose: this should reflect current form, not
+  // get diluted by an imbalance the user already corrected months ago.
+  const unilateralSessions = (sessions ?? [])
+    .filter((session) =>
+      (session.workout_session_exercises[0]?.sets ?? []).some((s) => s.side === "left" || s.side === "right"),
+    )
+    .slice(-5);
+
+  let sideBalance: SideBalance | null = null;
+  if (unilateralSessions.length > 0) {
+    let leftSum = 0;
+    let leftCount = 0;
+    let rightSum = 0;
+    let rightCount = 0;
+    for (const session of unilateralSessions) {
+      for (const s of session.workout_session_exercises[0]?.sets ?? []) {
+        if (s.weight_kg == null || s.reps == null) continue;
+        const e1rm = s.weight_kg * (1 + s.reps / 30);
+        if (s.side === "left") {
+          leftSum += e1rm;
+          leftCount += 1;
+        } else if (s.side === "right") {
+          rightSum += e1rm;
+          rightCount += 1;
+        }
+      }
+    }
+    if (leftCount > 0 && rightCount > 0) {
+      const leftAvg = leftSum / leftCount;
+      const rightAvg = rightSum / rightCount;
+      const weaker = Math.min(leftAvg, rightAvg);
+      sideBalance = {
+        leftE1rm: Math.round(leftAvg * 10) / 10,
+        rightE1rm: Math.round(rightAvg * 10) / 10,
+        diffPct: weaker > 0 ? (Math.abs(leftAvg - rightAvg) / weaker) * 100 : 0,
+        strongerSide: leftAvg === rightAvg ? null : leftAvg > rightAvg ? "left" : "right",
+      };
+    }
   }
 
   const now = new Date();
@@ -376,6 +426,7 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
     },
     combinedWeekOverWeek,
     combinedSinceFirst,
+    sideBalance,
   };
 }
 

@@ -16,6 +16,7 @@ import { analyzePlateau } from "@/lib/calculations/strength";
 import { ExerciseChart } from "@/components/exercises/exercise-chart";
 import { OneRepMaxCard } from "@/components/exercises/one-rep-max-card";
 import { PlateauCard } from "@/components/exercises/plateau-card";
+import { SideBalanceCard } from "@/components/exercises/side-balance-card";
 import { FavoriteButton } from "@/components/exercises/favorite-button";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +36,15 @@ export default async function ExerciseDetailPage({
   if (!exercise) notFound();
 
   const [
-    { points, sessionPoints, personalRecords, weekOverWeek, combinedWeekOverWeek, combinedSinceFirst },
+    {
+      points,
+      sessionPoints,
+      personalRecords,
+      weekOverWeek,
+      combinedWeekOverWeek,
+      combinedSinceFirst,
+      sideBalance,
+    },
     favoriteIds,
     note,
     alternatives,
@@ -143,6 +152,8 @@ export default async function ExerciseDetailPage({
           )}
 
           <PlateauCard analysis={plateau} alternatives={alternatives} />
+
+          {sideBalance && <SideBalanceCard balance={sideBalance} />}
 
           <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="rounded-xl border bg-card p-4 text-sm">
