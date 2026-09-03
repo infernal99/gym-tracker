@@ -30,7 +30,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
 
   return (
     <form action={formAction} className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4">
         <div className="space-y-2">
           <Label htmlFor="displayName">Nombre</Label>
           <Input id="displayName" name="displayName" defaultValue={profile.display_name} required />
@@ -72,7 +72,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
 
       <div className="space-y-3 border-t pt-4">
         <p className="text-sm font-medium">Privacidad</p>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4">
           <div className="space-y-2">
             <Label htmlFor="profileVisibility">Perfil</Label>
             <Select name="profileVisibility" defaultValue={profile.profile_visibility}>

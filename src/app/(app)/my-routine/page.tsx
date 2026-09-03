@@ -1,20 +1,26 @@
 import Link from "next/link";
-import { Star, Moon, ChevronDown, Target } from "lucide-react";
+import { Star, Moon, ChevronDown, Target, Trash2 } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getTemplate } from "@/lib/services/routines";
 import { getNextDayInSequence } from "@/lib/services/training";
+import { listExercises } from "@/lib/services/exercises";
 import { setSequenceAnchorAction } from "@/lib/actions/training";
+import { deleteDayAction } from "@/lib/actions/routines";
+import { TemplateDayExercises } from "@/components/routines/template-day-exercises";
+import { AddDayCard } from "@/components/routines/add-day-card";
+import { RenameTemplateDialog } from "@/components/routines/rename-template-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function MyRoutinePage() {
   const profile = await requireProfile();
-  const [template, sequence] = await Promise.all([
+  const [template, sequence, exercises] = await Promise.all([
     profile.active_template_id ? getTemplate(profile.active_template_id) : Promise.resolve(null),
     profile.active_template_id
       ? getNextDayInSequence(profile.id, profile.active_template_id)
       : Promise.resolve({ day: null, nextTrainingDay: null }),
+    listExercises(),
   ]);
 
   if (!template) {
@@ -35,16 +41,23 @@ export default async function MyRoutinePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between fade-up">
+      <div className="flex items-start justify-between gap-2 fade-up">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{template.name}</h1>
           {template.description && (
             <p className="mt-1 text-muted-foreground">{template.description}</p>
           )}
         </div>
-        <Button render={<Link href="/my-routine/choose" />} variant="outline">
-          Cambiar rutina
-        </Button>
+        <div className="flex shrink-0 items-center gap-1">
+          <RenameTemplateDialog
+            templateId={template.id}
+            name={template.name}
+            description={template.description}
+          />
+          <Button render={<Link href="/my-routine/choose" />} variant="outline" size="sm">
+            Cambiar rutina
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-3 fade-up [animation-delay:60ms]">
@@ -56,7 +69,7 @@ export default async function MyRoutinePage() {
           if (day.is_rest_day) {
             return (
               <Card key={day.id}>
-                <CardHeader>
+                <CardHeader className="flex-row items-center justify-between space-y-0">
                   <CardTitle className="flex items-center gap-2 text-base">
                     {day.name}
                     <Badge variant="secondary" className="gap-1">
@@ -64,6 +77,11 @@ export default async function MyRoutinePage() {
                       Descanso
                     </Badge>
                   </CardTitle>
+                  <form action={deleteDayAction.bind(null, day.id, template.id)}>
+                    <Button type="submit" variant="ghost" size="icon-sm">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </form>
                 </CardHeader>
               </Card>
             );
@@ -84,20 +102,13 @@ export default async function MyRoutinePage() {
                     <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
                   </span>
                 </summary>
-                <div className="space-y-2 px-(--card-spacing) pb-(--card-spacing)">
-                  {dayExercises.map((ex) => (
-                    <div key={ex.id} className="rounded-xl border bg-surface px-3 py-2">
-                      <p className="text-sm font-medium">{ex.exercises?.name}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {ex.target_sets} series
-                        {ex.target_reps_min && ex.target_reps_max
-                          ? ` · ${ex.target_reps_min}-${ex.target_reps_max} reps`
-                          : ""}
-                        {ex.target_weight_kg ? ` · ${ex.target_weight_kg} kg` : ""}
-                        {` · ${ex.rest_seconds}s descanso`}
-                      </p>
-                    </div>
-                  ))}
+                <div className="space-y-3 px-(--card-spacing) pb-(--card-spacing)">
+                  <TemplateDayExercises
+                    dayId={day.id}
+                    templateId={template.id}
+                    dayExercises={dayExercises}
+                    exercises={exercises}
+                  />
                   {isSuggested ? (
                     <p className="flex items-center gap-1.5 text-xs text-primary">
                       <Target className="h-3.5 w-3.5" />
@@ -111,6 +122,17 @@ export default async function MyRoutinePage() {
                       </Button>
                     </form>
                   )}
+                  <form action={deleteDayAction.bind(null, day.id, template.id)}>
+                    <Button
+                      type="submit"
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Eliminar día
+                    </Button>
+                  </form>
                 </div>
               </details>
             </div>
@@ -118,9 +140,7 @@ export default async function MyRoutinePage() {
         })}
       </div>
 
-      <Button render={<Link href={`/routines/${template.id}`} />} variant="outline" className="w-full">
-        Ver y editar rutina completa
-      </Button>
+      <AddDayCard templateId={template.id} />
     </div>
   );
 }

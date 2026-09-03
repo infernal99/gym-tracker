@@ -30,6 +30,24 @@ export async function createTemplateAction(formData: FormData) {
   redirect(`/routines/${data.id}/setup`);
 }
 
+export async function renameTemplateAction(templateId: string, formData: FormData) {
+  const parsed = templateSchema.safeParse({
+    name: formData.get("name"),
+    description: formData.get("description") ?? "",
+  });
+  if (!parsed.success) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("workout_templates")
+    .update({ name: parsed.data.name, description: parsed.data.description || null })
+    .eq("id", templateId);
+
+  revalidatePath("/my-routine");
+  revalidatePath(`/routines/${templateId}`);
+  revalidatePath("/routines");
+}
+
 export async function setActiveTemplateAction(templateId: string) {
   const profile = await requireProfile();
   const supabase = await createClient();
