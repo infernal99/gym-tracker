@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { muscleZone, type MuscleZone } from "@/lib/muscle-colors";
+import { MUSCLE_ZONES, muscleZone, type MuscleZone } from "@/lib/muscle-colors";
+import { countCompletedSets } from "@/lib/set-utils";
 
 export interface WeeklyMuscleVolume {
   /** ISO date of that week's Monday. */
@@ -257,4 +258,57 @@ export async function listExportRows(userId: string): Promise<ExportRow[]> {
     }
   }
   return rows;
+}
+
+export type VolumeStatus = "low" | "optimal" | "high";
+
+export interface ZoneWeeklyVolume {
+  zone: MuscleZone;
+  sets: number;
+  status: VolumeStatus;
+}
+
+// Rough hypertrophy-training set-count landmarks (roughly the "MEV/MAV/MRV"
+// ranges popularized by Renaissance Periodization) — a single general range
+// rather than one per muscle group, since this is meant as an orientation
+// nudge, not a prescription. Below it usually means real progress will
+// stall; well above it usually means diminishing returns and slower
+// recovery, not extra growth.
+export const LOW_SETS_THRESHOLD = 10;
+export const HIGH_SETS_THRESHOLD = 20;
+
+// This week's completed sets per muscle zone with a traffic-light read —
+// every zone is included even at 0 sets, since a muscle group that's gone
+// quiet is exactly what this is meant to surface.
+export async function getWeeklyVolumeStatus(userId: string): Promise<ZoneWeeklyVolume[]> {
+  const supabase = await createClient();
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+  weekStart.setHours(0, 0, 0, 0);
+
+  const { data: sessions } = await supabase
+    .from("workout_sessions")
+    .select(
+      `completed_at, workout_session_exercises(exercises(muscle_groups(slug)), sets(set_number))`,
+    )
+    .eq("user_id", userId)
+    .not("completed_at", "is", null)
+    .gte("completed_at", weekStart.toISOString());
+
+  const zoneSets = new Map<MuscleZone, number>();
+  for (const session of sessions ?? []) {
+    for (const sessionExercise of session.workout_session_exercises ?? []) {
+      const zone = muscleZone(sessionExercise.exercises?.muscle_groups?.slug);
+      if (!zone) continue;
+      const sets = countCompletedSets(sessionExercise.sets ?? []);
+      zoneSets.set(zone, (zoneSets.get(zone) ?? 0) + sets);
+    }
+  }
+
+  return MUSCLE_ZONES.map((zone) => {
+    const sets = zoneSets.get(zone) ?? 0;
+    const status: VolumeStatus =
+      sets < LOW_SETS_THRESHOLD ? "low" : sets <= HIGH_SETS_THRESHOLD ? "optimal" : "high";
+    return { zone, sets, status };
+  });
 }

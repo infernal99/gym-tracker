@@ -1,15 +1,19 @@
 import { Download } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
-import { getMuscleVolumeStats } from "@/lib/services/stats";
+import { getMuscleVolumeStats, getWeeklyVolumeStatus } from "@/lib/services/stats";
 import { MuscleVolumeChart } from "@/components/stats/muscle-volume-chart";
 import { MuscleChangeList } from "@/components/stats/muscle-change-list";
+import { WeeklyVolumeSemaphore } from "@/components/stats/weekly-volume-semaphore";
 import { ZONE_LABELS, muscleZoneColor } from "@/lib/muscle-colors";
 import { BackButton } from "@/components/ui/back-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function StatsPage() {
   const profile = await requireProfile();
-  const { weeks, zoneTotals, vsLastWeek, vsFirstRecord } = await getMuscleVolumeStats(profile.id, 12);
+  const [{ weeks, zoneTotals, vsLastWeek, vsFirstRecord }, weeklyVolumeStatus] = await Promise.all([
+    getMuscleVolumeStats(profile.id, 12),
+    getWeeklyVolumeStatus(profile.id),
+  ]);
 
   const totalVolume = zoneTotals.reduce((sum, z) => sum + z.volumeKg, 0);
 
@@ -17,6 +21,15 @@ export default async function StatsPage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <BackButton fallbackHref="/profile" />
       <h1 className="text-2xl font-bold tracking-tight fade-up">Estadísticas</h1>
+
+      <Card className="fade-up [animation-delay:20ms]">
+        <CardHeader>
+          <CardTitle className="text-base">Semáforo de esta semana</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <WeeklyVolumeSemaphore zones={weeklyVolumeStatus} />
+        </CardContent>
+      </Card>
 
       <Card className="fade-up [animation-delay:40ms]">
         <CardHeader>
