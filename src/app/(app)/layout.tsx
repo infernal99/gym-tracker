@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/services/profile";
+import { listUnreadMilestones } from "@/lib/services/notifications";
 import { Sidebar } from "@/components/nav/sidebar";
 import { MobileNav } from "@/components/nav/mobile-nav";
 import { UserMenu } from "@/components/nav/user-menu";
+import { MilestoneCelebration } from "@/components/notifications/milestone-celebration";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const profile = await requireProfile();
@@ -10,6 +12,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!profile.onboarding_completed) {
     redirect("/onboarding");
   }
+
+  const milestones = await listUnreadMilestones(profile.id);
 
   return (
     <div className="flex min-h-svh">
@@ -33,6 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <main className="flex-1 px-4 pb-20 pt-6 md:px-6 md:pb-6">{children}</main>
       </div>
       <MobileNav />
+      <MilestoneCelebration milestones={milestones} />
     </div>
   );
 }

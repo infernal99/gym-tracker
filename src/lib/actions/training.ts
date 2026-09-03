@@ -228,6 +228,7 @@ export async function finishWorkoutAction(sessionId: string) {
   }
 
   await supabase.rpc("evaluate_achievements", { p_user_id: session.user_id });
+  await supabase.rpc("check_exercise_milestones", { p_user_id: session.user_id });
 
   revalidatePath("/dashboard");
   revalidatePath("/train/history");

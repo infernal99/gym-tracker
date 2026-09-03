@@ -10,6 +10,7 @@ import {
   Target,
   Trophy,
   Users,
+  Swords,
 } from "lucide-react";
 
 export type NavLink = {
@@ -30,6 +31,7 @@ export const navLinks: NavLink[] = [
   { href: "/body", label: "Peso", icon: Scale },
   { href: "/achievements", label: "Logros", icon: Trophy },
   { href: "/friends", label: "Amigos", icon: Users },
+  { href: "/challenges", label: "Retos", icon: Swords },
   { href: "/profile", label: "Perfil", icon: User },
 ];
 

@@ -211,6 +211,7 @@ export type Database = {
           challenge_id: string
           current_value: number
           id: string
+          initial_value: number
           joined_at: string
           rank: number | null
           user_id: string
@@ -219,6 +220,7 @@ export type Database = {
           challenge_id: string
           current_value?: number
           id?: string
+          initial_value?: number
           joined_at?: string
           rank?: number | null
           user_id: string
@@ -227,6 +229,7 @@ export type Database = {
           challenge_id?: string
           current_value?: number
           id?: string
+          initial_value?: number
           joined_at?: string
           rank?: number | null
           user_id?: string
@@ -1373,6 +1376,10 @@ export type Database = {
       calculate_level: { Args: { p_xp: number }; Returns: number }
       can_view_profile: { Args: { target: string }; Returns: boolean }
       can_view_session: { Args: { p_user_id: string }; Returns: boolean }
+      check_exercise_milestones: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       evaluate_achievements: { Args: { p_user_id: string }; Returns: undefined }
       find_user_by_username: {
         Args: { p_username: string }
@@ -1440,6 +1447,7 @@ export type Database = {
         | "challenge"
         | "goal_completed"
         | "workout_reminder"
+        | "milestone"
       photo_angle: "front" | "side" | "back"
       pr_type: "max_weight" | "max_reps_at_weight" | "max_volume" | "best_1rm"
       primary_goal:
@@ -1625,6 +1633,7 @@ export const Constants = {
         "challenge",
         "goal_completed",
         "workout_reminder",
+        "milestone",
       ],
       photo_angle: ["front", "side", "back"],
       pr_type: ["max_weight", "max_reps_at_weight", "max_volume", "best_1rm"],
