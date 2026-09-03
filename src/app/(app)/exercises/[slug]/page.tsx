@@ -10,6 +10,7 @@ import {
 import { getExerciseProgress } from "@/lib/services/training";
 import { requireProfile } from "@/lib/services/profile";
 import { muscleBadgeClass } from "@/lib/muscle-colors";
+import { difficultyLabels, movementTypeLabels } from "@/lib/exercise-labels";
 import { saveExerciseNoteAction } from "@/lib/actions/exercises";
 import { ExerciseChart } from "@/components/exercises/exercise-chart";
 import { FavoriteButton } from "@/components/exercises/favorite-button";
@@ -18,19 +19,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-const difficultyLabels: Record<string, string> = {
-  beginner: "Principiante",
-  intermediate: "Intermedio",
-  advanced: "Avanzado",
-};
-
-const movementTypeLabels: Record<string, string> = {
-  compound: "Compuesto",
-  isolation: "Aislado",
-  cardio: "Cardio",
-  mobility: "Movilidad",
-};
 
 export default async function ExerciseDetailPage({
   params,

@@ -13,6 +13,7 @@ import { ExerciseInfoDialog } from "@/components/exercises/exercise-info-dialog"
 import { FavoriteButton } from "@/components/exercises/favorite-button";
 import { ExerciseFiltersSheet } from "@/components/exercises/exercise-filters-sheet";
 import { ExerciseSearchInput } from "@/components/exercises/exercise-search-input";
+import { CreateExerciseDialog } from "@/components/exercises/create-exercise-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function ExercisesPage({
@@ -80,17 +81,20 @@ export default async function ExercisesPage({
     <div className="space-y-4">
       <div className="flex items-center justify-between fade-up">
         <h1 className="text-2xl font-bold tracking-tight">Ejercicios</h1>
-        <Link
-          href={onlyFavorites ? "/exercises" : "/exercises?favorites=1"}
-          className={`flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-medium transition-colors ${
-            onlyFavorites
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border hover:bg-accent"
-          }`}
-        >
-          <Star className={`h-4 w-4 ${onlyFavorites ? "fill-current" : ""}`} />
-          Favoritos
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={onlyFavorites ? "/exercises" : "/exercises?favorites=1"}
+            className={`flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-medium transition-colors ${
+              onlyFavorites
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border hover:bg-accent"
+            }`}
+          >
+            <Star className={`h-4 w-4 ${onlyFavorites ? "fill-current" : ""}`} />
+            Favoritos
+          </Link>
+          <CreateExerciseDialog muscleGroups={muscleGroups} equipment={equipment} />
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
