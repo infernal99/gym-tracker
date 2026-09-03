@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { Clock, Dumbbell, Layers, Weight } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getSessionWithDetails } from "@/lib/services/training";
+import { countCompletedSets } from "@/lib/set-utils";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -20,7 +21,7 @@ export default async function TrainHistoryDetailPage({
   const sessionExercises = [...(session.workout_session_exercises ?? [])].sort(
     (a, b) => a.order_index - b.order_index,
   );
-  const totalSets = sessionExercises.reduce((sum, e) => sum + e.sets.length, 0);
+  const totalSets = sessionExercises.reduce((sum, e) => sum + countCompletedSets(e.sets), 0);
 
   return (
     <div className="mx-auto max-w-xl space-y-6">

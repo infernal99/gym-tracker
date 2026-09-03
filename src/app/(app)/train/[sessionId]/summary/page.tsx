@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Clock, Dumbbell, Flame, Layers, Trophy, Weight } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getSessionWithDetails, getPreviousSessionForDay } from "@/lib/services/training";
+import { countCompletedSets } from "@/lib/set-utils";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +34,9 @@ export default async function TrainSummaryPage({
   if (!session.completed_at) redirect(`/train/${sessionId}`);
 
   const sessionExercises = session.workout_session_exercises ?? [];
+  const completedExercises = sessionExercises.filter((e) => e.sets.length > 0);
   const allSets = sessionExercises.flatMap((e) => e.sets);
+  const totalSeries = sessionExercises.reduce((sum, e) => sum + countCompletedSets(e.sets), 0);
   const totalReps = allSets.reduce((sum, s) => sum + (s.reps ?? 0), 0);
 
   const supabase = await createClient();
@@ -73,8 +76,8 @@ export default async function TrainSummaryPage({
 
       <div className="grid grid-cols-2 gap-2.5 fade-up [animation-delay:60ms]">
         <StatTile icon={Clock} label="Duración" value={formatDuration(session.duration_seconds ?? 0)} />
-        <StatTile icon={Dumbbell} label="Ejercicios" value={sessionExercises.length} />
-        <StatTile icon={Layers} label="Series" value={allSets.length} />
+        <StatTile icon={Dumbbell} label="Ejercicios" value={completedExercises.length} />
+        <StatTile icon={Layers} label="Series" value={totalSeries} />
         <StatTile icon={Weight} label="Volumen" value={`${session.total_volume_kg} kg`} />
       </div>
 

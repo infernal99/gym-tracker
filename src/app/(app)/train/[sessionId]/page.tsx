@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Check, Flame, Trash2 } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getSessionWithDetails, getLastPerformance, getPrSetIds } from "@/lib/services/training";
+import { countCompletedSets } from "@/lib/set-utils";
 import { logSetAction, deleteSetAction, finishWorkoutAction } from "@/lib/actions/training";
 import { ElapsedClock } from "@/components/training/elapsed-clock";
 import { RestTimer } from "@/components/training/rest-timer";
@@ -73,10 +74,10 @@ export default async function TrainSessionPage({
   const slots = Array.from({ length: slotCount }, (_, i) => i + 1);
 
   const totalSetsTarget = sessionExercises.reduce(
-    (sum, e) => sum + Math.max(e.target_sets ?? 3, e.sets.length, 1),
+    (sum, e) => sum + Math.max(e.target_sets ?? 3, countCompletedSets(e.sets), 1),
     0,
   );
-  const totalSetsDone = sessionExercises.reduce((sum, e) => sum + e.sets.length, 0);
+  const totalSetsDone = sessionExercises.reduce((sum, e) => sum + countCompletedSets(e.sets), 0);
 
   const firstIncomplete = slots.find((n) => !slotIsDone(n));
   const activeSet = Number(setParam) || firstIncomplete || slotCount;
@@ -139,7 +140,8 @@ export default async function TrainSessionPage({
 
       <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
         {sessionExercises.map((ex, i) => {
-          const done = ex.sets.length >= (ex.target_sets ?? 1) && ex.sets.length > 0;
+          const exSeries = countCompletedSets(ex.sets);
+          const done = exSeries >= (ex.target_sets ?? 1) && exSeries > 0;
           const isActive = ex.id === current.id;
           return (
             <Link key={ex.id} href={`/train/${sessionId}?exercise=${ex.id}`} className="shrink-0">
