@@ -47,7 +47,7 @@ export default async function MyRoutinePage() {
         </Button>
       </div>
 
-      <div className="grid gap-3 fade-up [animation-delay:60ms] sm:grid-cols-2">
+      <div className="grid gap-3 fade-up [animation-delay:60ms]">
         {days.map((day) => {
           const dayExercises = [...(day.workout_template_exercises ?? [])].sort(
             (a, b) => a.order_index - b.order_index,

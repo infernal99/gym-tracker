@@ -66,7 +66,7 @@ export default async function ProfilePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 fade-up [animation-delay:60ms]">
+      <div className="grid grid-cols-2 gap-2.5 fade-up [animation-delay:60ms]">
         <StatTile icon={Dumbbell} label="Entrenamientos" value={stats.totalWorkouts} />
         <StatTile
           icon={Weight}
@@ -77,7 +77,7 @@ export default async function ProfilePage() {
         <StatTile icon={Trophy} label="PRs" value={stats.totalPrs} />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 fade-up [animation-delay:100ms]">
+      <div className="grid gap-3 fade-up [animation-delay:100ms]">
         <Link
           href="/body"
           className="card-interactive flex items-center justify-between rounded-xl border bg-card p-4"

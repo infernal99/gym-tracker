@@ -83,7 +83,7 @@ export default async function BodyPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 fade-up [animation-delay:140ms]">
+      <div className="grid grid-cols-2 gap-2.5 fade-up [animation-delay:140ms]">
         <StatTile
           icon={Scale}
           label="Peso inicial"
@@ -115,7 +115,7 @@ export default async function BodyPage() {
           {!latestMeasurement ? (
             <p className="text-sm text-muted-foreground">Todavía no has añadido medidas.</p>
           ) : (
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-3 gap-3">
               {measurementFields.map((f) => {
                 const value = latestMeasurement[f.key];
                 return (

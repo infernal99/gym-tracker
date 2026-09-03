@@ -116,7 +116,7 @@ export default async function RoutineDetailPage({
                   </summary>
                   <form
                     action={addTemplateExerciseAction.bind(null, day.id, template.id)}
-                    className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"
+                    className="mt-3 grid grid-cols-2 gap-2"
                   >
                     <div className="col-span-2 sm:col-span-4">
                       <Select name="exerciseId" required>
@@ -177,7 +177,7 @@ export default async function RoutineDetailPage({
         <CardContent>
           <form
             action={addDayAction.bind(null, template.id)}
-            className="flex flex-col gap-2 sm:flex-row sm:items-end"
+            className="flex flex-col gap-2"
           >
             <div className="flex-1 space-y-1">
               <Label htmlFor="dayName" className="text-xs">

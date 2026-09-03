@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/services/profile";
 import { listUnreadMilestones } from "@/lib/services/notifications";
-import { Sidebar } from "@/components/nav/sidebar";
 import { MobileNav } from "@/components/nav/mobile-nav";
+import { MoreMenu } from "@/components/nav/more-menu";
 import { UserMenu } from "@/components/nav/user-menu";
 import { MilestoneCelebration } from "@/components/notifications/milestone-celebration";
 
@@ -16,17 +16,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const milestones = await listUnreadMilestones(profile.id);
 
   return (
-    <div className="flex min-h-svh">
-      <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b px-4 md:px-6">
-          <div className="md:hidden flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
+    <div className="min-h-svh md:flex md:min-h-svh md:items-center md:justify-center md:bg-surface md:p-6">
+      <div className="flex min-h-svh w-full flex-col bg-background md:h-[880px] md:max-h-[92svh] md:min-h-0 md:w-[430px] md:overflow-hidden md:rounded-[2.5rem] md:border md:shadow-2xl">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
+          <div className="flex items-center gap-1">
+            <MoreMenu />
+            <div className="ml-1 flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
               G
             </div>
             <span className="font-bold tracking-tight">Gym Tracker</span>
           </div>
-          <div className="hidden md:block" />
           <UserMenu
             displayName={profile.display_name}
             username={profile.username}
@@ -34,9 +33,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             level={profile.level}
           />
         </header>
-        <main className="flex-1 px-4 pb-20 pt-6 md:px-6 md:pb-6">{children}</main>
+        <main className="flex-1 overflow-y-auto px-4 pb-6 pt-6">{children}</main>
+        <MobileNav />
       </div>
-      <MobileNav />
       <MilestoneCelebration milestones={milestones} />
     </div>
   );

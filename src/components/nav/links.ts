@@ -19,8 +19,8 @@ export type NavLink = {
   icon: LucideIcon;
 };
 
-// Full nav shown on the desktop sidebar.
-// More links (Calendario, Social, Estadísticas) land as their phases ship.
+// Full nav — source list for the bottom tab bar (mobileNavLinks) and the
+// header's "Más" overflow menu (moreNavLinks).
 export const navLinks: NavLink[] = [
   { href: "/dashboard", label: "Hoy", icon: LayoutDashboard },
   { href: "/my-routine", label: "Mi rutina", icon: Star },
@@ -35,8 +35,8 @@ export const navLinks: NavLink[] = [
   { href: "/profile", label: "Perfil", icon: User },
 ];
 
-// Curated subset for the mobile bottom bar — keeps it to 5 tabs so it stays
-// usable on narrow screens; the rest stay reachable from the sidebar/profile.
+// Curated subset for the bottom tab bar — keeps it to 5 tabs so it stays
+// usable on a phone-width frame; the rest live in the header's "Más" menu.
 export const mobileNavLinks: NavLink[] = [
   { href: "/dashboard", label: "Hoy", icon: LayoutDashboard },
   { href: "/routines", label: "Rutinas", icon: ListChecks },
@@ -44,3 +44,8 @@ export const mobileNavLinks: NavLink[] = [
   { href: "/goals", label: "Objetivos", icon: Target },
   { href: "/profile", label: "Perfil", icon: User },
 ];
+
+// Everything not already in the bottom bar, surfaced via the header's "Más" menu.
+export const moreNavLinks: NavLink[] = navLinks.filter(
+  (link) => !mobileNavLinks.some((tab) => tab.href === link.href),
+);

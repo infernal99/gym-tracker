@@ -23,7 +23,7 @@ export default async function NewRoutinePage() {
           <ListChecks className="h-3.5 w-3.5" />
           Plantillas
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3">
           {templates.map((template) => (
             <Card key={template.id} className="card-interactive">
               <CardHeader>
@@ -56,7 +56,7 @@ export default async function NewRoutinePage() {
         </h2>
         <Card>
           <CardContent className="pt-6">
-            <form action={createTemplateAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <form action={createTemplateAction} className="flex flex-col gap-3">
               <div className="flex-1 space-y-2">
                 <Label htmlFor="name">Nombre</Label>
                 <Input id="name" name="name" placeholder="Mi rutina" required />

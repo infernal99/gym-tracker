@@ -28,7 +28,7 @@ export default async function ChooseActiveRoutinePage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 fade-up [animation-delay:60ms] sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 fade-up [animation-delay:60ms]">
           {templates.map((template) => (
             <Card key={template.id} className="card-interactive">
               <CardHeader>

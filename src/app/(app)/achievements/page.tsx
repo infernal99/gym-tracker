@@ -26,7 +26,7 @@ export default async function AchievementsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 fade-up [animation-delay:60ms]">
+      <div className="grid grid-cols-1 gap-3 fade-up [animation-delay:60ms]">
         {achievements.map((a) => {
           const unlocked = !!a.unlockedAt;
           return (

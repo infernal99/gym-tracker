@@ -106,7 +106,7 @@ export default async function ExerciseDetailPage({
       ) : (
         <div className="space-y-4 fade-up [animation-delay:60ms]">
           <p className="stat-label">Mi progreso</p>
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5">
             <StatTile
               icon={Trophy}
               label="PR peso"
@@ -134,7 +134,7 @@ export default async function ExerciseDetailPage({
             </CardContent>
           </Card>
 
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="grid gap-2.5">
             <div className="rounded-xl border bg-card p-4 text-sm">
               <p className="stat-label mb-1.5">Esta semana vs la anterior</p>
               {weekOverWeek.bestThisWeek === null ? (

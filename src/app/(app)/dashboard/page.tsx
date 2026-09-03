@@ -44,7 +44,7 @@ export default async function DashboardPage() {
       <Card className="fade-up glow-primary overflow-hidden [animation-delay:60ms]">
         <CardContent className="pt-6">
           {stats.activeSession ? (
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4">
               <div>
                 <p className="stat-label">Entrenamiento en curso</p>
                 <p className="mt-1 text-2xl font-semibold tracking-tight">
@@ -113,7 +113,7 @@ export default async function DashboardPage() {
       {otherDays.length > 0 && (
         <div className="fade-up [animation-delay:100ms]">
           <p className="stat-label mb-2">Otros días de tu rutina</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2">
             {otherDays.map((day) => (
               <AlternateDayCard key={day.id} day={day} />
             ))}
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
 
       <div className="fade-up [animation-delay:140ms]">
         <p className="stat-label mb-2">Tu progreso</p>
-        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5">
           <StatTile icon={Flame} label="Esta semana" value={stats.workoutsThisWeek} />
           <StatTile
             icon={Dumbbell}

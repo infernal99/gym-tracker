@@ -71,7 +71,7 @@ export default async function TrainSummaryPage({
         <p className="text-muted-foreground">{session.name}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 fade-up [animation-delay:60ms]">
+      <div className="grid grid-cols-2 gap-2.5 fade-up [animation-delay:60ms]">
         <StatTile icon={Clock} label="Duración" value={formatDuration(session.duration_seconds ?? 0)} />
         <StatTile icon={Dumbbell} label="Ejercicios" value={sessionExercises.length} />
         <StatTile icon={Layers} label="Series" value={allSets.length} />
