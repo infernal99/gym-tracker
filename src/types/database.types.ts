@@ -1373,6 +1373,7 @@ export type Database = {
       calculate_level: { Args: { p_xp: number }; Returns: number }
       can_view_profile: { Args: { target: string }; Returns: boolean }
       can_view_session: { Args: { p_user_id: string }; Returns: boolean }
+      evaluate_achievements: { Args: { p_user_id: string }; Returns: undefined }
       is_blocked: { Args: { a: string; b: string }; Returns: boolean }
       is_challenge_participant: {
         Args: { p_challenge_id: string }
@@ -1631,5 +1632,6 @@ export const Constants = {
     },
   },
 } as const
+
 
 export type ExerciseDifficulty = Database["public"]["Enums"]["exercise_difficulty"]

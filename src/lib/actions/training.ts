@@ -227,8 +227,11 @@ export async function finishWorkoutAction(sessionId: string) {
       .eq("id", session.user_id);
   }
 
+  await supabase.rpc("evaluate_achievements", { p_user_id: session.user_id });
+
   revalidatePath("/dashboard");
   revalidatePath("/train/history");
+  revalidatePath("/achievements");
   redirect(`/train/${sessionId}/summary`);
 }
 

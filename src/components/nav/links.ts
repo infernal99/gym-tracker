@@ -8,6 +8,7 @@ import {
   User,
   Scale,
   Target,
+  Trophy,
 } from "lucide-react";
 
 export type NavLink = {
@@ -26,6 +27,7 @@ export const navLinks: NavLink[] = [
   { href: "/exercises", label: "Ejercicios", icon: Dumbbell },
   { href: "/goals", label: "Objetivos", icon: Target },
   { href: "/body", label: "Peso", icon: Scale },
+  { href: "/achievements", label: "Logros", icon: Trophy },
   { href: "/profile", label: "Perfil", icon: User },
 ];
 

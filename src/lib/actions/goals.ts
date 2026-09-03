@@ -93,6 +93,11 @@ export async function updateGoalProgressAction(
     return { error: "No se pudo actualizar el objetivo" };
   }
 
+  if (reachedGoal) {
+    await supabase.rpc("evaluate_achievements", { p_user_id: profile.id });
+    revalidatePath("/achievements");
+  }
+
   revalidatePath("/goals");
   return { error: null };
 }
