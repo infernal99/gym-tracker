@@ -67,7 +67,8 @@ export default async function StatsPage() {
         <CardHeader>
           <CardTitle className="text-base">Esta semana vs la anterior</CardTitle>
           <p className="text-xs text-muted-foreground">
-            Según tu 1RM estimado por grupo: mismo peso a más repeticiones también cuenta como mejora.
+            % de cambio en tu 1RM estimado por ejercicio: mismo peso a más repeticiones también cuenta
+            como mejora.
           </p>
         </CardHeader>
         <CardContent>

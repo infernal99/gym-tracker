@@ -12,13 +12,16 @@ export interface WeeklyMuscleVolume {
 
 export interface MuscleZoneChange {
   zone: MuscleZone;
-  /** Average estimated 1RM (Epley) across the zone's sets that week — a
-   *  performance figure, not total weight moved: the same weight for one
-   *  more rep raises this even if volume stays flat. */
-  currentE1rmKg: number;
-  referenceE1rmKg: number;
-  /** Label for the reference point (e.g. the first week's date). */
-  referenceLabel: string;
+  // Average, across the zone's exercises, of each exercise's own % change in
+  // estimated 1RM (Epley) — e.g. 12kg×8 → 12kg×9 is one exercise's +2.6%.
+  // Averaging % per exercise (not averaging raw e1RM in kg across exercises)
+  // matters because a zone mixes a 100kg bench with a 10kg cable fly: an
+  // average in kg would be dominated by whichever lift is heaviest, while
+  // each exercise's own percent change counts equally regardless of load.
+  // null when no exercise in the zone has both a current and a reference
+  // data point to compare.
+  changePct: number | null;
+  exerciseCount: number;
 }
 
 export interface MuscleVolumeStats {
@@ -62,7 +65,7 @@ export async function getMuscleVolumeStats(
     .select(
       `completed_at,
        workout_session_exercises(
-         exercises(muscle_groups(slug)),
+         exercises(id, muscle_groups(slug)),
          sets(weight_kg, reps)
        )`,
     )
@@ -72,11 +75,7 @@ export async function getMuscleVolumeStats(
 
   const weeks: WeeklyMuscleVolume[] = [];
   const byWeekStart = new Map<string, WeeklyMuscleVolume>();
-  // Average estimated 1RM per zone per week, tracked alongside (not inside)
-  // WeeklyMuscleVolume since it's a performance figure for the two change
-  // cards below, not a volume figure the stacked chart should ever plot.
-  const e1rmSumByWeek = new Map<WeeklyMuscleVolume, Record<MuscleZone, number>>();
-  const e1rmCountByWeek = new Map<WeeklyMuscleVolume, Record<MuscleZone, number>>();
+  const weekIndexByKey = new Map<string, number>();
   for (let i = 0; i < weekCount; i++) {
     const start = new Date(since);
     start.setDate(start.getDate() + i * 7);
@@ -87,20 +86,22 @@ export async function getMuscleVolumeStats(
       byZone: emptyZones(),
     };
     weeks.push(week);
-    byWeekStart.set(start.toLocaleDateString("sv-SE"), week);
-    e1rmSumByWeek.set(week, emptyZones());
-    e1rmCountByWeek.set(week, emptyZones());
+    const key = start.toLocaleDateString("sv-SE");
+    byWeekStart.set(key, week);
+    weekIndexByKey.set(key, i);
   }
 
   const zoneTotals = new Map<MuscleZone, { volumeKg: number; sets: number }>();
+  // Each exercise's best estimated 1RM per week it was trained — the basis
+  // for the two change cards below, kept separate from the zone's own
+  // per-week volume above since the two use different aggregations.
+  const exerciseWeeklyBest = new Map<string, { zone: MuscleZone; weekly: Map<number, number> }>();
 
   for (const session of sessions ?? []) {
-    const week = byWeekStart.get(
-      startOfWeek(new Date(session.completed_at as string)).toLocaleDateString("sv-SE"),
-    );
+    const weekKey = startOfWeek(new Date(session.completed_at as string)).toLocaleDateString("sv-SE");
+    const week = byWeekStart.get(weekKey);
     if (!week) continue;
-    const e1rmSum = e1rmSumByWeek.get(week)!;
-    const e1rmCount = e1rmCountByWeek.get(week)!;
+    const weekIndex = weekIndexByKey.get(weekKey)!;
 
     for (const sessionExercise of session.workout_session_exercises ?? []) {
       const zone = muscleZone(sessionExercise.exercises?.muscle_groups?.slug);
@@ -119,53 +120,76 @@ export async function getMuscleVolumeStats(
       total.sets += sets.length;
       zoneTotals.set(zone, total);
 
-      for (const set of sets) {
-        if (set.weight_kg == null || set.reps == null) continue;
-        const weightKg = Number(set.weight_kg);
-        const reps = Number(set.reps);
-        e1rmSum[zone] += weightKg * (1 + reps / 30);
-        e1rmCount[zone] += 1;
+      const exerciseId = sessionExercise.exercises?.id;
+      if (exerciseId) {
+        let bestE1rm = 0;
+        for (const set of sets) {
+          if (set.weight_kg == null || set.reps == null) continue;
+          const e1rm = Number(set.weight_kg) * (1 + Number(set.reps) / 30);
+          if (e1rm > bestE1rm) bestE1rm = e1rm;
+        }
+        if (bestE1rm > 0) {
+          const entry = exerciseWeeklyBest.get(exerciseId) ?? { zone, weekly: new Map<number, number>() };
+          const existingBest = entry.weekly.get(weekIndex) ?? 0;
+          if (bestE1rm > existingBest) entry.weekly.set(weekIndex, bestE1rm);
+          exerciseWeeklyBest.set(exerciseId, entry);
+        }
       }
     }
   }
 
-  const avgE1rm = (week: WeeklyMuscleVolume, zone: MuscleZone) => {
-    const count = e1rmCountByWeek.get(week)?.[zone] ?? 0;
-    return count > 0 ? e1rmSumByWeek.get(week)![zone] / count : 0;
-  };
+  const exercisesByZone = new Map<MuscleZone, Map<number, number>[]>();
+  for (const { zone, weekly } of exerciseWeeklyBest.values()) {
+    const list = exercisesByZone.get(zone) ?? [];
+    list.push(weekly);
+    exercisesByZone.set(zone, list);
+  }
+
+  function averageChangePct(
+    zone: MuscleZone,
+    currentWeekIndex: number,
+    baselineFor: (weekly: Map<number, number>) => number | null,
+  ): { changePct: number | null; exerciseCount: number } {
+    const changes: number[] = [];
+    for (const weekly of exercisesByZone.get(zone) ?? []) {
+      const current = weekly.get(currentWeekIndex);
+      if (current == null) continue;
+      const baseline = baselineFor(weekly);
+      if (baseline == null || baseline <= 0) continue;
+      changes.push(((current - baseline) / baseline) * 100);
+    }
+    if (changes.length === 0) return { changePct: null, exerciseCount: 0 };
+    return {
+      changePct: changes.reduce((sum, c) => sum + c, 0) / changes.length,
+      exerciseCount: changes.length,
+    };
+  }
 
   const zonesWithData = [...zoneTotals.keys()];
-  const currentWeek = weeks[weeks.length - 1];
-  const previousWeek = weeks[weeks.length - 2];
+  const currentWeekIndex = weeks.length - 1;
+  const previousWeekIndex = weeks.length - 2;
 
-  const vsLastWeek: MuscleZoneChange[] = zonesWithData
-    .map((zone) => ({
-      zone,
-      currentE1rmKg: avgE1rm(currentWeek, zone),
-      referenceE1rmKg: previousWeek ? avgE1rm(previousWeek, zone) : 0,
-      referenceLabel: "semana pasada",
-    }))
-    .filter((c) => c.currentE1rmKg > 0 || c.referenceE1rmKg > 0);
+  const vsLastWeek: MuscleZoneChange[] = zonesWithData.map((zone) => ({
+    zone,
+    ...averageChangePct(zone, currentWeekIndex, (weekly) => weekly.get(previousWeekIndex) ?? null),
+  }));
 
-  // The earliest week (inside this weekCount-week window) that shows any
-  // e1RM for the zone — this is a "since your first record in view" figure
-  // rather than a true all-time first, but for how young this app's
+  // "First record" means the earliest week (inside this weekCount-week
+  // window) each exercise has data — a "since your first record in view"
+  // figure rather than a true all-time first, but for how young this app's
   // accounts are the two coincide in practice, and it avoids a second,
   // unbounded query just to find one number.
-  const vsFirstRecord: MuscleZoneChange[] = zonesWithData
-    .map((zone) => {
-      const firstWeek = weeks.find((w) => avgE1rm(w, zone) > 0);
-      const isCurrentWeek = firstWeek === currentWeek;
-      return {
-        zone,
-        currentE1rmKg: avgE1rm(currentWeek, zone),
-        // Treated as "no baseline yet" when the only record is this week's,
-        // so the UI reads it as new rather than a nonsensical 0% change.
-        referenceE1rmKg: isCurrentWeek || !firstWeek ? 0 : avgE1rm(firstWeek, zone),
-        referenceLabel: firstWeek && !isCurrentWeek ? firstWeek.label : "primer registro",
-      };
-    })
-    .filter((c) => c.currentE1rmKg > 0 || c.referenceE1rmKg > 0);
+  const vsFirstRecord: MuscleZoneChange[] = zonesWithData.map((zone) => ({
+    zone,
+    ...averageChangePct(zone, currentWeekIndex, (weekly) => {
+      let firstIndex: number | null = null;
+      for (const idx of weekly.keys()) {
+        if (idx === currentWeekIndex) continue;
+        if (firstIndex === null || idx < firstIndex) firstIndex = idx;
+      }
+      return firstIndex === null ? null : weekly.get(firstIndex)!;
+    }),
+  }));
 
   return {
     weeks,
