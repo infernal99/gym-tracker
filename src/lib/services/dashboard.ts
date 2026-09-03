@@ -97,6 +97,17 @@ export async function getDashboardStats(userId: string, activeTemplateId: string
       : Promise.resolve({ data: null }),
   ]);
 
+  let pendingDayExerciseCount = 0;
+  let pendingDaySetCount = 0;
+  if (sequence.day && !sequence.day.is_rest_day) {
+    const { data: dayExercises } = await supabase
+      .from("workout_template_exercises")
+      .select("target_sets")
+      .eq("template_day_id", sequence.day.id);
+    pendingDayExerciseCount = dayExercises?.length ?? 0;
+    pendingDaySetCount = (dayExercises ?? []).reduce((s, r) => s + r.target_sets, 0);
+  }
+
   return {
     totalWorkouts: totalWorkouts ?? 0,
     workoutsThisWeek: workoutsThisWeek ?? 0,
@@ -104,10 +115,13 @@ export async function getDashboardStats(userId: string, activeTemplateId: string
     lastSession,
     currentStreak,
     prsThisWeek: prsThisWeek ?? 0,
+    volumeThisWeek,
     volumeChangePct,
     activeSession,
     activeTemplateName: activeTemplateRow.data?.name ?? null,
     pendingDay: sequence.day,
+    pendingDayExerciseCount,
+    pendingDaySetCount,
     nextTrainingDayIfResting: sequence.nextTrainingDay,
   };
 }

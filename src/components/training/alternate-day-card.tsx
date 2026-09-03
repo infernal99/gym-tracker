@@ -17,7 +17,7 @@ export function AlternateDayCard({ day }: { day: { id: string; name: string } })
     <Dialog>
       <DialogTrigger
         render={
-          <button className="flex w-full flex-col gap-1.5 rounded-xl border bg-card px-3 py-2.5 text-left transition-colors hover:bg-accent" />
+          <button className="card-interactive flex w-full flex-col gap-1.5 rounded-xl border bg-card px-3 py-2.5 text-left" />
         }
       >
         <Dumbbell className="h-4 w-4 text-muted-foreground" />

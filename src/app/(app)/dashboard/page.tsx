@@ -1,34 +1,54 @@
 import Link from "next/link";
-import { Dumbbell, Flame, Moon, Play, TrendingUp, Trophy } from "lucide-react";
+import { Dumbbell, Flame, Moon, Play, Trophy, TrendingUp, TrendingDown } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getDashboardStats } from "@/lib/services/dashboard";
 import { listTrainingDays } from "@/lib/services/training";
 import { startWorkoutAction } from "@/lib/actions/training";
 import { AlternateDayCard } from "@/components/training/alternate-day-card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
-function StatCard({
+function greetingForHour(hour: number) {
+  if (hour < 12) return "Buenos días";
+  if (hour < 20) return "Buenas tardes";
+  return "Buenas noches";
+}
+
+function StatTile({
   icon: Icon,
   label,
   value,
+  trend,
 }: {
   icon: React.ElementType;
   label: string;
   value: string | number;
+  trend?: { value: string; positive: boolean } | null;
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-3 pt-6">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-2xl font-semibold leading-none tabular-nums">{value}</p>
-          <p className="truncate text-sm text-muted-foreground">{label}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-2 rounded-xl border bg-card p-3.5">
+      <div className="flex items-center justify-between">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+        {trend && (
+          <span
+            className={`flex items-center gap-0.5 text-xs font-medium ${
+              trend.positive ? "text-success" : "text-muted-foreground"
+            }`}
+          >
+            {trend.positive ? (
+              <TrendingUp className="h-3 w-3" />
+            ) : (
+              <TrendingDown className="h-3 w-3" />
+            )}
+            {trend.value}
+          </span>
+        )}
+      </div>
+      <div>
+        <p className="stat-value">{value}</p>
+        <p className="stat-label mt-0.5">{label}</p>
+      </div>
+    </div>
   );
 }
 
@@ -40,8 +60,10 @@ export default async function DashboardPage() {
   ]);
 
   const otherDays = trainingDays.filter((d) => d.id !== stats.pendingDay?.id);
-
-  const today = new Date().toLocaleDateString("es-ES", {
+  const firstName = profile.display_name.split(" ")[0];
+  const now = new Date();
+  const greeting = greetingForHour(now.getHours());
+  const today = now.toLocaleDateString("es-ES", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -49,21 +71,26 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Hoy</h1>
-        <p className="capitalize text-muted-foreground">{today}</p>
+      <div className="fade-up">
+        <p className="text-muted-foreground">
+          {greeting}, {firstName} 👋
+        </p>
+        <h1 className="mt-0.5 text-2xl font-semibold capitalize tracking-tight">{today}</h1>
       </div>
 
-      <Card>
+      <Card className="fade-up glow-primary overflow-hidden [animation-delay:60ms]">
         <CardContent className="pt-6">
           {stats.activeSession ? (
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Entrenamiento en curso</p>
-                <p className="text-xl font-semibold">{stats.activeSession.name}</p>
+                <p className="stat-label">Entrenamiento en curso</p>
+                <p className="mt-1 text-2xl font-semibold tracking-tight">
+                  {stats.activeSession.name}
+                </p>
               </div>
               <Button
                 render={<Link href={`/train/${stats.activeSession.id}`} />}
+                size="lg"
                 className="w-full sm:w-auto"
               >
                 <Play className="h-4 w-4" />
@@ -82,9 +109,14 @@ export default async function DashboardPage() {
             </div>
           ) : stats.pendingDay.is_rest_day ? (
             <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <Moon className="h-5 w-5 text-muted-foreground" />
-                <p className="text-xl font-semibold">Día de descanso</p>
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                  <Moon className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="stat-label">Hoy</p>
+                  <p className="text-2xl font-semibold tracking-tight">Día de descanso</p>
+                </div>
               </div>
               {stats.nextTrainingDayIfResting && (
                 <p className="text-sm text-muted-foreground">
@@ -93,20 +125,16 @@ export default async function DashboardPage() {
               )}
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Dumbbell className="h-6 w-6" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm text-muted-foreground">Entrenamiento pendiente</p>
-                  <p className="truncate text-2xl font-semibold tracking-tight">
-                    {stats.pendingDay.name}
-                  </p>
-                  {stats.activeTemplateName && (
-                    <p className="text-sm text-muted-foreground">{stats.activeTemplateName}</p>
-                  )}
-                </div>
+            <div className="space-y-5">
+              <div>
+                <p className="stat-label text-primary">Hoy</p>
+                <p className="mt-1 truncate text-3xl font-bold tracking-tight sm:text-4xl">
+                  {stats.pendingDay.name}
+                </p>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  {stats.activeTemplateName && `${stats.activeTemplateName} · `}
+                  {stats.pendingDayExerciseCount} ejercicios · {stats.pendingDaySetCount} series
+                </p>
               </div>
               <form action={startWorkoutAction.bind(null, stats.pendingDay.id, true)}>
                 <Button type="submit" size="lg" className="w-full">
@@ -120,8 +148,8 @@ export default async function DashboardPage() {
       </Card>
 
       {otherDays.length > 0 && (
-        <div>
-          <p className="mb-2 text-sm text-muted-foreground">Otros días de tu rutina</p>
+        <div className="fade-up [animation-delay:100ms]">
+          <p className="stat-label mb-2">Otros días de tu rutina</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {otherDays.map((day) => (
               <AlternateDayCard key={day.id} day={day} />
@@ -130,63 +158,43 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {stats.lastSession && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Último entrenamiento</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            {stats.lastSession.name} ·{" "}
-            {new Date(stats.lastSession.completed_at!).toLocaleDateString("es-ES")}
-            {stats.lastSession.duration_seconds
-              ? ` · ${Math.round(stats.lastSession.duration_seconds / 60)}min`
-              : ""}{" "}
-            · {stats.lastSession.total_volume_kg} kg de volumen
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Progreso reciente</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-center gap-3 text-sm">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success">
-              <Trophy className="h-4 w-4" />
-            </span>
-            {stats.prsThisWeek} PR{stats.prsThisWeek === 1 ? "" : "s"} esta semana
-          </div>
-          {stats.volumeChangePct !== null && (
-            <div className="flex items-center gap-3 text-sm">
-              <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                  stats.volumeChangePct >= 0
-                    ? "bg-success/10 text-success"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                <TrendingUp className="h-4 w-4" />
-              </span>
-              {stats.volumeChangePct >= 0 ? "+" : ""}
-              {stats.volumeChangePct.toFixed(1)}% de volumen esta semana
-            </div>
-          )}
-          <div className="flex items-center gap-3 text-sm">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Flame className="h-4 w-4" />
-            </span>
-            {stats.workoutsThisWeek} entrenamiento{stats.workoutsThisWeek === 1 ? "" : "s"} esta
-            semana · racha de {stats.currentStreak}d
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <StatCard icon={Trophy} label="Entrenamientos totales" value={stats.totalWorkouts} />
-        <StatCard icon={Flame} label="Este mes" value={stats.workoutsThisMonth} />
-        <StatCard icon={TrendingUp} label="Racha actual" value={`${stats.currentStreak}d`} />
+      <div className="fade-up [animation-delay:140ms]">
+        <p className="stat-label mb-2">Tu progreso</p>
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+          <StatTile icon={Flame} label="Esta semana" value={stats.workoutsThisWeek} />
+          <StatTile
+            icon={Dumbbell}
+            label="Volumen semana"
+            value={`${Math.round(stats.volumeThisWeek).toLocaleString("es-ES")} kg`}
+            trend={
+              stats.volumeChangePct !== null
+                ? {
+                    value: `${stats.volumeChangePct >= 0 ? "+" : ""}${stats.volumeChangePct.toFixed(0)}%`,
+                    positive: stats.volumeChangePct >= 0,
+                  }
+                : null
+            }
+          />
+          <StatTile icon={TrendingUp} label="Racha" value={`${stats.currentStreak}d`} />
+          <StatTile icon={Trophy} label="PRs esta semana" value={stats.prsThisWeek} />
+        </div>
       </div>
+
+      {stats.lastSession && (
+        <div className="fade-up flex items-center justify-between rounded-xl border bg-card px-4 py-3 text-sm [animation-delay:180ms]">
+          <div className="min-w-0">
+            <p className="truncate font-medium">{stats.lastSession.name}</p>
+            <p className="text-muted-foreground">
+              {new Date(stats.lastSession.completed_at!).toLocaleDateString("es-ES")}
+              {stats.lastSession.duration_seconds
+                ? ` · ${Math.round(stats.lastSession.duration_seconds / 60)} min`
+                : ""}{" "}
+              · {stats.lastSession.total_volume_kg} kg
+            </p>
+          </div>
+          <span className="stat-label shrink-0">Último</span>
+        </div>
+      )}
     </div>
   );
 }

@@ -54,6 +54,8 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-surface: var(--surface);
+  --color-card-hover: var(--card-hover);
 }
 
 /* Gym Tracker: dark, premium, sport/data-driven — dark mode is the only
@@ -62,7 +64,10 @@
   color-scheme: dark;
   --background: #0b0f14;
   --foreground: #f3f6fa;
+  /* Depth ladder: background < surface < card < card-hover < popover/modal. */
+  --surface: #10151d;
   --card: #141a23;
+  --card-hover: #182030;
   --card-foreground: #f3f6fa;
   --popover: #141a23;
   --popover-foreground: #f3f6fa;
@@ -112,5 +117,63 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Motion system: fast (hover/press feedback), normal (entrances), emphasis
+   (celebrations like PRs/level-up). Kept to transform+opacity only. */
+@layer utilities {
+  .duration-fast {
+    transition-duration: 150ms;
+  }
+  .duration-normal {
+    transition-duration: 250ms;
+  }
+  .duration-emphasis {
+    transition-duration: 400ms;
+  }
+
+  .glow-primary {
+    background-image: radial-gradient(
+      120% 140% at 100% 0%,
+      color-mix(in oklch, var(--primary) 22%, transparent) 0%,
+      transparent 60%
+    );
+  }
+
+  .stat-value {
+    @apply font-heading text-2xl font-semibold tracking-tight tabular-nums text-foreground;
+  }
+
+  .stat-label {
+    @apply text-xs font-medium uppercase tracking-wide text-muted-foreground;
+  }
+
+  .card-interactive {
+    @apply transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-foreground/15 hover:shadow-lg hover:shadow-black/20 active:translate-y-0 active:scale-[0.99];
+  }
+
+  .fade-up {
+    animation: fade-up 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up {
+    animation: none;
+  }
+  .card-interactive {
+    transition: none;
   }
 }
