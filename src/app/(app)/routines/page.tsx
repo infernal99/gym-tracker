@@ -8,6 +8,7 @@ import {
   duplicateTemplateAction,
 } from "@/lib/actions/routines";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -90,9 +91,14 @@ export default async function RoutinesPage() {
                       </Button>
                     </form>
                     <form action={deleteTemplateAction.bind(null, template.id)}>
-                      <Button type="submit" variant="ghost" size="icon-sm" title="Eliminar">
+                      <ConfirmSubmitButton
+                        confirmMessage={`¿Eliminar la rutina "${template.name}"? Se borrarán todos sus días y ejercicios. No se puede deshacer.`}
+                        variant="ghost"
+                        size="icon-sm"
+                        title="Eliminar"
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      </ConfirmSubmitButton>
                     </form>
                   </>
                 )}

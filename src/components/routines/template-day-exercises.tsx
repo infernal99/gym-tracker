@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import { ChevronDown, ChevronUp, GripVertical, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { matchesExerciseQuery } from "@/lib/exercise-search";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import {
   addTemplateExerciseAction,
   removeTemplateExerciseAction,
@@ -247,9 +248,13 @@ function ExerciseRow({
           <Pencil className="h-3.5 w-3.5" />
         </Button>
         <form action={removeTemplateExerciseAction.bind(null, exercise.id, templateId)}>
-          <Button type="submit" variant="ghost" size="icon-sm">
+          <ConfirmSubmitButton
+            confirmMessage={`¿Quitar "${exercise.exercises?.name}" de este día?`}
+            variant="ghost"
+            size="icon-sm"
+          >
             <Trash2 className="h-3.5 w-3.5 text-destructive" />
-          </Button>
+          </ConfirmSubmitButton>
         </form>
       </div>
     </div>
@@ -267,13 +272,16 @@ function AddExerciseForm({
 }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<ExerciseOption | null>(null);
+  const [open, setOpen] = useState(false);
 
+  // With no query, show the full list (browsable) rather than nothing — the
+  // exercise might be there under a different name than what comes to mind.
   const matches =
-    !selected && query.trim()
-      ? exercises
-          .filter((e) => matchesExerciseQuery(e.name, query))
-          .slice(0, 8)
-      : [];
+    selected || !open
+      ? []
+      : query.trim()
+        ? exercises.filter((e) => matchesExerciseQuery(e.name, query)).slice(0, 8)
+        : exercises.slice(0, 50);
 
   return (
     <form
@@ -292,11 +300,18 @@ function AddExerciseForm({
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setOpen(true)}
+            onBlur={() => setOpen(false)}
             placeholder="Buscar ejercicio..."
             className="pl-8"
           />
           {matches.length > 0 && (
-            <div className="absolute inset-x-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border bg-popover shadow-md">
+            <div
+              className="absolute inset-x-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border bg-popover shadow-md"
+              // Fires before the input's blur, so the click below still
+              // lands instead of the list closing out from under it.
+              onMouseDown={(e) => e.preventDefault()}
+            >
               {matches.map((exercise) => (
                 <button
                   key={exercise.id}
@@ -304,6 +319,7 @@ function AddExerciseForm({
                   onClick={() => {
                     setSelected(exercise);
                     setQuery("");
+                    setOpen(false);
                   }}
                   className="flex w-full px-3 py-2 text-left text-sm hover:bg-accent"
                 >

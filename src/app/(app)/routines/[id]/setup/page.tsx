@@ -11,6 +11,7 @@ import {
 } from "@/lib/actions/routines";
 import { ExercisePicker } from "@/components/routines/exercise-picker";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -121,9 +122,13 @@ export default async function RoutineSetupPage({
                     <p className="text-xs text-muted-foreground">{ex.target_sets} series</p>
                   </div>
                   <form action={removeTemplateExerciseAction.bind(null, ex.id, template.id)}>
-                    <Button type="submit" variant="ghost" size="icon-sm">
+                    <ConfirmSubmitButton
+                      confirmMessage={`¿Quitar "${ex.exercises?.name}" de este día?`}
+                      variant="ghost"
+                      size="icon-sm"
+                    >
                       <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
+                    </ConfirmSubmitButton>
                   </form>
                 </div>
               ))}

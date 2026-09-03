@@ -7,6 +7,7 @@ import { TemplateDayExercises } from "@/components/routines/template-day-exercis
 import { AddDayCard } from "@/components/routines/add-day-card";
 import { RenameTemplateDialog } from "@/components/routines/rename-template-dialog";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -72,9 +73,13 @@ export default async function RoutineDetailPage({
                 )}
               </div>
               <form action={deleteDayAction.bind(null, day.id, template.id)}>
-                <Button type="submit" variant="ghost" size="icon-sm">
+                <ConfirmSubmitButton
+                  confirmMessage={`¿Eliminar el día "${day.name}"? No se puede deshacer.`}
+                  variant="ghost"
+                  size="icon-sm"
+                >
                   <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                </ConfirmSubmitButton>
               </form>
             </CardHeader>
             {!day.is_rest_day && (

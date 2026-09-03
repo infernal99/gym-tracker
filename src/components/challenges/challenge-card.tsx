@@ -4,6 +4,7 @@ import { CalendarClock, CheckCircle2, Trash2 } from "lucide-react";
 import { deleteChallengeAction } from "@/lib/actions/challenges";
 import { challengeProgress, daysRemaining, type Challenge } from "@/lib/challenge-utils";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 
 const metricUnit: Record<string, string> = {
   custom: "kg",
@@ -40,9 +41,13 @@ export function ChallengeCard({ challenge }: { challenge: Challenge }) {
           )}
         </div>
         <form action={deleteChallengeAction.bind(null, challenge.id)}>
-          <Button type="submit" variant="ghost" size="icon-sm">
+          <ConfirmSubmitButton
+            confirmMessage="¿Eliminar este reto? No se puede deshacer."
+            variant="ghost"
+            size="icon-sm"
+          >
             <Trash2 className="h-3.5 w-3.5 text-destructive" />
-          </Button>
+          </ConfirmSubmitButton>
         </form>
       </div>
 

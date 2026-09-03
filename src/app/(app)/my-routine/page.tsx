@@ -10,6 +10,7 @@ import { AddDayCard } from "@/components/routines/add-day-card";
 import { RenameTemplateDialog } from "@/components/routines/rename-template-dialog";
 import { WeeklyCalendar } from "@/components/routines/weekly-calendar";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -87,9 +88,13 @@ export default async function MyRoutinePage() {
                     </Badge>
                   </CardTitle>
                   <form action={deleteDayAction.bind(null, day.id, template.id)}>
-                    <Button type="submit" variant="ghost" size="icon-sm">
+                    <ConfirmSubmitButton
+                      confirmMessage={`¿Eliminar el día "${day.name}"? No se puede deshacer.`}
+                      variant="ghost"
+                      size="icon-sm"
+                    >
                       <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    </ConfirmSubmitButton>
                   </form>
                 </CardHeader>
               </Card>
@@ -119,15 +124,15 @@ export default async function MyRoutinePage() {
                     exercises={exercises}
                   />
                   <form action={deleteDayAction.bind(null, day.id, template.id)}>
-                    <Button
-                      type="submit"
+                    <ConfirmSubmitButton
+                      confirmMessage={`¿Eliminar el día "${day.name}" y sus ${dayExercises.length} ejercicios? No se puede deshacer.`}
                       variant="ghost"
                       size="sm"
                       className="w-full text-destructive hover:text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                       Eliminar día
-                    </Button>
+                    </ConfirmSubmitButton>
                   </form>
                 </div>
               </details>

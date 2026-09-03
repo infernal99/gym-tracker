@@ -6,6 +6,7 @@ import { updateGoalProgressAction, deleteGoalAction } from "@/lib/actions/goals"
 import { goalProgress, type Goal } from "@/lib/goal-utils";
 import type { ActionResult } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Input } from "@/components/ui/input";
 
 const initialState: ActionResult = { error: null };
@@ -45,9 +46,13 @@ export function GoalCard({ goal }: { goal: Goal }) {
             </Button>
           )}
           <form action={deleteGoalAction.bind(null, goal.id)}>
-            <Button type="submit" variant="ghost" size="icon-sm">
+            <ConfirmSubmitButton
+              confirmMessage="¿Eliminar este objetivo? No se puede deshacer."
+              variant="ghost"
+              size="icon-sm"
+            >
               <Trash2 className="h-3.5 w-3.5 text-destructive" />
-            </Button>
+            </ConfirmSubmitButton>
           </form>
         </div>
       </div>

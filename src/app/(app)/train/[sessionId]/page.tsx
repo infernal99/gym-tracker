@@ -9,6 +9,7 @@ import { RestTimer } from "@/components/training/rest-timer";
 import { CancelWorkoutButton } from "@/components/training/cancel-workout-button";
 import { ExerciseInfoDialog } from "@/components/exercises/exercise-info-dialog";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -262,9 +263,13 @@ export default async function TrainSessionPage({
                 )}
                 {existing && (
                   <form action={deleteSetAction.bind(null, sessionId, existing.id)}>
-                    <Button type="submit" variant="ghost" size="icon-sm">
+                    <ConfirmSubmitButton
+                      confirmMessage="¿Eliminar esta serie?"
+                      variant="ghost"
+                      size="icon-sm"
+                    >
                       <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
+                    </ConfirmSubmitButton>
                   </form>
                 )}
               </div>

@@ -9,6 +9,7 @@ import {
 import { FriendSearch } from "@/components/friends/friend-search";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function FriendsPage() {
@@ -108,9 +109,13 @@ export default async function FriendsPage() {
                   </span>
                 )}
                 <form action={removeFriendAction.bind(null, f.id)}>
-                  <Button type="submit" size="icon-sm" variant="ghost">
+                  <ConfirmSubmitButton
+                    confirmMessage={`¿Eliminar a ${f.displayName} de tus amigos?`}
+                    size="icon-sm"
+                    variant="ghost"
+                  >
                     <X className="h-3.5 w-3.5 text-muted-foreground" />
-                  </Button>
+                  </ConfirmSubmitButton>
                 </form>
               </div>
             ))}
