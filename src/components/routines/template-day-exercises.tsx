@@ -295,19 +295,26 @@ function AddExerciseForm({
       <input type="hidden" name="exerciseId" value={selected?.id ?? ""} />
 
       {!selected ? (
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setOpen(true)}
-            onBlur={() => setOpen(false)}
-            placeholder="Buscar ejercicio..."
-            className="pl-8"
-          />
+        <div>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setOpen(true)}
+              onBlur={() => setOpen(false)}
+              placeholder="Buscar ejercicio..."
+              className="pl-8"
+            />
+          </div>
           {matches.length > 0 && (
+            // A normal block below the input (not absolutely positioned)
+            // so it can't get clipped by an ancestor's overflow-hidden —
+            // several day-card containers have one for their rounded
+            // corners, which was cutting this list off instead of letting
+            // it float over the rest of the form.
             <div
-              className="absolute inset-x-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border bg-popover shadow-md"
+              className="mt-1 max-h-48 overflow-y-auto rounded-xl border bg-popover shadow-md"
               // Fires before the input's blur, so the click below still
               // lands instead of the list closing out from under it.
               onMouseDown={(e) => e.preventDefault()}
