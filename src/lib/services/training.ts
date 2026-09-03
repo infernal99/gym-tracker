@@ -226,6 +226,12 @@ export type SideBalance = {
   strongerSide: "left" | "right" | null;
 };
 
+export type RestComparison = {
+  targetSeconds: number;
+  actualSeconds: number;
+  diffSeconds: number;
+};
+
 // One point per completed session that includes this exercise: the set with
 // the best estimated 1RM (Epley) that session represents that day's top
 // performance, plus that session's total volume for the exercise.
@@ -237,7 +243,7 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
   const [{ data: sessions }, { data: personalRecords }] = await Promise.all([
     supabase
       .from("workout_sessions")
-      .select("id, completed_at, workout_session_exercises!inner(id, exercise_id, sets(*))")
+      .select("id, completed_at, workout_session_exercises!inner(id, exercise_id, rest_seconds, sets(*))")
       .eq("user_id", userId)
       .eq("workout_session_exercises.exercise_id", exerciseId)
       .not("completed_at", "is", null)
@@ -338,6 +344,46 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
     }
   }
 
+  // Actual rest vs. the exercise's target, from the last 5 sessions. There's
+  // no dedicated rest-timer log, so this uses the gap between consecutive
+  // sets' completed_at as a proxy — it also includes however long the next
+  // set itself took, so it slightly overestimates true rest, but it's the
+  // only signal the data actually has.
+  let restComparison: RestComparison | null = null;
+  {
+    const gaps: number[] = [];
+    let targetSeconds: number | null = null;
+    for (const session of (sessions ?? []).slice(-5)) {
+      const sessionExercise = session.workout_session_exercises[0];
+      if (!sessionExercise) continue;
+      if (sessionExercise.rest_seconds != null) targetSeconds = sessionExercise.rest_seconds;
+
+      const bySetNumber = new Map<number, string>();
+      for (const s of sessionExercise.sets ?? []) {
+        if (!s.completed_at) continue;
+        const existing = bySetNumber.get(s.set_number);
+        if (!existing || s.side === "both") bySetNumber.set(s.set_number, s.completed_at);
+      }
+      const ordered = [...bySetNumber.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([, completedAt]) => new Date(completedAt).getTime());
+      for (let i = 1; i < ordered.length; i++) {
+        const gapSeconds = (ordered[i] - ordered[i - 1]) / 1000;
+        // Excludes gaps over 15 min — almost certainly an interruption
+        // (phone call, another exercise in between) rather than rest.
+        if (gapSeconds > 0 && gapSeconds < 900) gaps.push(gapSeconds);
+      }
+    }
+    if (gaps.length >= 3 && targetSeconds) {
+      const avgGap = gaps.reduce((sum, g) => sum + g, 0) / gaps.length;
+      restComparison = {
+        targetSeconds,
+        actualSeconds: Math.round(avgGap),
+        diffSeconds: Math.round(avgGap - targetSeconds),
+      };
+    }
+  }
+
   const now = new Date();
   const thisWeekStart = startOfWeek(now);
   const lastWeekStart = new Date(thisWeekStart);
@@ -427,6 +473,7 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
     combinedWeekOverWeek,
     combinedSinceFirst,
     sideBalance,
+    restComparison,
   };
 }
 
