@@ -212,6 +212,8 @@ function ExerciseRow({
           <img
             src={exercise.thumbnail_url}
             alt={exercise.name}
+            loading="lazy"
+            decoding="async"
             className="h-12 w-12 shrink-0 rounded-lg object-cover"
           />
         ) : (
