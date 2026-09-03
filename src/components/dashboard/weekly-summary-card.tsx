@@ -1,25 +1,10 @@
 import Link from "next/link";
 import { Check, Clock, Dumbbell, Flame, Layers, Trophy } from "lucide-react";
 import type { WeeklySummary } from "@/lib/services/weekly-summary";
+import { DeltaBadge } from "@/components/ui/delta-badge";
 import { Card, CardContent } from "@/components/ui/card";
 
 const WEEKDAY_INITIALS = ["L", "M", "X", "J", "V", "S", "D"];
-
-function Delta({ current, previous, unit = "" }: { current: number; previous: number; unit?: string }) {
-  if (previous === 0) {
-    if (current === 0) return <span className="text-xs text-muted-foreground">—</span>;
-    return <span className="text-xs font-medium text-success">nuevo</span>;
-  }
-  const diff = current - previous;
-  if (diff === 0) return <span className="text-xs text-muted-foreground">igual</span>;
-  const pct = Math.round((diff / previous) * 100);
-  return (
-    <span className={`text-xs font-medium ${diff > 0 ? "text-success" : "text-muted-foreground"}`}>
-      {diff > 0 ? "+" : ""}
-      {Math.abs(pct) >= 1000 ? `${diff > 0 ? "" : "-"}${Math.abs(diff)}${unit}` : `${pct}%`}
-    </span>
-  );
-}
 
 function Row({
   icon: Icon,
@@ -42,7 +27,7 @@ function Row({
       <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{label}</span>
       <span className="font-semibold tabular-nums">{value}</span>
       <span className="w-14 shrink-0 text-right">
-        <Delta current={current} previous={previous} unit={unit} />
+        <DeltaBadge current={current} previous={previous} unit={unit} />
       </span>
     </div>
   );

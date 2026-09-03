@@ -2,13 +2,14 @@ import { Download } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getMuscleVolumeStats } from "@/lib/services/stats";
 import { MuscleVolumeChart } from "@/components/stats/muscle-volume-chart";
+import { MuscleChangeList } from "@/components/stats/muscle-change-list";
 import { ZONE_LABELS, muscleZoneColor } from "@/lib/muscle-colors";
 import { BackButton } from "@/components/ui/back-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function StatsPage() {
   const profile = await requireProfile();
-  const { weeks, zoneTotals } = await getMuscleVolumeStats(profile.id, 12);
+  const { weeks, zoneTotals, vsLastWeek, vsFirstRecord } = await getMuscleVolumeStats(profile.id, 12);
 
   const totalVolume = zoneTotals.reduce((sum, z) => sum + z.volumeKg, 0);
 
@@ -61,6 +62,24 @@ export default async function StatsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card className="fade-up [animation-delay:100ms]">
+        <CardHeader>
+          <CardTitle className="text-base">Esta semana vs la anterior</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MuscleChangeList changes={vsLastWeek} />
+        </CardContent>
+      </Card>
+
+      <Card className="fade-up [animation-delay:110ms]">
+        <CardHeader>
+          <CardTitle className="text-base">Desde tu primer registro</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MuscleChangeList changes={vsFirstRecord} />
+        </CardContent>
+      </Card>
 
       <Card className="fade-up [animation-delay:120ms]">
         <CardHeader>

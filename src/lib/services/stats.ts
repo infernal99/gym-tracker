@@ -10,9 +10,19 @@ export interface WeeklyMuscleVolume {
   byZone: Record<MuscleZone, number>;
 }
 
+export interface MuscleZoneChange {
+  zone: MuscleZone;
+  currentKg: number;
+  referenceKg: number;
+  /** Label for the reference point (e.g. the first week's date). */
+  referenceLabel: string;
+}
+
 export interface MuscleVolumeStats {
   weeks: WeeklyMuscleVolume[];
   zoneTotals: { zone: MuscleZone; volumeKg: number; sets: number }[];
+  vsLastWeek: MuscleZoneChange[];
+  vsFirstRecord: MuscleZoneChange[];
 }
 
 function startOfWeek(date: Date) {
@@ -99,11 +109,46 @@ export async function getMuscleVolumeStats(
     }
   }
 
+  const zonesWithData = [...zoneTotals.keys()];
+  const currentWeek = weeks[weeks.length - 1];
+  const previousWeek = weeks[weeks.length - 2];
+
+  const vsLastWeek: MuscleZoneChange[] = zonesWithData
+    .map((zone) => ({
+      zone,
+      currentKg: currentWeek.byZone[zone],
+      referenceKg: previousWeek?.byZone[zone] ?? 0,
+      referenceLabel: "semana pasada",
+    }))
+    .filter((c) => c.currentKg > 0 || c.referenceKg > 0);
+
+  // The earliest week (inside this weekCount-week window) that shows any
+  // volume for the zone — this is a "since your first record in view" figure
+  // rather than a true all-time first, but for how young this app's
+  // accounts are the two coincide in practice, and it avoids a second,
+  // unbounded query just to find one number.
+  const vsFirstRecord: MuscleZoneChange[] = zonesWithData
+    .map((zone) => {
+      const firstWeek = weeks.find((w) => w.byZone[zone] > 0);
+      const isCurrentWeek = firstWeek === currentWeek;
+      return {
+        zone,
+        currentKg: currentWeek.byZone[zone],
+        // Treated as "no baseline yet" when the only record is this week's,
+        // so the UI reads it as new rather than a nonsensical 0% change.
+        referenceKg: isCurrentWeek ? 0 : (firstWeek?.byZone[zone] ?? 0),
+        referenceLabel: firstWeek && !isCurrentWeek ? firstWeek.label : "primer registro",
+      };
+    })
+    .filter((c) => c.currentKg > 0 || c.referenceKg > 0);
+
   return {
     weeks,
     zoneTotals: [...zoneTotals.entries()]
       .map(([zone, t]) => ({ zone, ...t }))
       .sort((a, b) => b.volumeKg - a.volumeKg),
+    vsLastWeek,
+    vsFirstRecord,
   };
 }
 
