@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { Star, Moon, ChevronDown, Target, Trash2 } from "lucide-react";
+import { Star, Moon, ChevronDown, Trash2 } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getTemplate, listWeekdaySlots } from "@/lib/services/routines";
 import { getNextDayInSequence } from "@/lib/services/training";
 import { listExercises } from "@/lib/services/exercises";
-import { setSequenceAnchorAction } from "@/lib/actions/training";
 import { deleteDayAction } from "@/lib/actions/routines";
 import { TemplateDayExercises } from "@/components/routines/template-day-exercises";
 import { AddDayCard } from "@/components/routines/add-day-card";
@@ -119,19 +118,6 @@ export default async function MyRoutinePage() {
                     dayExercises={dayExercises}
                     exercises={exercises}
                   />
-                  {isSuggested ? (
-                    <p className="flex items-center gap-1.5 text-xs text-primary">
-                      <Target className="h-3.5 w-3.5" />
-                      Es tu próximo entrenamiento sugerido
-                    </p>
-                  ) : (
-                    <form action={setSequenceAnchorAction.bind(null, day.id)}>
-                      <Button type="submit" variant="ghost" size="sm" className="w-full">
-                        <Target className="h-3.5 w-3.5" />
-                        Ajustar mis entrenos a este día
-                      </Button>
-                    </form>
-                  )}
                   <form action={deleteDayAction.bind(null, day.id, template.id)}>
                     <Button
                       type="submit"

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, ChevronUp, GripVertical, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import {
   addTemplateExerciseAction,
   removeTemplateExerciseAction,
   updateTemplateExerciseAction,
+  reorderTemplateExercisesAction,
 } from "@/lib/actions/routines";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,9 +104,23 @@ function ExerciseFieldsGrid({
 function ExerciseRow({
   exercise,
   templateId,
+  isFirst,
+  isLast,
+  onMove,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  dragging,
 }: {
   exercise: DayExercise;
   templateId: string;
+  isFirst: boolean;
+  isLast: boolean;
+  onMove: (direction: -1 | 1) => void;
+  onDragStart: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: () => void;
+  dragging: boolean;
 }) {
   const [editing, setEditing] = useState(false);
 
@@ -150,8 +165,19 @@ function ExerciseRow({
   }
 
   return (
-    <div className="flex items-center justify-between rounded-xl border bg-surface px-3 py-2">
-      <div className="min-w-0">
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={`flex items-center gap-2 rounded-xl border bg-surface px-2 py-2 transition-opacity duration-fast ${
+        dragging ? "opacity-40" : ""
+      }`}
+    >
+      <span className="cursor-grab touch-none text-muted-foreground active:cursor-grabbing">
+        <GripVertical className="h-4 w-4" />
+      </span>
+      <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{exercise.exercises?.name}</p>
         <p className="text-xs text-muted-foreground">
           {exercise.target_sets} series
@@ -162,6 +188,24 @@ function ExerciseRow({
           {exercise.target_rir !== null ? ` · RIR ${exercise.target_rir}` : ""}
           {` · ${exercise.rest_seconds}s descanso`}
         </p>
+      </div>
+      <div className="flex shrink-0 flex-col">
+        <button
+          type="button"
+          disabled={isFirst}
+          onClick={() => onMove(-1)}
+          className="text-muted-foreground hover:text-foreground disabled:opacity-30"
+        >
+          <ChevronUp className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          disabled={isLast}
+          onClick={() => onMove(1)}
+          className="text-muted-foreground hover:text-foreground disabled:opacity-30"
+        >
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
         <Button type="button" variant="ghost" size="icon-sm" onClick={() => setEditing(true)}>
@@ -273,13 +317,65 @@ export function TemplateDayExercises({
   dayExercises: DayExercise[];
   exercises: ExerciseOption[];
 }) {
+  const [items, setItems] = useState(() =>
+    [...dayExercises].sort((a, b) => a.order_index - b.order_index),
+  );
+  const [dragId, setDragId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setItems([...dayExercises].sort((a, b) => a.order_index - b.order_index));
+  }, [dayExercises]);
+
+  function persistOrder(next: DayExercise[]) {
+    setItems(next);
+    reorderTemplateExercisesAction(
+      templateId,
+      next.map((i) => i.id),
+    );
+  }
+
+  function moveByStep(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= items.length) return;
+    const next = [...items];
+    [next[index], next[target]] = [next[target], next[index]];
+    persistOrder(next);
+  }
+
+  function handleDrop(targetId: string) {
+    if (!dragId || dragId === targetId) {
+      setDragId(null);
+      return;
+    }
+    const from = items.findIndex((i) => i.id === dragId);
+    const to = items.findIndex((i) => i.id === targetId);
+    if (from === -1 || to === -1) {
+      setDragId(null);
+      return;
+    }
+    const next = [...items];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setDragId(null);
+    persistOrder(next);
+  }
+
   return (
     <div className="space-y-3">
-      {[...dayExercises]
-        .sort((a, b) => a.order_index - b.order_index)
-        .map((ex) => (
-          <ExerciseRow key={ex.id} exercise={ex} templateId={templateId} />
-        ))}
+      {items.map((ex, index) => (
+        <ExerciseRow
+          key={ex.id}
+          exercise={ex}
+          templateId={templateId}
+          isFirst={index === 0}
+          isLast={index === items.length - 1}
+          onMove={(direction) => moveByStep(index, direction)}
+          onDragStart={() => setDragId(ex.id)}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={() => handleDrop(ex.id)}
+          dragging={dragId === ex.id}
+        />
+      ))}
 
       <details className="rounded-xl border px-3 py-2">
         <summary className="cursor-pointer text-sm text-muted-foreground">

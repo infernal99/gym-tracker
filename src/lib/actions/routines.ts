@@ -393,3 +393,33 @@ export async function removeTemplateExerciseAction(rowId: string, templateId: st
   revalidatePath(`/routines/${templateId}/setup`);
   revalidatePath("/my-routine");
 }
+
+// Persists a drag-and-drop reorder of a day's exercises — orderedIds is the
+// full list of that day's workout_template_exercises rows in their new
+// order. workout_template_exercises has a unique (template_day_id,
+// order_index) constraint, so swapping two rows' positions directly would
+// transiently collide (row A can't move into row B's slot before B moves
+// out) — parking everything at negative, guaranteed-unique positions first
+// avoids that.
+export async function reorderTemplateExercisesAction(
+  templateId: string,
+  orderedIds: string[],
+) {
+  const supabase = await createClient();
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase
+        .from("workout_template_exercises")
+        .update({ order_index: -(index + 1) })
+        .eq("id", id),
+    ),
+  );
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase.from("workout_template_exercises").update({ order_index: index }).eq("id", id),
+    ),
+  );
+  revalidatePath(`/routines/${templateId}`);
+  revalidatePath(`/routines/${templateId}/setup`);
+  revalidatePath("/my-routine");
+}
