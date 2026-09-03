@@ -13,6 +13,7 @@ import { muscleBadgeClass } from "@/lib/muscle-colors";
 import { saveExerciseNoteAction } from "@/lib/actions/exercises";
 import { ExerciseChart } from "@/components/exercises/exercise-chart";
 import { FavoriteButton } from "@/components/exercises/favorite-button";
+import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,30 +31,6 @@ const movementTypeLabels: Record<string, string> = {
   cardio: "Cardio",
   mobility: "Movilidad",
 };
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string | number;
-}) {
-  return (
-    <Card>
-      <CardContent className="flex items-center gap-3 pt-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <p className="text-xl font-semibold leading-none">{value}</p>
-          <p className="text-sm text-muted-foreground">{label}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 export default async function ExerciseDetailPage({
   params,
@@ -91,12 +68,12 @@ export default async function ExerciseDetailPage({
         <img
           src={exercise.image_url}
           alt={exercise.name}
-          className="aspect-video w-full rounded-lg border object-cover"
+          className="aspect-video w-full rounded-xl border object-cover"
         />
       )}
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 fade-up">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{exercise.name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{exercise.name}</h1>
           {exercise.alternate_names?.[0] && (
             <p className="text-sm text-muted-foreground">{exercise.alternate_names[0]}</p>
           )}
@@ -117,10 +94,133 @@ export default async function ExerciseDetailPage({
         <FavoriteButton exerciseId={exercise.id} isFavorite={isFavorite} />
       </div>
 
-      {(exercise.instructions?.length || exercise.tips?.length || exercise.common_mistakes?.length) ? (
-        <Card>
+      {points.length === 0 ? (
+        <Card className="fade-up [animation-delay:60ms]">
+          <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+            <Dumbbell className="h-10 w-10 text-muted-foreground" />
+            <p className="text-muted-foreground">
+              Todavía no has registrado este ejercicio en ningún entrenamiento.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4 fade-up [animation-delay:60ms]">
+          <p className="stat-label">Mi progreso</p>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <StatTile
+              icon={Trophy}
+              label="PR peso"
+              value={bestWeightPR ? `${bestWeightPR.weight_kg} kg` : "—"}
+            />
+            <StatTile
+              icon={Flame}
+              label="1RM estimado"
+              value={best1rmPR ? `${Math.round(best1rmPR.value)} kg` : "—"}
+            />
+            <StatTile icon={Dumbbell} label="Sesiones" value={points.length} />
+            <StatTile
+              icon={TrendingUp}
+              label="Volumen total"
+              value={`${Math.round(totalVolume)} kg`}
+            />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Evolución</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ExerciseChart points={points} />
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="rounded-xl border bg-card p-4 text-sm">
+              <p className="stat-label mb-1.5">Esta semana vs la anterior</p>
+              {weekOverWeek.bestThisWeek === null ? (
+                <p className="text-muted-foreground">No has entrenado esto esta semana.</p>
+              ) : weekOverWeek.bestLastWeek === null ? (
+                <p>
+                  Mejor 1RM esta semana:{" "}
+                  <span className="font-semibold tabular-nums">{weekOverWeek.bestThisWeek} kg</span>
+                </p>
+              ) : (
+                <p className="tabular-nums">
+                  {weekOverWeek.bestThisWeek} kg vs {weekOverWeek.bestLastWeek} kg ·{" "}
+                  <span
+                    className={`font-semibold ${(weekOverWeek.changePct ?? 0) >= 0 ? "text-success" : "text-muted-foreground"}`}
+                  >
+                    {(weekOverWeek.changePct ?? 0) >= 0 ? "+" : ""}
+                    {weekOverWeek.changePct?.toFixed(1)}%
+                  </span>
+                </p>
+              )}
+            </div>
+
+            <div className="rounded-xl border bg-card p-4 text-sm">
+              <p className="stat-label mb-1.5">Desde tu primer registro</p>
+              {points.length < 2 ? (
+                <p className="text-muted-foreground">Solo hay una sesión registrada todavía.</p>
+              ) : (
+                <p className="tabular-nums">
+                  {first.weightKg} kg × {first.reps} →{" "}
+                  <span className="font-semibold">
+                    {latest.weightKg} kg × {latest.reps}
+                  </span>{" "}
+                  ·{" "}
+                  <span
+                    className={`font-semibold ${(weightChangeSinceFirst ?? 0) >= 0 ? "text-success" : "text-muted-foreground"}`}
+                  >
+                    {(weightChangeSinceFirst ?? 0) >= 0 ? "+" : ""}
+                    {weightChangeSinceFirst} kg
+                  </span>
+                  {e1rmChangePctSinceFirst !== null && (
+                    <>
+                      {" "}
+                      (1RM {e1rmChangePctSinceFirst >= 0 ? "+" : ""}
+                      {e1rmChangePctSinceFirst.toFixed(1)}%)
+                    </>
+                  )}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <Card className="py-0">
+            <CardHeader className="pt-5">
+              <CardTitle className="text-base">Historial</CardTitle>
+            </CardHeader>
+            <CardContent className="divide-y divide-border p-0">
+              {[...points]
+                .reverse()
+                .slice(0, 10)
+                .map((p, i) => (
+                  <div
+                    key={`${p.date}-${i}`}
+                    className="flex items-center justify-between px-4 py-2.5 text-sm"
+                  >
+                    <span className="text-muted-foreground">
+                      {new Date(p.date).toLocaleDateString("es-ES", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                    <span className="font-medium tabular-nums">
+                      {p.weightKg} kg × {p.reps}
+                    </span>
+                  </div>
+                ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {(exercise.instructions?.length ||
+        exercise.tips?.length ||
+        exercise.common_mistakes?.length) && (
+        <Card className="fade-up [animation-delay:100ms]">
           <CardHeader>
-            <CardTitle className="text-base">Información</CardTitle>
+            <CardTitle className="text-base">Técnica</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             {exercise.instructions && exercise.instructions.length > 0 && (
@@ -155,7 +255,7 @@ export default async function ExerciseDetailPage({
             )}
           </CardContent>
         </Card>
-      ) : null}
+      )}
 
       {alternatives.length > 0 && (
         <Card>
@@ -167,7 +267,7 @@ export default async function ExerciseDetailPage({
               <Link
                 key={alt.id}
                 href={`/exercises/${alt.slug}`}
-                className="rounded-xl border px-3 py-1.5 text-sm hover:bg-accent"
+                className="card-interactive rounded-full border bg-card px-3 py-1.5 text-sm"
               >
                 {alt.name}
               </Link>
@@ -195,126 +295,6 @@ export default async function ExerciseDetailPage({
           </form>
         </CardContent>
       </Card>
-
-      {points.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-            <Dumbbell className="h-10 w-10 text-muted-foreground" />
-            <p className="text-muted-foreground">
-              Todavía no has registrado este ejercicio en ningún entrenamiento.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard
-              icon={Trophy}
-              label="PR peso"
-              value={bestWeightPR ? `${bestWeightPR.weight_kg} kg` : "—"}
-            />
-            <StatCard
-              icon={Flame}
-              label="1RM estimado"
-              value={best1rmPR ? `${Math.round(best1rmPR.value)} kg` : "—"}
-            />
-            <StatCard icon={Dumbbell} label="Sesiones" value={points.length} />
-            <StatCard icon={TrendingUp} label="Volumen total" value={`${Math.round(totalVolume)} kg`} />
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Progreso</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ExerciseChart points={points} />
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Esta semana vs la anterior</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm">
-                {weekOverWeek.bestThisWeek === null ? (
-                  <p className="text-muted-foreground">No has entrenado esto esta semana.</p>
-                ) : weekOverWeek.bestLastWeek === null ? (
-                  <p className="text-muted-foreground">
-                    Mejor 1RM esta semana: {weekOverWeek.bestThisWeek} kg (sin datos de la semana
-                    anterior para comparar).
-                  </p>
-                ) : (
-                  <p>
-                    {weekOverWeek.bestThisWeek} kg vs {weekOverWeek.bestLastWeek} kg ·{" "}
-                    <span
-                      className={
-                        (weekOverWeek.changePct ?? 0) >= 0 ? "text-success" : "text-muted-foreground"
-                      }
-                    >
-                      {(weekOverWeek.changePct ?? 0) >= 0 ? "+" : ""}
-                      {weekOverWeek.changePct?.toFixed(1)}%
-                    </span>
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Desde tu primer registro</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm">
-                {points.length < 2 ? (
-                  <p className="text-muted-foreground">
-                    Solo hay una sesión registrada todavía.
-                  </p>
-                ) : (
-                  <p>
-                    {first.weightKg} kg × {first.reps} ({new Date(first.date).toLocaleDateString("es-ES")}) →{" "}
-                    {latest.weightKg} kg × {latest.reps} ·{" "}
-                    <span className={(weightChangeSinceFirst ?? 0) >= 0 ? "text-success" : "text-muted-foreground"}>
-                      {(weightChangeSinceFirst ?? 0) >= 0 ? "+" : ""}
-                      {weightChangeSinceFirst} kg
-                    </span>
-                    {e1rmChangePctSinceFirst !== null && (
-                      <>
-                        {" "}
-                        (1RM {e1rmChangePctSinceFirst >= 0 ? "+" : ""}
-                        {e1rmChangePctSinceFirst.toFixed(1)}%)
-                      </>
-                    )}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Últimas sesiones</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {[...points]
-                .reverse()
-                .slice(0, 10)
-                .map((p, i) => (
-                  <div
-                    key={`${p.date}-${i}`}
-                    className="flex items-center justify-between rounded-xl border px-3 py-2 text-sm"
-                  >
-                    <span className="text-muted-foreground">
-                      {new Date(p.date).toLocaleDateString("es-ES")}
-                    </span>
-                    <span className="font-medium">
-                      {p.weightKg} kg × {p.reps}
-                    </span>
-                  </div>
-                ))}
-            </CardContent>
-          </Card>
-        </>
-      )}
     </div>
   );
 }

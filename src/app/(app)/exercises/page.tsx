@@ -205,7 +205,7 @@ function ExerciseRow({
   isFavorite: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5">
+    <div className="flex items-center gap-3 px-3 py-2.5 transition-colors duration-fast hover:bg-accent/40">
       <Link href={`/exercises/${exercise.slug}`} className="flex min-w-0 flex-1 items-center gap-3">
         {exercise.thumbnail_url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -214,10 +214,10 @@ function ExerciseRow({
             alt={exercise.name}
             loading="lazy"
             decoding="async"
-            className="h-12 w-12 shrink-0 rounded-lg object-cover"
+            className="h-12 w-12 shrink-0 rounded-xl object-cover"
           />
         ) : (
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted">
             <Dumbbell className="h-5 w-5 text-muted-foreground" />
           </div>
         )}
