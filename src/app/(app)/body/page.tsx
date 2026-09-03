@@ -2,6 +2,7 @@ import { TrendingDown, TrendingUp, Scale } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { listWeightEntries, listMeasurements } from "@/lib/services/body";
 import { WeightChart } from "@/components/body/weight-chart";
+import { MeasurementChart } from "@/components/body/measurement-chart";
 import { LogWeightDialog } from "@/components/body/log-weight-dialog";
 import { LogMeasurementDialog } from "@/components/body/log-measurement-dialog";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -115,18 +116,24 @@ export default async function BodyPage() {
           {!latestMeasurement ? (
             <p className="text-sm text-muted-foreground">Todavía no has añadido medidas.</p>
           ) : (
-            <div className="grid grid-cols-3 gap-3">
-              {measurementFields.map((f) => {
-                const value = latestMeasurement[f.key];
-                return (
-                  <div key={f.key} className="rounded-xl border bg-surface p-3 text-center">
-                    <p className="text-lg font-semibold tabular-nums">
-                      {value !== null ? `${value}` : "—"}
-                    </p>
-                    <p className="stat-label mt-0.5">{f.label}</p>
-                  </div>
-                );
-              })}
+            <div className="space-y-5">
+              <div className="grid grid-cols-3 gap-3">
+                {measurementFields.map((f) => {
+                  const value = latestMeasurement[f.key];
+                  return (
+                    <div key={f.key} className="rounded-xl border bg-surface p-3 text-center">
+                      <p className="text-lg font-semibold tabular-nums">
+                        {value !== null ? `${value}` : "—"}
+                      </p>
+                      <p className="stat-label mt-0.5">{f.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+              <div>
+                <p className="stat-label mb-2">Evolución</p>
+                <MeasurementChart entries={measurements} />
+              </div>
             </div>
           )}
         </CardContent>
