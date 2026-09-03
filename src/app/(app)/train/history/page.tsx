@@ -10,17 +10,17 @@ export default async function TrainHistoryPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Historial</h1>
+      <h1 className="text-2xl font-bold tracking-tight fade-up">Historial</h1>
 
       {sessions.length === 0 ? (
-        <Card>
+        <Card className="fade-up [animation-delay:60ms]">
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <History className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">Aún no has completado ningún entrenamiento.</p>
           </CardContent>
         </Card>
       ) : (
-        <Card className="divide-y divide-border overflow-hidden py-0">
+        <Card className="fade-up [animation-delay:60ms] divide-y divide-border overflow-hidden py-0">
           {sessions.map((session) => (
             <Link
               key={session.id}

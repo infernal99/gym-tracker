@@ -17,7 +17,7 @@ export default async function GoalsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between fade-up">
-        <h1 className="text-2xl font-semibold tracking-tight">Objetivos</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Objetivos</h1>
         <CreateGoalDialog exercises={exerciseOptions} />
       </div>
 

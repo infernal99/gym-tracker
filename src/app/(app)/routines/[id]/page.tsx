@@ -41,14 +41,14 @@ export default async function RoutineDetailPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{template.name}</h1>
+      <div className="fade-up">
+        <h1 className="text-2xl font-bold tracking-tight">{template.name}</h1>
         {template.description && (
           <p className="mt-1 text-muted-foreground">{template.description}</p>
         )}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 fade-up [animation-delay:60ms]">
         {days.map((day) => (
           <Card key={day.id}>
             <CardHeader className="flex-row items-center justify-between space-y-0">
@@ -88,7 +88,7 @@ export default async function RoutineDetailPage({
                   .map((ex) => (
                     <div
                       key={ex.id}
-                      className="flex items-center justify-between rounded-xl border px-3 py-2"
+                      className="flex items-center justify-between rounded-xl border bg-surface px-3 py-2"
                     >
                       <div>
                         <p className="text-sm font-medium">{ex.exercises?.name}</p>

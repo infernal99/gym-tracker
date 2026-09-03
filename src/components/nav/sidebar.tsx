@@ -14,7 +14,7 @@ export function Sidebar() {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
           G
         </div>
-        <span className="font-semibold tracking-tight">Gym Tracker</span>
+        <span className="font-bold tracking-tight">Gym Tracker</span>
       </div>
       <nav className="flex flex-1 flex-col gap-1 p-3">
         {navLinks.map((link) => {

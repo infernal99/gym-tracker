@@ -11,21 +11,21 @@ export default async function NewRoutinePage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Nueva rutina</h1>
+      <div className="fade-up">
+        <h1 className="text-2xl font-bold tracking-tight">Nueva rutina</h1>
         <p className="mt-1 text-muted-foreground">
           Parte de una plantilla ya hecha o crea la tuya desde cero.
         </p>
       </div>
 
-      <div className="space-y-3">
-        <h2 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <ListChecks className="h-4 w-4" />
+      <div className="space-y-3 fade-up [animation-delay:60ms]">
+        <h2 className="stat-label flex items-center gap-2">
+          <ListChecks className="h-3.5 w-3.5" />
           Plantillas
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {templates.map((template) => (
-            <Card key={template.id}>
+            <Card key={template.id} className="card-interactive">
               <CardHeader>
                 <CardTitle className="text-base">{template.name}</CardTitle>
               </CardHeader>
@@ -49,9 +49,9 @@ export default async function NewRoutinePage() {
         </div>
       </div>
 
-      <div className="space-y-3">
-        <h2 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Sparkles className="h-4 w-4" />
+      <div className="space-y-3 fade-up [animation-delay:100ms]">
+        <h2 className="stat-label flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5" />
           Crear la mía
         </h2>
         <Card>

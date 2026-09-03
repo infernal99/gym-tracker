@@ -65,8 +65,8 @@ export default async function RoutineSetupPage({
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{template.name}</h1>
+      <div className="fade-up">
+        <h1 className="text-2xl font-bold tracking-tight">{template.name}</h1>
         <p className="mt-1 text-muted-foreground">
           {currentDay
             ? `${currentDay.name}: añade los ejercicios que vas a entrenar.`
@@ -114,7 +114,7 @@ export default async function RoutineSetupPage({
               .map((ex) => (
                 <div
                   key={ex.id}
-                  className="flex items-center justify-between rounded-xl border px-3 py-2"
+                  className="flex items-center justify-between rounded-xl border bg-surface px-3 py-2"
                 >
                   <div>
                     <p className="text-sm font-medium">{ex.exercises?.name}</p>

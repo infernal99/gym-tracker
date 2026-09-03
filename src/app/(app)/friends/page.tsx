@@ -21,7 +21,7 @@ export default async function FriendsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight fade-up">Amigos</h1>
+      <h1 className="text-2xl font-bold tracking-tight fade-up">Amigos</h1>
 
       <div className="fade-up [animation-delay:40ms]">
         <FriendSearch />

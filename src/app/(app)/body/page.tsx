@@ -50,7 +50,7 @@ export default async function BodyPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between fade-up">
-        <h1 className="text-2xl font-semibold tracking-tight">Peso corporal</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Peso corporal</h1>
         <LogWeightDialog defaultWeightKg={currentWeight} />
       </div>
 

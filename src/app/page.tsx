@@ -15,7 +15,7 @@ export default async function HomePage() {
         </div>
         <span className="text-xl font-semibold tracking-tight">Gym Tracker</span>
       </div>
-      <h1 className="max-w-md text-3xl font-semibold tracking-tight sm:text-4xl">
+      <h1 className="max-w-md text-3xl font-bold tracking-tight sm:text-4xl">
         Tu ecosistema personal de entrenamiento
       </h1>
       <p className="max-w-md text-muted-foreground">

@@ -78,8 +78,8 @@ export default async function ExercisesPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Ejercicios</h1>
+      <div className="flex items-center justify-between fade-up">
+        <h1 className="text-2xl font-bold tracking-tight">Ejercicios</h1>
         <Link
           href={onlyFavorites ? "/exercises" : "/exercises?favorites=1"}
           className={`flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-medium transition-colors ${

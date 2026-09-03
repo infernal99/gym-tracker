@@ -17,8 +17,8 @@ export default async function RoutinesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Rutinas</h1>
+      <div className="flex items-center justify-between fade-up">
+        <h1 className="text-2xl font-bold tracking-tight">Rutinas</h1>
         <Button render={<Link href="/routines/new" />}>
           <Plus className="h-4 w-4" />
           Nueva rutina
@@ -26,7 +26,7 @@ export default async function RoutinesPage() {
       </div>
 
       {templates.length === 0 ? (
-        <Card>
+        <Card className="fade-up [animation-delay:60ms]">
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <ListChecks className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">Tu progreso empieza aquí.</p>
@@ -37,12 +37,15 @@ export default async function RoutinesPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="divide-y divide-border overflow-hidden py-0">
+        <Card className="fade-up [animation-delay:60ms] divide-y divide-border overflow-hidden py-0">
           {templates.map((template) => (
-            <div key={template.id} className="flex items-center gap-3 px-4 py-3">
+            <div
+              key={template.id}
+              className="flex items-center gap-3 px-4 py-3 transition-colors duration-fast hover:bg-accent/40"
+            >
               <Link href={`/routines/${template.id}`} className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="truncate font-medium hover:underline">{template.name}</p>
+                  <p className="truncate font-medium">{template.name}</p>
                   {template.is_public && (
                     <Badge variant="outline" className="shrink-0">
                       De serie
@@ -54,7 +57,7 @@ export default async function RoutinesPage() {
                     </Badge>
                   )}
                 </div>
-                <p className="mt-0.5 text-sm text-muted-foreground">
+                <p className="stat-label mt-0.5">
                   {template.workout_template_days?.length ?? 0} días
                 </p>
               </Link>

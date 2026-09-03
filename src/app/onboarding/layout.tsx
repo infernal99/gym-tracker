@@ -5,7 +5,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
           G
         </div>
-        <span className="text-lg font-semibold tracking-tight">Gym Tracker</span>
+        <span className="text-lg font-bold tracking-tight">Gym Tracker</span>
       </div>
       <div className="w-full max-w-sm">{children}</div>
     </div>

@@ -19,7 +19,7 @@ export default async function AchievementsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between fade-up">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Logros</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Logros</h1>
           <p className="text-muted-foreground">
             {unlockedCount} / {achievements.length} desbloqueados
           </p>
