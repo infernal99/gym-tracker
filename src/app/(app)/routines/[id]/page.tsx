@@ -6,6 +6,7 @@ import { deleteDayAction } from "@/lib/actions/routines";
 import { TemplateDayExercises } from "@/components/routines/template-day-exercises";
 import { AddDayCard } from "@/components/routines/add-day-card";
 import { RenameTemplateDialog } from "@/components/routines/rename-template-dialog";
+import { EditDayDialog } from "@/components/routines/edit-day-dialog";
 import { Button } from "@/components/ui/button";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,15 +73,18 @@ export default async function RoutineDetailPage({
                   </div>
                 )}
               </div>
-              <form action={deleteDayAction.bind(null, day.id, template.id)}>
-                <ConfirmSubmitButton
-                  confirmMessage={`¿Eliminar el día "${day.name}"? No se puede deshacer.`}
-                  variant="ghost"
-                  size="icon-sm"
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </ConfirmSubmitButton>
-              </form>
+              <div className="flex shrink-0 items-center gap-0.5">
+                <EditDayDialog day={day} templateId={template.id} muscleGroups={muscleGroups} />
+                <form action={deleteDayAction.bind(null, day.id, template.id)}>
+                  <ConfirmSubmitButton
+                    confirmMessage={`¿Eliminar el día "${day.name}"? No se puede deshacer.`}
+                    variant="ghost"
+                    size="icon-sm"
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </ConfirmSubmitButton>
+                </form>
+              </div>
             </CardHeader>
             {!day.is_rest_day && (
               <CardContent>
@@ -96,7 +100,7 @@ export default async function RoutineDetailPage({
         ))}
       </div>
 
-      <AddDayCard templateId={template.id} />
+      <AddDayCard templateId={template.id} muscleGroups={muscleGroups} />
     </div>
   );
 }

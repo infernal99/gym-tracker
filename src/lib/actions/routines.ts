@@ -202,10 +202,34 @@ export async function addDayAction(templateId: string, formData: FormData) {
 
   revalidatePath(`/routines/${templateId}`);
   revalidatePath(`/routines/${templateId}/setup`);
+  revalidatePath("/my-routine");
 
   if (formData.get("fromSetup") === "1" && newDay) {
     redirect(`/routines/${templateId}/setup?day=${newDay.id}`);
   }
+}
+
+export async function updateDayAction(dayId: string, templateId: string, formData: FormData) {
+  const parsed = daySchema.safeParse({
+    name: formData.get("name"),
+    isRestDay: formData.get("isRestDay") === "on",
+    muscleGroupIds: formData.getAll("muscleGroupIds"),
+  });
+  if (!parsed.success) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("workout_template_days")
+    .update({
+      name: parsed.data.name,
+      is_rest_day: parsed.data.isRestDay,
+      muscle_group_ids: parsed.data.muscleGroupIds,
+    })
+    .eq("id", dayId);
+
+  revalidatePath(`/routines/${templateId}`);
+  revalidatePath(`/routines/${templateId}/setup`);
+  revalidatePath("/my-routine");
 }
 
 // Points a weekday (0=lunes..6=domingo) at a day for the drag-and-drop

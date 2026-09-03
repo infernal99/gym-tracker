@@ -1,13 +1,14 @@
 import Link from "next/link";
-import { Star, Moon, ChevronDown, Trash2 } from "lucide-react";
+import { Star, Moon, ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getTemplate, listWeekdaySlots } from "@/lib/services/routines";
 import { getNextDayInSequence } from "@/lib/services/training";
-import { listExercises } from "@/lib/services/exercises";
+import { listExercises, listMuscleGroups } from "@/lib/services/exercises";
 import { deleteDayAction } from "@/lib/actions/routines";
 import { TemplateDayExercises } from "@/components/routines/template-day-exercises";
 import { AddDayCard } from "@/components/routines/add-day-card";
 import { RenameTemplateDialog } from "@/components/routines/rename-template-dialog";
+import { EditDayDialog } from "@/components/routines/edit-day-dialog";
 import { WeeklyCalendar } from "@/components/routines/weekly-calendar";
 import { Button } from "@/components/ui/button";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
@@ -16,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function MyRoutinePage() {
   const profile = await requireProfile();
-  const [template, sequence, exercises, weekdaySlots] = await Promise.all([
+  const [template, sequence, exercises, weekdaySlots, muscleGroups] = await Promise.all([
     profile.active_template_id ? getTemplate(profile.active_template_id) : Promise.resolve(null),
     profile.active_template_id
       ? getNextDayInSequence(profile.id, profile.active_template_id)
@@ -25,6 +26,7 @@ export default async function MyRoutinePage() {
     profile.active_template_id
       ? listWeekdaySlots(profile.active_template_id)
       : Promise.resolve([]),
+    listMuscleGroups(),
   ]);
 
   if (!template) {
@@ -110,13 +112,38 @@ export default async function MyRoutinePage() {
             >
               <details className="group">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-(--card-spacing) transition-colors duration-fast hover:bg-accent/40 [&::-webkit-details-marker]:hidden">
-                  <span className="font-heading text-base font-semibold">{day.name}</span>
-                  <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <div className="min-w-0">
+                    <span className="font-heading text-base font-semibold">{day.name}</span>
+                    {day.muscle_group_ids.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {day.muscle_group_ids.map((mgId) => {
+                          const group = muscleGroups.find((g) => g.id === mgId);
+                          return group ? (
+                            <Badge key={mgId} variant="outline">
+                              {group.name}
+                            </Badge>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <span className="flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground">
                     {dayExercises.length} ejercicios
                     <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
                   </span>
                 </summary>
                 <div className="space-y-3 px-(--card-spacing) pb-(--card-spacing)">
+                  <EditDayDialog
+                    day={day}
+                    templateId={template.id}
+                    muscleGroups={muscleGroups}
+                    trigger={
+                      <>
+                        <Pencil className="h-3.5 w-3.5" />
+                        Editar día
+                      </>
+                    }
+                  />
                   <TemplateDayExercises
                     dayId={day.id}
                     templateId={template.id}
@@ -141,7 +168,7 @@ export default async function MyRoutinePage() {
         })}
       </div>
 
-      <AddDayCard templateId={template.id} />
+      <AddDayCard templateId={template.id} muscleGroups={muscleGroups} />
     </div>
   );
 }
