@@ -128,7 +128,7 @@ export async function getDashboardStats(userId: string, activeTemplateId: string
 
 // Consecutive calendar days (ending today or yesterday) with at least one
 // completed session. Doesn't yet account for a routine's planned rest days.
-function calculateCurrentStreak(completedAtDates: string[]): number {
+export function calculateCurrentStreak(completedAtDates: string[]): number {
   if (completedAtDates.length === 0) return 0;
 
   const uniqueDays = Array.from(
