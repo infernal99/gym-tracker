@@ -205,6 +205,34 @@ export async function addDayAction(templateId: string, formData: FormData) {
   }
 }
 
+// Asigna un día de la rutina a un día concreto de la semana (0=lunes..6=
+// domingo) para el calendario semanal arrastrable de Mi rutina. Si ese
+// hueco ya lo ocupaba otro día, lo libera (drag-and-drop siempre mueve,
+// nunca duplica un mismo día de la semana).
+export async function assignWeekdayAction(dayId: string, templateId: string, weekday: number) {
+  if (weekday < 0 || weekday > 6) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("workout_template_days")
+    .update({ weekday: null })
+    .eq("template_id", templateId)
+    .eq("weekday", weekday);
+
+  await supabase.from("workout_template_days").update({ weekday }).eq("id", dayId);
+
+  revalidatePath("/my-routine");
+  revalidatePath(`/routines/${templateId}`);
+}
+
+export async function unassignWeekdayAction(dayId: string, templateId: string) {
+  const supabase = await createClient();
+  await supabase.from("workout_template_days").update({ weekday: null }).eq("id", dayId);
+
+  revalidatePath("/my-routine");
+  revalidatePath(`/routines/${templateId}`);
+}
+
 // Copia los ejercicios de un día ya montado a otro (p. ej. un día que
 // repite el mismo enfoque muscular), como punto de partida editable.
 export async function copyDayExercisesAction(

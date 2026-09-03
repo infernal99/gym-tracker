@@ -9,6 +9,7 @@ import { deleteDayAction } from "@/lib/actions/routines";
 import { TemplateDayExercises } from "@/components/routines/template-day-exercises";
 import { AddDayCard } from "@/components/routines/add-day-card";
 import { RenameTemplateDialog } from "@/components/routines/rename-template-dialog";
+import { WeeklyCalendar } from "@/components/routines/weekly-calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,7 +61,9 @@ export default async function MyRoutinePage() {
         </div>
       </div>
 
-      <div className="grid gap-3 fade-up [animation-delay:60ms]">
+      <WeeklyCalendar templateId={template.id} days={days} />
+
+      <div className="grid gap-3 fade-up [animation-delay:100ms]">
         {days.map((day) => {
           const dayExercises = [...(day.workout_template_exercises ?? [])].sort(
             (a, b) => a.order_index - b.order_index,

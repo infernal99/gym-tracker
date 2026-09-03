@@ -1199,6 +1199,7 @@ export type Database = {
           muscle_group_ids: string[]
           name: string
           template_id: string
+          weekday: number | null
         }
         Insert: {
           created_at?: string
@@ -1208,6 +1209,7 @@ export type Database = {
           muscle_group_ids?: string[]
           name: string
           template_id: string
+          weekday?: number | null
         }
         Update: {
           created_at?: string
@@ -1217,6 +1219,7 @@ export type Database = {
           muscle_group_ids?: string[]
           name?: string
           template_id?: string
+          weekday?: number | null
         }
         Relationships: [
           {

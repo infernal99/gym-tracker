@@ -33,13 +33,12 @@ function resolveRestDay<T extends { id: string; is_rest_day: boolean }>(
   return { day, nextTrainingDay: nextTrainingDay.is_rest_day ? null : nextTrainingDay };
 }
 
-// The routine is a sequence, not a calendar: "next" is whatever comes after
-// the day of the last completed session for this template, wrapping around
-// (only sessions marked as counting toward the sequence are considered — an
-// "solo por hoy" session is logged but doesn't move the pointer). A manual
-// anchor (profiles.sequence_anchor_day_id) overrides this entirely when set,
-// letting the user realign without training right now; it's cleared the
-// next time a counting session is completed.
+// The routine is a sequence by default, but a day can optionally be pinned
+// to a real weekday (workout_template_days.weekday, via the drag-and-drop
+// calendar on Mi rutina) — when today has a pinned day, that wins over the
+// sequence. A manual anchor (profiles.sequence_anchor_day_id) overrides
+// both, letting the user realign without training right now; it's cleared
+// the next time a counting session is completed.
 export async function getNextDayInSequence(userId: string, templateId: string) {
   const supabase = await createClient();
   const { data: days } = await supabase
@@ -60,6 +59,10 @@ export async function getNextDayInSequence(userId: string, templateId: string) {
     const anchored = days.find((d) => d.id === profile.sequence_anchor_day_id);
     if (anchored) return resolveRestDay(days, anchored);
   }
+
+  const todayWeekday = (new Date().getDay() + 6) % 7; // Monday = 0
+  const pinnedToday = days.find((d) => d.weekday === todayWeekday);
+  if (pinnedToday) return resolveRestDay(days, pinnedToday);
 
   const { data: lastSession } = await supabase
     .from("workout_sessions")
