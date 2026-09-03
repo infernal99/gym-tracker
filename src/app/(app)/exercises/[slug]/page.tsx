@@ -17,6 +17,7 @@ import { FavoriteButton } from "@/components/exercises/favorite-button";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -30,7 +31,7 @@ export default async function ExerciseDetailPage({
   const exercise = await getExerciseBySlug(slug);
   if (!exercise) notFound();
 
-  const [{ points, personalRecords, weekOverWeek }, favoriteIds, note, alternatives] =
+  const [{ points, sessionPoints, personalRecords, weekOverWeek }, favoriteIds, note, alternatives] =
     await Promise.all([
       getExerciseProgress(profile.id, exercise.id),
       listFavoriteExerciseIds(profile.id),
@@ -51,6 +52,7 @@ export default async function ExerciseDetailPage({
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      <BackButton fallbackHref="/exercises" />
       {exercise.image_url && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -118,7 +120,7 @@ export default async function ExerciseDetailPage({
               <CardTitle className="text-base">Evolución</CardTitle>
             </CardHeader>
             <CardContent>
-              <ExerciseChart points={points} />
+              <ExerciseChart points={points} sessionPoints={sessionPoints} />
             </CardContent>
           </Card>
 

@@ -206,9 +206,25 @@ export type ExerciseProgressPoint = {
   volumeKg: number;
 };
 
+export type ExerciseSetPoint = {
+  setNumber: number;
+  weightKg: number;
+  reps: number;
+  e1rm: number;
+};
+
+export type ExerciseSessionSets = {
+  date: string;
+  volumeKg: number;
+  sets: ExerciseSetPoint[];
+};
+
 // One point per completed session that includes this exercise: the set with
 // the best estimated 1RM (Epley) that session represents that day's top
 // performance, plus that session's total volume for the exercise.
+// sessionPoints carries every individual set (not just the best one) so the
+// chart can also show a single set number's progression across sessions —
+// the first set alone doesn't show whether e.g. set 3 is improving too.
 export async function getExerciseProgress(userId: string, exerciseId: string) {
   const supabase = await createClient();
   const [{ data: sessions }, { data: personalRecords }] = await Promise.all([
@@ -228,6 +244,7 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
   ]);
 
   const points: ExerciseProgressPoint[] = [];
+  const sessionPoints: ExerciseSessionSets[] = [];
   for (const session of sessions ?? []) {
     const sessionExercise = session.workout_session_exercises[0];
     const validSets = (sessionExercise?.sets ?? []).filter(
@@ -247,6 +264,27 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
       reps: best.reps,
       e1rm: Math.round(best.weight_kg * (1 + best.reps / 30) * 10) / 10,
       volumeKg,
+    });
+
+    // A unilateral set has a left+right row for the same set_number — prefer
+    // the combined 'both' row when present, otherwise keep the first side
+    // seen, so each set_number appears once per session.
+    const bySetNumber = new Map<number, (typeof validSets)[number]>();
+    for (const s of validSets) {
+      const existing = bySetNumber.get(s.set_number);
+      if (!existing || s.side === "both") bySetNumber.set(s.set_number, s);
+    }
+    sessionPoints.push({
+      date: session.completed_at as string,
+      volumeKg,
+      sets: [...bySetNumber.values()]
+        .sort((a, b) => a.set_number - b.set_number)
+        .map((s) => ({
+          setNumber: s.set_number,
+          weightKg: s.weight_kg,
+          reps: s.reps,
+          e1rm: Math.round(s.weight_kg * (1 + s.reps / 30) * 10) / 10,
+        })),
     });
   }
 
@@ -268,6 +306,7 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
 
   return {
     points,
+    sessionPoints,
     personalRecords: personalRecords ?? [],
     weekOverWeek: {
       bestThisWeek,

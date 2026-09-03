@@ -4,6 +4,7 @@ import { requireProfile } from "@/lib/services/profile";
 import { listMyTemplates } from "@/lib/services/routines";
 import { setActiveTemplateAction } from "@/lib/actions/routines";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function ChooseActiveRoutinePage() {
@@ -12,6 +13,7 @@ export default async function ChooseActiveRoutinePage() {
 
   return (
     <div className="space-y-6">
+      <BackButton fallbackHref="/my-routine" />
       <div className="fade-up">
         <h1 className="text-2xl font-bold tracking-tight">Elegir rutina</h1>
         <p className="mt-1 text-muted-foreground">

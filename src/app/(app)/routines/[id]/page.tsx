@@ -9,6 +9,7 @@ import { RenameTemplateDialog } from "@/components/routines/rename-template-dial
 import { EditDayDialog } from "@/components/routines/edit-day-dialog";
 import { Button } from "@/components/ui/button";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
+import { BackButton } from "@/components/ui/back-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -32,6 +33,7 @@ export default async function RoutineDetailPage({
 
   return (
     <div className="space-y-6">
+      <BackButton fallbackHref="/routines" />
       <div className="flex items-start justify-between gap-2 fade-up">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{template.name}</h1>

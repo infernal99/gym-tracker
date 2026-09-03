@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { ExerciseProgressPoint } from "@/lib/services/training";
+import type { ExerciseProgressPoint, ExerciseSessionSets } from "@/lib/services/training";
 
 const metrics = [
   { key: "e1rm", label: "1RM estimado", unit: "kg" },
@@ -26,21 +26,65 @@ const periods = [
   { key: "all", label: "Todo", days: null },
 ] as const;
 
-export function ExerciseChart({ points }: { points: ExerciseProgressPoint[] }) {
+export function ExerciseChart({
+  points,
+  sessionPoints,
+}: {
+  points: ExerciseProgressPoint[];
+  sessionPoints: ExerciseSessionSets[];
+}) {
   const [metric, setMetric] = useState<(typeof metrics)[number]["key"]>("e1rm");
   const [period, setPeriod] = useState<(typeof periods)[number]["key"]>("all");
+  // "best" = the session's top set (current behaviour); otherwise a fixed
+  // set_number so you can see e.g. set 2's progression on its own, since
+  // it doesn't always move in lockstep with set 1.
+  const [setNumber, setSetNumber] = useState<number | "best">("best");
   const activeMetric = metrics.find((m) => m.key === metric)!;
   const activePeriod = periods.find((p) => p.key === period)!;
+
+  const maxSetCount = Math.max(0, ...sessionPoints.map((sp) => sp.sets.length));
+  const setOptions = Array.from({ length: Math.min(maxSetCount, 6) }, (_, i) => i + 1);
+
+  const resolvedPoints: ExerciseProgressPoint[] = useMemo(() => {
+    if (setNumber === "best") return points;
+    return sessionPoints
+      .map((sp) => {
+        const set = sp.sets.find((s) => s.setNumber === setNumber);
+        if (!set) return null;
+        return {
+          date: sp.date,
+          weightKg: set.weightKg,
+          reps: set.reps,
+          e1rm: set.e1rm,
+          volumeKg: sp.volumeKg,
+        };
+      })
+      .filter((p): p is ExerciseProgressPoint => p !== null);
+  }, [points, sessionPoints, setNumber]);
 
   const cutoff =
     activePeriod.days !== null ? Date.now() - activePeriod.days * 86_400_000 : null;
   const filteredPoints =
-    cutoff !== null ? points.filter((p) => new Date(p.date).getTime() >= cutoff) : points;
+    cutoff !== null ? resolvedPoints.filter((p) => new Date(p.date).getTime() >= cutoff) : resolvedPoints;
 
   const data = filteredPoints.map((p) => ({
     date: new Date(p.date).toLocaleDateString("es-ES", { day: "numeric", month: "short" }),
     value: p[metric],
   }));
+
+  // Gym progression is often 0.5kg or less — the default domain starts at 0
+  // and picks coarse round-number ticks (0/3/6/9/12), which flattens small
+  // real changes into an almost-invisible line. Zoom the axis tight to the
+  // data's own range instead, with headroom sized to how small that range is.
+  const values = data.map((d) => d.value);
+  const dataMin = values.length > 0 ? Math.min(...values) : 0;
+  const dataMax = values.length > 0 ? Math.max(...values) : 1;
+  const spread = dataMax - dataMin;
+  const padding = spread > 0 ? Math.max(spread * 0.15, 0.5) : Math.max(dataMax * 0.1, 1);
+  const yDomain: [number, number] = [
+    Math.max(0, Math.floor((dataMin - padding) * 2) / 2),
+    Math.ceil((dataMax + padding) * 2) / 2,
+  ];
 
   return (
     <div className="space-y-3">
@@ -78,48 +122,86 @@ export function ExerciseChart({ points }: { points: ExerciseProgressPoint[] }) {
           ))}
         </div>
       </div>
-      <div className="h-56 w-full" key={`${metric}-${period}`}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 8, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 6" stroke="var(--border)" vertical={false} />
-            <XAxis
-              dataKey="date"
-              fontSize={11}
-              tickLine={false}
-              axisLine={false}
-              stroke="var(--muted-foreground)"
-            />
-            <YAxis
-              fontSize={11}
-              tickLine={false}
-              axisLine={false}
-              width={36}
-              stroke="var(--muted-foreground)"
-            />
-            <Tooltip
-              formatter={(value) => [`${value} kg`, activeMetric.label]}
-              cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
-              contentStyle={{
-                fontSize: 12,
-                borderRadius: 12,
-                border: "1px solid var(--border)",
-                background: "var(--popover)",
-                color: "var(--popover-foreground)",
-                boxShadow: "0 8px 24px rgb(0 0 0 / 0.35)",
-              }}
-            />
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke="var(--primary)"
-              strokeWidth={2.5}
-              dot={false}
-              activeDot={{ r: 5, fill: "var(--primary)", stroke: "var(--background)", strokeWidth: 2 }}
-              animationDuration={400}
-              animationEasing="ease-out"
-            />
-          </LineChart>
-        </ResponsiveContainer>
+      {setOptions.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="stat-label">Serie</span>
+          <button
+            type="button"
+            onClick={() => setSetNumber("best")}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors duration-fast ${
+              setNumber === "best"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            Mejor
+          </button>
+          {setOptions.map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setSetNumber(n)}
+              className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors duration-fast ${
+                setNumber === n
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+              }`}
+            >
+              S{n}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="h-56 w-full" key={`${metric}-${period}-${setNumber}`}>
+        {data.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+            No hay datos para esta serie en el periodo elegido.
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data} margin={{ top: 8, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 6" stroke="var(--border)" vertical={false} />
+              <XAxis
+                dataKey="date"
+                fontSize={11}
+                tickLine={false}
+                axisLine={false}
+                stroke="var(--muted-foreground)"
+              />
+              <YAxis
+                domain={yDomain}
+                allowDecimals
+                fontSize={11}
+                tickLine={false}
+                axisLine={false}
+                width={36}
+                stroke="var(--muted-foreground)"
+              />
+              <Tooltip
+                formatter={(value) => [`${value} kg`, activeMetric.label]}
+                cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
+                contentStyle={{
+                  fontSize: 12,
+                  borderRadius: 12,
+                  border: "1px solid var(--border)",
+                  background: "var(--popover)",
+                  color: "var(--popover-foreground)",
+                  boxShadow: "0 8px 24px rgb(0 0 0 / 0.35)",
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="var(--primary)"
+                strokeWidth={2.5}
+                dot={false}
+                activeDot={{ r: 5, fill: "var(--primary)", stroke: "var(--background)", strokeWidth: 2 }}
+                animationDuration={400}
+                animationEasing="ease-out"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

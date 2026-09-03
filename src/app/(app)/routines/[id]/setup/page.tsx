@@ -15,6 +15,7 @@ import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { BackButton } from "@/components/ui/back-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function RoutineSetupPage({
@@ -66,6 +67,7 @@ export default async function RoutineSetupPage({
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
+      <BackButton fallbackHref={`/routines/${template.id}`} />
       <div className="fade-up">
         <h1 className="text-2xl font-bold tracking-tight">{template.name}</h1>
         <p className="mt-1 text-muted-foreground">

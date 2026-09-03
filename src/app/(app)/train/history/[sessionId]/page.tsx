@@ -4,6 +4,7 @@ import { requireProfile } from "@/lib/services/profile";
 import { getSessionWithDetails } from "@/lib/services/training";
 import { countCompletedSets } from "@/lib/set-utils";
 import { StatTile } from "@/components/ui/stat-tile";
+import { BackButton } from "@/components/ui/back-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function TrainHistoryDetailPage({
@@ -25,6 +26,7 @@ export default async function TrainHistoryDetailPage({
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
+      <BackButton fallbackHref="/train/history" />
       <div className="fade-up">
         <h1 className="text-2xl font-bold tracking-tight">{session.name}</h1>
         <p className="text-muted-foreground">
