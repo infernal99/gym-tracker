@@ -25,18 +25,18 @@ export default async function TrainHistoryPage() {
             <Link
               key={session.id}
               href={`/train/history/${session.id}`}
-              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-accent/50"
+              className="flex items-center gap-3 px-4 py-3 transition-colors duration-fast hover:bg-accent/40"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-muted-foreground">
+                <p className="stat-label">
                   {new Date(session.completed_at!).toLocaleDateString("es-ES", {
                     weekday: "long",
                     day: "numeric",
                     month: "long",
                   })}
                 </p>
-                <p className="mt-0.5 truncate font-medium">{session.name}</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">
+                <p className="mt-0.5 truncate font-semibold">{session.name}</p>
+                <p className="mt-0.5 text-sm tabular-nums text-muted-foreground">
                   {session.duration_seconds
                     ? `${Math.round(session.duration_seconds / 60)}min · `
                     : ""}

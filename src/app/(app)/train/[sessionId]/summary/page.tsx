@@ -1,11 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { Flame, Trophy } from "lucide-react";
+import { Clock, Dumbbell, Flame, Layers, Trophy, Weight } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getSessionWithDetails, getPreviousSessionForDay } from "@/lib/services/training";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatTile } from "@/components/ui/stat-tile";
 
 function formatDuration(totalSeconds: number) {
   const h = Math.floor(totalSeconds / 3600);
@@ -62,49 +63,40 @@ export default async function TrainSummaryPage({
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      <div className="text-center">
-        <Trophy className="mx-auto h-10 w-10 text-success" />
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Entrenamiento completado</h1>
+      <div className="fade-up glow-primary flex flex-col items-center gap-2 rounded-2xl border bg-card px-6 py-8 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10 text-success">
+          <Trophy className="h-7 w-7" />
+        </div>
+        <h1 className="text-2xl font-bold tracking-tight">Entrenamiento completado</h1>
         <p className="text-muted-foreground">{session.name}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: "Duración", value: formatDuration(session.duration_seconds ?? 0) },
-          { label: "Ejercicios", value: sessionExercises.length },
-          { label: "Series", value: allSets.length },
-          { label: "Volumen", value: `${session.total_volume_kg} kg` },
-        ].map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="pt-6 text-center">
-              <p className="text-xl font-semibold">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 fade-up [animation-delay:60ms]">
+        <StatTile icon={Clock} label="Duración" value={formatDuration(session.duration_seconds ?? 0)} />
+        <StatTile icon={Dumbbell} label="Ejercicios" value={sessionExercises.length} />
+        <StatTile icon={Layers} label="Series" value={allSets.length} />
+        <StatTile icon={Weight} label="Volumen" value={`${session.total_volume_kg} kg`} />
       </div>
 
       {prRows && prRows.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Flame className="h-4 w-4 text-success" />
-              Nuevos récords
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {prRows.map((pr) => (
-              <p key={pr.id} className="text-sm">
-                <span className="font-medium">{pr.exercises?.name}</span>{" "}
+        <div className="fade-up duration-emphasis space-y-2 rounded-2xl border border-success/30 bg-success/5 p-4 [animation-delay:120ms]">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-success">
+            <Flame className="h-4 w-4" />
+            Nuevos récords
+          </p>
+          {prRows.map((pr) => (
+            <div key={pr.id} className="flex items-center justify-between text-sm">
+              <span className="font-medium">{pr.exercises?.name}</span>
+              <span className="font-semibold tabular-nums text-success">
                 {pr.weight_kg} kg × {pr.reps}
-              </p>
-            ))}
-          </CardContent>
-        </Card>
+              </span>
+            </div>
+          ))}
+        </div>
       )}
 
       {previous && (
-        <Card>
+        <Card className="fade-up [animation-delay:160ms]">
           <CardHeader>
             <CardTitle className="text-base">Esta sesión vs la anterior</CardTitle>
           </CardHeader>
@@ -114,13 +106,13 @@ export default async function TrainSummaryPage({
               {volumeDelta === null ? (
                 "—"
               ) : (
-                <span className={volumeDelta >= 0 ? "text-success" : "text-muted-foreground"}>
+                <span className={`font-semibold tabular-nums ${volumeDelta >= 0 ? "text-success" : "text-muted-foreground"}`}>
                   {volumeDelta >= 0 ? "+" : ""}
                   {volumeDelta.toFixed(1)}%
                 </span>
               )}
             </p>
-            <p>
+            <p className="tabular-nums">
               Repeticiones: {totalReps} (antes {previousReps ?? 0})
             </p>
           </CardContent>
