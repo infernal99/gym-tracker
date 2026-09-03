@@ -1199,7 +1199,6 @@ export type Database = {
           muscle_group_ids: string[]
           name: string
           template_id: string
-          weekday: number | null
         }
         Insert: {
           created_at?: string
@@ -1209,7 +1208,6 @@ export type Database = {
           muscle_group_ids?: string[]
           name: string
           template_id: string
-          weekday?: number | null
         }
         Update: {
           created_at?: string
@@ -1219,7 +1217,6 @@ export type Database = {
           muscle_group_ids?: string[]
           name?: string
           template_id?: string
-          weekday?: number | null
         }
         Relationships: [
           {
@@ -1287,6 +1284,45 @@ export type Database = {
             columns: ["template_day_id"]
             isOneToOne: false
             referencedRelation: "workout_template_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_template_weekday_slots: {
+        Row: {
+          created_at: string
+          day_id: string
+          id: string
+          template_id: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          day_id: string
+          id?: string
+          template_id: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          day_id?: string
+          id?: string
+          template_id?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_template_weekday_slots_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "workout_template_days"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_template_weekday_slots_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "workout_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -1382,6 +1418,10 @@ export type Database = {
       check_exercise_milestones: {
         Args: { p_user_id: string }
         Returns: undefined
+      }
+      ensure_default_rest_day: {
+        Args: { p_template_id: string }
+        Returns: string
       }
       evaluate_achievements: { Args: { p_user_id: string }; Returns: undefined }
       find_user_by_username: {

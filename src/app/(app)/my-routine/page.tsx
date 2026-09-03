@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Star, Moon, ChevronDown, Target, Trash2 } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
-import { getTemplate } from "@/lib/services/routines";
+import { getTemplate, listWeekdaySlots } from "@/lib/services/routines";
 import { getNextDayInSequence } from "@/lib/services/training";
 import { listExercises } from "@/lib/services/exercises";
 import { setSequenceAnchorAction } from "@/lib/actions/training";
@@ -16,12 +16,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function MyRoutinePage() {
   const profile = await requireProfile();
-  const [template, sequence, exercises] = await Promise.all([
+  const [template, sequence, exercises, weekdaySlots] = await Promise.all([
     profile.active_template_id ? getTemplate(profile.active_template_id) : Promise.resolve(null),
     profile.active_template_id
       ? getNextDayInSequence(profile.id, profile.active_template_id)
       : Promise.resolve({ day: null, nextTrainingDay: null }),
     listExercises(),
+    profile.active_template_id
+      ? listWeekdaySlots(profile.active_template_id)
+      : Promise.resolve([]),
   ]);
 
   if (!template) {
@@ -61,7 +64,11 @@ export default async function MyRoutinePage() {
         </div>
       </div>
 
-      <WeeklyCalendar templateId={template.id} days={days} />
+      <WeeklyCalendar
+        templateId={template.id}
+        trainingDays={days.filter((d) => !d.is_rest_day)}
+        slots={weekdaySlots}
+      />
 
       <div className="grid gap-3 fade-up [animation-delay:100ms]">
         {days.map((day) => {

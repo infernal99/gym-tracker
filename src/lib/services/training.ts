@@ -33,12 +33,13 @@ function resolveRestDay<T extends { id: string; is_rest_day: boolean }>(
   return { day, nextTrainingDay: nextTrainingDay.is_rest_day ? null : nextTrainingDay };
 }
 
-// The routine is a sequence by default, but a day can optionally be pinned
-// to a real weekday (workout_template_days.weekday, via the drag-and-drop
-// calendar on Mi rutina) — when today has a pinned day, that wins over the
-// sequence. A manual anchor (profiles.sequence_anchor_day_id) overrides
-// both, letting the user realign without training right now; it's cleared
-// the next time a counting session is completed.
+// The routine is a sequence by default, but weekdays can optionally be
+// pinned to a day via workout_template_weekday_slots (the drag-and-drop
+// calendar on Mi rutina; the same day can occupy several weekdays) — when
+// today has a pinned day, that wins over the sequence. A manual anchor
+// (profiles.sequence_anchor_day_id) overrides both, letting the user
+// realign without training right now; it's cleared the next time a
+// counting session is completed.
 export async function getNextDayInSequence(userId: string, templateId: string) {
   const supabase = await createClient();
   const { data: days } = await supabase
@@ -61,7 +62,14 @@ export async function getNextDayInSequence(userId: string, templateId: string) {
   }
 
   const todayWeekday = (new Date().getDay() + 6) % 7; // Monday = 0
-  const pinnedToday = days.find((d) => d.weekday === todayWeekday);
+  const { data: slot } = await supabase
+    .from("workout_template_weekday_slots")
+    .select("day_id")
+    .eq("template_id", templateId)
+    .eq("weekday", todayWeekday)
+    .maybeSingle();
+
+  const pinnedToday = slot ? days.find((d) => d.id === slot.day_id) : undefined;
   if (pinnedToday) return resolveRestDay(days, pinnedToday);
 
   const { data: lastSession } = await supabase

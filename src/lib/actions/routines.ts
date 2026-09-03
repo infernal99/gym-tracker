@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/services/profile";
 import { templateSchema, daySchema, templateExerciseSchema } from "@/lib/validation/routines";
+import { REST_DAY_SENTINEL } from "@/lib/routines-constants";
 
 export async function createTemplateAction(formData: FormData) {
   const parsed = templateSchema.safeParse({
@@ -205,29 +206,47 @@ export async function addDayAction(templateId: string, formData: FormData) {
   }
 }
 
-// Asigna un día de la rutina a un día concreto de la semana (0=lunes..6=
-// domingo) para el calendario semanal arrastrable de Mi rutina. Si ese
-// hueco ya lo ocupaba otro día, lo libera (drag-and-drop siempre mueve,
-// nunca duplica un mismo día de la semana).
-export async function assignWeekdayAction(dayId: string, templateId: string, weekday: number) {
+// Points a weekday (0=lunes..6=domingo) at a day for the drag-and-drop
+// calendar on Mi rutina. Unlike the old 1:1 model, the same day can occupy
+// several weekdays (e.g. "Piernas" on martes AND viernes) — only the
+// weekday slot itself is unique, so dropping a day never removes it from
+// anywhere else it's scheduled.
+export async function assignWeekdayAction(
+  weekday: number,
+  templateId: string,
+  dayId: string,
+) {
   if (weekday < 0 || weekday > 6) return;
 
   const supabase = await createClient();
-  await supabase
-    .from("workout_template_days")
-    .update({ weekday: null })
-    .eq("template_id", templateId)
-    .eq("weekday", weekday);
 
-  await supabase.from("workout_template_days").update({ weekday }).eq("id", dayId);
+  let resolvedDayId = dayId;
+  if (dayId === REST_DAY_SENTINEL) {
+    const { data } = await supabase.rpc("ensure_default_rest_day", {
+      p_template_id: templateId,
+    });
+    if (!data) return;
+    resolvedDayId = data;
+  }
+
+  await supabase
+    .from("workout_template_weekday_slots")
+    .upsert(
+      { template_id: templateId, weekday, day_id: resolvedDayId },
+      { onConflict: "template_id,weekday" },
+    );
 
   revalidatePath("/my-routine");
   revalidatePath(`/routines/${templateId}`);
 }
 
-export async function unassignWeekdayAction(dayId: string, templateId: string) {
+export async function unassignWeekdayAction(templateId: string, weekday: number) {
   const supabase = await createClient();
-  await supabase.from("workout_template_days").update({ weekday: null }).eq("id", dayId);
+  await supabase
+    .from("workout_template_weekday_slots")
+    .delete()
+    .eq("template_id", templateId)
+    .eq("weekday", weekday);
 
   revalidatePath("/my-routine");
   revalidatePath(`/routines/${templateId}`);

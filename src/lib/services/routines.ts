@@ -37,3 +37,27 @@ export async function getTemplate(templateId: string) {
     .single();
   return data;
 }
+
+export interface WeekdaySlot {
+  weekday: number;
+  dayId: string;
+  dayName: string;
+  isRestDay: boolean;
+}
+
+export async function listWeekdaySlots(templateId: string): Promise<WeekdaySlot[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("workout_template_weekday_slots")
+    .select("weekday, workout_template_days(id, name, is_rest_day)")
+    .eq("template_id", templateId);
+
+  return (data ?? [])
+    .filter((row) => row.workout_template_days)
+    .map((row) => ({
+      weekday: row.weekday,
+      dayId: row.workout_template_days!.id,
+      dayName: row.workout_template_days!.name,
+      isRestDay: row.workout_template_days!.is_rest_day,
+    }));
+}
