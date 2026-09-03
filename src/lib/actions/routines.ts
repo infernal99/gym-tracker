@@ -346,6 +346,44 @@ export async function addTemplateExerciseAction(
 
   revalidatePath(`/routines/${templateId}`);
   revalidatePath(`/routines/${templateId}/setup`);
+  revalidatePath("/my-routine");
+}
+
+export async function updateTemplateExerciseAction(
+  rowId: string,
+  templateId: string,
+  formData: FormData,
+) {
+  const parsed = templateExerciseSchema
+    .omit({ exerciseId: true })
+    .safeParse({
+      targetSets: formData.get("targetSets"),
+      targetRepsMin: formData.get("targetRepsMin") || "",
+      targetRepsMax: formData.get("targetRepsMax") || "",
+      targetWeightKg: formData.get("targetWeightKg") || "",
+      targetRir: formData.get("targetRir") || "",
+      restSeconds: formData.get("restSeconds") || 90,
+      notes: formData.get("notes") || "",
+    });
+  if (!parsed.success) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("workout_template_exercises")
+    .update({
+      target_sets: parsed.data.targetSets,
+      target_reps_min: parsed.data.targetRepsMin || null,
+      target_reps_max: parsed.data.targetRepsMax || null,
+      target_weight_kg: parsed.data.targetWeightKg || null,
+      target_rir: parsed.data.targetRir || null,
+      rest_seconds: parsed.data.restSeconds,
+      notes: parsed.data.notes || null,
+    })
+    .eq("id", rowId);
+
+  revalidatePath(`/routines/${templateId}`);
+  revalidatePath(`/routines/${templateId}/setup`);
+  revalidatePath("/my-routine");
 }
 
 export async function removeTemplateExerciseAction(rowId: string, templateId: string) {
@@ -353,4 +391,5 @@ export async function removeTemplateExerciseAction(rowId: string, templateId: st
   await supabase.from("workout_template_exercises").delete().eq("id", rowId);
   revalidatePath(`/routines/${templateId}`);
   revalidatePath(`/routines/${templateId}/setup`);
+  revalidatePath("/my-routine");
 }
