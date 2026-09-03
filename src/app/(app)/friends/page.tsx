@@ -1,12 +1,18 @@
 import { Check, Flame, Users, X } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
-import { listFriends, listIncomingRequests, listOutgoingRequests } from "@/lib/services/friends";
+import {
+  getFriendsLeaderboard,
+  listFriends,
+  listIncomingRequests,
+  listOutgoingRequests,
+} from "@/lib/services/friends";
 import {
   respondFriendRequestAction,
   cancelFriendRequestAction,
   removeFriendAction,
 } from "@/lib/actions/friends";
 import { FriendSearch } from "@/components/friends/friend-search";
+import { FriendsLeaderboard } from "@/components/friends/friends-leaderboard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
@@ -14,10 +20,11 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default async function FriendsPage() {
   const profile = await requireProfile();
-  const [friends, incoming, outgoing] = await Promise.all([
+  const [friends, incoming, outgoing, leaderboard] = await Promise.all([
     listFriends(profile.id),
     listIncomingRequests(profile.id),
     listOutgoingRequests(profile.id),
+    getFriendsLeaderboard(profile.id),
   ]);
 
   return (
@@ -76,6 +83,12 @@ export default async function FriendsPage() {
               </form>
             </div>
           ))}
+        </div>
+      )}
+
+      {friends.length > 0 && (
+        <div className="fade-up [animation-delay:120ms]">
+          <FriendsLeaderboard entries={leaderboard} />
         </div>
       )}
 
