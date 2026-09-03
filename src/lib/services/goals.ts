@@ -14,6 +14,7 @@ export async function listGoals(userId: string): Promise<Goal[]> {
     id: g.id,
     type: g.type,
     title: g.title,
+    exerciseId: g.exercise_id,
     exerciseName: g.exercises?.name ?? null,
     initialValue: g.initial_value,
     currentValue: g.current_value,

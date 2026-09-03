@@ -88,3 +88,49 @@ export function analyzePlateau(points: { e1rm: number }[]): PlateauAnalysis {
 
   return { status, sessionsSinceBest, bestE1rm, recentChangePct };
 }
+
+export interface GoalEta {
+  currentKg: number;
+  weeklyRateKg: number;
+  weeksRemaining: number | null;
+  projectedDate: string | null;
+  /** Already there, or moving the wrong way — no meaningful ETA to show. */
+  reached: boolean;
+}
+
+// Projects when a strength goal will be hit from the plain slope between
+// the oldest and newest point in the last ~8 sessions — no smoothing or
+// regression, just "how much did this actually move over how many days,"
+// extrapolated forward at that same rate.
+export function estimateGoalEta(points: { date: string; e1rm: number }[], targetKg: number): GoalEta | null {
+  if (points.length < 3) return null;
+
+  const recent = points.slice(-8);
+  const first = recent[0];
+  const last = recent[recent.length - 1];
+  const currentKg = last.e1rm;
+
+  if (currentKg >= targetKg) {
+    return { currentKg, weeklyRateKg: 0, weeksRemaining: 0, projectedDate: null, reached: true };
+  }
+
+  const daySpan = (new Date(last.date).getTime() - new Date(first.date).getTime()) / 86_400_000;
+  if (daySpan <= 0) return null;
+
+  const weeklyRateKg = ((last.e1rm - first.e1rm) / daySpan) * 7;
+  if (weeklyRateKg <= 0) {
+    return { currentKg, weeklyRateKg, weeksRemaining: null, projectedDate: null, reached: false };
+  }
+
+  const weeksRemaining = Math.ceil((targetKg - currentKg) / weeklyRateKg);
+  const projectedDate = new Date();
+  projectedDate.setDate(projectedDate.getDate() + weeksRemaining * 7);
+
+  return {
+    currentKg,
+    weeklyRateKg,
+    weeksRemaining,
+    projectedDate: projectedDate.toISOString(),
+    reached: false,
+  };
+}

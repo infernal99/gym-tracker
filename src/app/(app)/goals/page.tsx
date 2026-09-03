@@ -2,6 +2,8 @@ import { Target } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { listGoals } from "@/lib/services/goals";
 import { listExercises } from "@/lib/services/exercises";
+import { getExerciseProgress } from "@/lib/services/training";
+import { estimateGoalEta, type GoalEta } from "@/lib/calculations/strength";
 import { CreateGoalDialog } from "@/components/goals/create-goal-dialog";
 import { GoalCard } from "@/components/goals/goal-card";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +15,20 @@ export default async function GoalsPage() {
   const activeGoals = goals.filter((g) => g.status === "active" || g.status === "paused");
   const completedGoals = goals.filter((g) => g.status === "completed");
   const exerciseOptions = exercises.map((e) => ({ id: e.id, name: e.name }));
+
+  // ETA only makes sense for a strength goal tied to a real exercise, whose
+  // actual e1RM trend can be extrapolated — projecting from a manually
+  // typed "current value" would just be guessing at a rate.
+  const etaByGoalId = new Map<string, GoalEta>();
+  await Promise.all(
+    activeGoals
+      .filter((g) => g.type === "strength" && g.exerciseId)
+      .map(async (g) => {
+        const { points } = await getExerciseProgress(profile.id, g.exerciseId!);
+        const eta = estimateGoalEta(points, g.targetValue);
+        if (eta) etaByGoalId.set(g.id, eta);
+      }),
+  );
 
   return (
     <div className="space-y-6">
@@ -33,7 +49,7 @@ export default async function GoalsPage() {
           {activeGoals.length > 0 && (
             <div className="space-y-2 fade-up [animation-delay:60ms]">
               {activeGoals.map((goal) => (
-                <GoalCard key={goal.id} goal={goal} />
+                <GoalCard key={goal.id} goal={goal} eta={etaByGoalId.get(goal.id) ?? null} />
               ))}
             </div>
           )}

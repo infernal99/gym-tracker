@@ -1,9 +1,10 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { CheckCircle2, Pencil, Trash2 } from "lucide-react";
+import { CheckCircle2, Pencil, TrendingUp, Trash2 } from "lucide-react";
 import { updateGoalProgressAction, deleteGoalAction } from "@/lib/actions/goals";
 import { goalProgress, type Goal } from "@/lib/goal-utils";
+import type { GoalEta } from "@/lib/calculations/strength";
 import type { ActionResult } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
@@ -11,7 +12,20 @@ import { Input } from "@/components/ui/input";
 
 const initialState: ActionResult = { error: null };
 
-export function GoalCard({ goal }: { goal: Goal }) {
+function formatEta(eta: GoalEta) {
+  if (eta.reached) return null;
+  if (eta.weeksRemaining === null) {
+    return "Tu progreso reciente en este ejercicio está plano o bajando — sin una tendencia clara no se puede estimar cuándo lo alcanzarás.";
+  }
+  if (eta.weeksRemaining === 0) return "¡Ya deberías estar rozándolo en tu próxima sesión!";
+  const date = eta.projectedDate
+    ? new Date(eta.projectedDate).toLocaleDateString("es-ES", { day: "numeric", month: "long" })
+    : null;
+  const weeksLabel = eta.weeksRemaining === 1 ? "1 semana" : `${eta.weeksRemaining} semanas`;
+  return `A tu ritmo actual (+${eta.weeklyRateKg.toFixed(1)} kg/semana de 1RM estimado), lo alcanzarías en ~${weeksLabel}${date ? ` (sobre el ${date})` : ""}.`;
+}
+
+export function GoalCard({ goal, eta = null }: { goal: Goal; eta?: GoalEta | null }) {
   const [editing, setEditing] = useState(false);
   const boundAction = updateGoalProgressAction.bind(null, goal.id);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
@@ -75,6 +89,13 @@ export function GoalCard({ goal }: { goal: Goal }) {
           </span>
         </div>
       </div>
+
+      {!completed && eta && formatEta(eta) && (
+        <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+          <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          {formatEta(eta)}
+        </p>
+      )}
 
       {editing && !completed && (
         <form action={formAction} className="flex items-center gap-2">

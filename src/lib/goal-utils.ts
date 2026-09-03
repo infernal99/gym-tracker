@@ -7,6 +7,7 @@ export interface Goal {
   id: string;
   type: GoalType;
   title: string;
+  exerciseId: string | null;
   exerciseName: string | null;
   initialValue: number | null;
   currentValue: number | null;
