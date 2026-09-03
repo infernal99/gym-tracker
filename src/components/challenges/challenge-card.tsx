@@ -3,7 +3,6 @@
 import { CalendarClock, CheckCircle2, Trash2 } from "lucide-react";
 import { deleteChallengeAction } from "@/lib/actions/challenges";
 import { challengeProgress, daysRemaining, type Challenge } from "@/lib/challenge-utils";
-import { Button } from "@/components/ui/button";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 
 const metricUnit: Record<string, string> = {

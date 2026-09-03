@@ -7,78 +7,59 @@ function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
+/** Enough history for the streak and the week/month windows below. */
+const RECENT_WINDOW_DAYS = 120;
+
 export async function getDashboardStats(userId: string, activeTemplateId: string | null) {
   const supabase = await createClient();
   const now = new Date();
   const weekStart = startOfWeek(now);
   const lastWeekStart = new Date(weekStart);
   lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+  const monthStart = startOfMonth(now);
+  const recentSince = new Date(now);
+  recentSince.setDate(recentSince.getDate() - RECENT_WINDOW_DAYS);
 
-  const { count: totalWorkouts } = await supabase
-    .from("workout_sessions")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .not("completed_at", "is", null);
-
-  const { count: workoutsThisWeek } = await supabase
-    .from("workout_sessions")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .not("completed_at", "is", null)
-    .gte("completed_at", weekStart.toISOString());
-
-  const { count: workoutsThisMonth } = await supabase
-    .from("workout_sessions")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .not("completed_at", "is", null)
-    .gte("completed_at", startOfMonth(now).toISOString());
-
-  const { data: lastSession } = await supabase
-    .from("workout_sessions")
-    .select("id, name, completed_at, duration_seconds, total_volume_kg")
-    .eq("user_id", userId)
-    .not("completed_at", "is", null)
-    .order("completed_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const { data: recentCompletedDates } = await supabase
-    .from("workout_sessions")
-    .select("completed_at")
-    .eq("user_id", userId)
-    .not("completed_at", "is", null)
-    .order("completed_at", { ascending: false })
-    .limit(90);
-
-  const streak = currentStreak((recentCompletedDates ?? []).map((s) => s.completed_at as string));
-
-  const { count: prsThisWeek } = await supabase
-    .from("personal_records")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("achieved_at", weekStart.toISOString());
-
-  const { data: volumeThisWeekRows } = await supabase
-    .from("workout_sessions")
-    .select("total_volume_kg")
-    .eq("user_id", userId)
-    .not("completed_at", "is", null)
-    .gte("completed_at", weekStart.toISOString());
-
-  const { data: volumeLastWeekRows } = await supabase
-    .from("workout_sessions")
-    .select("total_volume_kg")
-    .eq("user_id", userId)
-    .not("completed_at", "is", null)
-    .gte("completed_at", lastWeekStart.toISOString())
-    .lt("completed_at", weekStart.toISOString());
-
-  const volumeThisWeek = (volumeThisWeekRows ?? []).reduce((s, r) => s + r.total_volume_kg, 0);
-  const volumeLastWeek = (volumeLastWeekRows ?? []).reduce((s, r) => s + r.total_volume_kg, 0);
-  const volumeChangePct = volumeLastWeek > 0 ? ((volumeThisWeek - volumeLastWeek) / volumeLastWeek) * 100 : null;
-
-  const [activeSession, sequence, activeTemplateRow] = await Promise.all([
+  // One recent-history fetch covers the week count, the month count, the
+  // streak and both weekly volumes — these used to be six separate queries,
+  // each awaited in turn, so the page paid six sequential round trips for
+  // numbers that all come off the same handful of rows.
+  const [
+    { count: totalWorkouts },
+    { data: recentSessions },
+    { data: lastSession },
+    { count: prsThisWeek },
+    activeSession,
+    sequence,
+    activeTemplateRow,
+  ] = await Promise.all([
+    supabase
+      .from("workout_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .not("completed_at", "is", null),
+    supabase
+      .from("workout_sessions")
+      .select("completed_at, total_volume_kg")
+      .eq("user_id", userId)
+      .not("completed_at", "is", null)
+      .gte("completed_at", recentSince.toISOString())
+      .order("completed_at", { ascending: false }),
+    // Kept separate from the window above so someone coming back after a
+    // long break still sees their last session rather than nothing.
+    supabase
+      .from("workout_sessions")
+      .select("id, name, completed_at, duration_seconds, total_volume_kg")
+      .eq("user_id", userId)
+      .not("completed_at", "is", null)
+      .order("completed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("personal_records")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("achieved_at", weekStart.toISOString()),
     getActiveSession(userId),
     activeTemplateId
       ? getNextDayInSequence(userId, activeTemplateId)
@@ -87,6 +68,26 @@ export async function getDashboardStats(userId: string, activeTemplateId: string
       ? supabase.from("workout_templates").select("id, name").eq("id", activeTemplateId).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
+
+  let workoutsThisWeek = 0;
+  let workoutsThisMonth = 0;
+  let volumeThisWeek = 0;
+  let volumeLastWeek = 0;
+  for (const session of recentSessions ?? []) {
+    const completedAt = new Date(session.completed_at as string);
+    const volume = Number(session.total_volume_kg ?? 0);
+    if (completedAt >= weekStart) {
+      workoutsThisWeek += 1;
+      volumeThisWeek += volume;
+    } else if (completedAt >= lastWeekStart) {
+      volumeLastWeek += volume;
+    }
+    if (completedAt >= monthStart) workoutsThisMonth += 1;
+  }
+
+  const streak = currentStreak((recentSessions ?? []).map((s) => s.completed_at as string));
+  const volumeChangePct =
+    volumeLastWeek > 0 ? ((volumeThisWeek - volumeLastWeek) / volumeLastWeek) * 100 : null;
 
   let pendingDayExerciseCount = 0;
   let pendingDaySetCount = 0;
@@ -101,8 +102,8 @@ export async function getDashboardStats(userId: string, activeTemplateId: string
 
   return {
     totalWorkouts: totalWorkouts ?? 0,
-    workoutsThisWeek: workoutsThisWeek ?? 0,
-    workoutsThisMonth: workoutsThisMonth ?? 0,
+    workoutsThisWeek,
+    workoutsThisMonth,
     lastSession,
     currentStreak: streak,
     prsThisWeek: prsThisWeek ?? 0,

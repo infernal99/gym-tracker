@@ -2,7 +2,6 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { Challenge } from "@/lib/challenge-utils";
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
 
 async function computeCurrentValue(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -66,51 +65,54 @@ export async function listChallenges(userId: string): Promise<Challenge[]> {
     .eq("challenge_participants.user_id", userId)
     .order("created_at", { ascending: false });
 
-  const results: Challenge[] = [];
+  // Each challenge's current value needs its own query, and reaching the
+  // target writes back — but nothing here depends on another challenge, so
+  // they run together rather than one full round trip after another.
+  // Promise.all preserves order, so the list stays sorted as queried.
+  return Promise.all(
+    (rows ?? []).map(async (row): Promise<Challenge> => {
+      const participant = row.challenge_participants[0];
+      const computed = await computeCurrentValue(
+        supabase,
+        userId,
+        row.metric,
+        row.exercise_id,
+        row.start_date,
+      );
+      const currentValue = computed ?? participant.current_value;
 
-  for (const row of rows ?? []) {
-    const participant = row.challenge_participants[0];
-    const computed = await computeCurrentValue(
-      supabase,
-      userId,
-      row.metric,
-      row.exercise_id,
-      row.start_date,
-    );
-    const currentValue = computed ?? participant.current_value;
+      const target = row.target_value ?? 0;
+      const initial = participant.initial_value;
+      const reached = target >= initial ? currentValue >= target : currentValue <= target;
 
-    if (computed !== null && computed !== participant.current_value) {
-      await supabase
-        .from("challenge_participants")
-        .update({ current_value: computed })
-        .eq("challenge_id", row.id)
-        .eq("user_id", userId);
-    }
+      await Promise.all([
+        computed !== null && computed !== participant.current_value
+          ? supabase
+              .from("challenge_participants")
+              .update({ current_value: computed })
+              .eq("challenge_id", row.id)
+              .eq("user_id", userId)
+          : null,
+        // A challenge past its end date without reaching the target stays
+        // "active" — the UI derives "expired" from end_date via
+        // daysRemaining(), so there's nothing to write.
+        reached && row.status !== "completed"
+          ? supabase.from("challenges").update({ status: "completed" }).eq("id", row.id)
+          : null,
+      ]);
 
-    const target = row.target_value ?? 0;
-    const initial = participant.initial_value;
-    const reached = target >= initial ? currentValue >= target : currentValue <= target;
-
-    if (reached && row.status !== "completed") {
-      await supabase.from("challenges").update({ status: "completed" }).eq("id", row.id);
-    } else if (!reached && row.end_date < todayIso() && row.status === "active") {
-      // Left as "active" but the UI treats a past end_date as expired —
-      // no separate write needed since daysRemaining() already derives it.
-    }
-
-    results.push({
-      id: row.id,
-      name: row.name,
-      metric: row.metric,
-      exerciseName: row.exercises?.name ?? null,
-      initialValue: initial,
-      targetValue: target,
-      currentValue,
-      startDate: row.start_date,
-      endDate: row.end_date,
-      status: reached ? "completed" : row.status,
-    });
-  }
-
-  return results;
+      return {
+        id: row.id,
+        name: row.name,
+        metric: row.metric,
+        exerciseName: row.exercises?.name ?? null,
+        initialValue: initial,
+        targetValue: target,
+        currentValue,
+        startDate: row.start_date,
+        endDate: row.end_date,
+        status: reached ? "completed" : row.status,
+      };
+    }),
+  );
 }
