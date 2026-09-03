@@ -36,9 +36,12 @@ function resolveRestDay<T extends { id: string; is_rest_day: boolean }>(
 // The routine is a sequence by default, but weekdays can optionally be
 // pinned to a day via workout_template_weekday_slots (the drag-and-drop
 // calendar on Mi rutina; the same day can occupy several weekdays) — when
-// today has a pinned day, that wins over the sequence. A manual anchor
-// (profiles.sequence_anchor_day_id) overrides both, letting the user
-// realign without training right now; it's cleared the next time a
+// today has a pinned day, that's authoritative: the calendar is a
+// deliberate, always-visible choice, so it wins over everything else. The
+// legacy manual anchor (profiles.sequence_anchor_day_id) — from a UI
+// control that no longer exists — only applies as a fallback when today
+// has no calendar pin, so it can't get a user permanently stuck on a day
+// they have no way to change anymore; it's cleared the next time a
 // counting session is completed.
 export async function getNextDayInSequence(userId: string, templateId: string) {
   const supabase = await createClient();
@@ -50,17 +53,6 @@ export async function getNextDayInSequence(userId: string, templateId: string) {
 
   if (!days || days.length === 0) return { day: null, nextTrainingDay: null };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("sequence_anchor_day_id")
-    .eq("id", userId)
-    .single();
-
-  if (profile?.sequence_anchor_day_id) {
-    const anchored = days.find((d) => d.id === profile.sequence_anchor_day_id);
-    if (anchored) return resolveRestDay(days, anchored);
-  }
-
   const todayWeekday = (new Date().getDay() + 6) % 7; // Monday = 0
   const { data: slot } = await supabase
     .from("workout_template_weekday_slots")
@@ -71,6 +63,17 @@ export async function getNextDayInSequence(userId: string, templateId: string) {
 
   const pinnedToday = slot ? days.find((d) => d.id === slot.day_id) : undefined;
   if (pinnedToday) return resolveRestDay(days, pinnedToday);
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("sequence_anchor_day_id")
+    .eq("id", userId)
+    .single();
+
+  if (profile?.sequence_anchor_day_id) {
+    const anchored = days.find((d) => d.id === profile.sequence_anchor_day_id);
+    if (anchored) return resolveRestDay(days, anchored);
+  }
 
   const { data: lastSession } = await supabase
     .from("workout_sessions")
