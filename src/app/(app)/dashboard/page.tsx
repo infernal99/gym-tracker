@@ -1,14 +1,16 @@
 import Link from "next/link";
-import { Dumbbell, Flame, Moon, Play, Trophy, TrendingUp } from "lucide-react";
+import { Moon, Play } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getDashboardStats } from "@/lib/services/dashboard";
+import { getWeeklySummary } from "@/lib/services/weekly-summary";
 import { listTrainingDays } from "@/lib/services/training";
 import { startWorkoutAction } from "@/lib/actions/training";
 import { AlternateDayCard } from "@/components/training/alternate-day-card";
+import { MotivationBanner } from "@/components/dashboard/motivation-banner";
+import { WeeklySummaryCard } from "@/components/dashboard/weekly-summary-card";
 import { InstallBanner } from "@/components/pwa/install-banner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { StatTile } from "@/components/ui/stat-tile";
 
 function greetingForHour(hour: number) {
   if (hour < 12) return "Buenos días";
@@ -18,9 +20,10 @@ function greetingForHour(hour: number) {
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  const [stats, trainingDays] = await Promise.all([
+  const [stats, trainingDays, weeklySummary] = await Promise.all([
     getDashboardStats(profile.id, profile.active_template_id),
     profile.active_template_id ? listTrainingDays(profile.active_template_id) : Promise.resolve([]),
+    getWeeklySummary(profile.id),
   ]);
 
   const otherDays = trainingDays.filter((d) => d.id !== stats.pendingDay?.id);
@@ -36,6 +39,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <InstallBanner />
+      <MotivationBanner summary={weeklySummary} />
       <div className="fade-up">
         <p className="text-muted-foreground">
           {greeting}, {firstName} 👋
@@ -124,25 +128,7 @@ export default async function DashboardPage() {
       )}
 
       <div className="fade-up [animation-delay:140ms]">
-        <p className="stat-label mb-2">Tu progreso</p>
-        <div className="grid grid-cols-2 gap-2.5">
-          <StatTile icon={Flame} label="Esta semana" value={stats.workoutsThisWeek} />
-          <StatTile
-            icon={Dumbbell}
-            label="Volumen semana"
-            value={`${Math.round(stats.volumeThisWeek).toLocaleString("es-ES")} kg`}
-            trend={
-              stats.volumeChangePct !== null
-                ? {
-                    value: `${stats.volumeChangePct >= 0 ? "+" : ""}${stats.volumeChangePct.toFixed(0)}%`,
-                    positive: stats.volumeChangePct >= 0,
-                  }
-                : null
-            }
-          />
-          <StatTile icon={TrendingUp} label="Racha" value={`${stats.currentStreak}d`} />
-          <StatTile icon={Trophy} label="PRs esta semana" value={stats.prsThisWeek} />
-        </div>
+        <WeeklySummaryCard summary={weeklySummary} />
       </div>
 
       {stats.lastSession && (
