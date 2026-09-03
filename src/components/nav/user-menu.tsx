@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { logoutAction } from "@/lib/actions/auth";
+import { moreNavLinks } from "@/components/nav/links";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -44,10 +45,15 @@ export function UserMenu({
           <p className="text-xs text-muted-foreground">@{username} · Nivel {level}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem render={<Link href="/profile" />}>
-          <UserIcon className="mr-2 h-4 w-4" />
-          Perfil
-        </DropdownMenuItem>
+        {moreNavLinks.map((link) => {
+          const Icon = link.icon;
+          return (
+            <DropdownMenuItem key={link.href} render={<Link href={link.href} />}>
+              <Icon className="mr-2 h-4 w-4" />
+              {link.label}
+            </DropdownMenuItem>
+          );
+        })}
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<form action={logoutAction} />}>
           <button type="submit" className="flex w-full items-center">
