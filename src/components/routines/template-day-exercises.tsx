@@ -28,7 +28,7 @@ type DayExercise = {
   exercises: { name: string } | null;
 };
 
-type ExerciseOption = { id: string; name: string };
+type ExerciseOption = { id: string; name: string; primary_muscle_group_id: string | null };
 
 function ExerciseFieldsGrid({
   defaults,
@@ -265,14 +265,26 @@ function AddExerciseForm({
   dayId,
   templateId,
   exercises,
+  dayMuscleGroupIds,
 }: {
   dayId: string;
   templateId: string;
   exercises: ExerciseOption[];
+  dayMuscleGroupIds: string[];
 }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<ExerciseOption | null>(null);
   const [open, setOpen] = useState(false);
+  const [showAll, setShowAll] = useState(dayMuscleGroupIds.length === 0);
+
+  // Scoped to the day's own muscle tags by default (a "Piernas" day should
+  // suggest leg exercises, not the whole 600+ library) — "Ver todos" backs
+  // out of that in case the exercise you want isn't tagged that way.
+  const pool = showAll
+    ? exercises
+    : exercises.filter(
+        (e) => e.primary_muscle_group_id && dayMuscleGroupIds.includes(e.primary_muscle_group_id),
+      );
 
   // With no query, show the full list (browsable) rather than nothing — the
   // exercise might be there under a different name than what comes to mind.
@@ -280,8 +292,8 @@ function AddExerciseForm({
     selected || !open
       ? []
       : query.trim()
-        ? exercises.filter((e) => matchesExerciseQuery(e.name, query)).slice(0, 8)
-        : exercises.slice(0, 50);
+        ? pool.filter((e) => matchesExerciseQuery(e.name, query)).slice(0, 8)
+        : pool.slice(0, 50);
 
   return (
     <form
@@ -307,6 +319,15 @@ function AddExerciseForm({
               className="pl-8"
             />
           </div>
+          {dayMuscleGroupIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAll((s) => !s)}
+              className="mt-1 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              {showAll ? "Mostrar solo los músculos de este día" : "Ver todos los ejercicios"}
+            </button>
+          )}
           {matches.length > 0 && (
             // A normal block below the input (not absolutely positioned)
             // so it can't get clipped by an ancestor's overflow-hidden —
@@ -369,11 +390,13 @@ export function TemplateDayExercises({
   templateId,
   dayExercises,
   exercises,
+  dayMuscleGroupIds = [],
 }: {
   dayId: string;
   templateId: string;
   dayExercises: DayExercise[];
   exercises: ExerciseOption[];
+  dayMuscleGroupIds?: string[];
 }) {
   const [items, setItems] = useState(() =>
     [...dayExercises].sort((a, b) => a.order_index - b.order_index),
@@ -439,7 +462,12 @@ export function TemplateDayExercises({
         <summary className="cursor-pointer text-sm text-muted-foreground">
           + Añadir ejercicio
         </summary>
-        <AddExerciseForm dayId={dayId} templateId={templateId} exercises={exercises} />
+        <AddExerciseForm
+          dayId={dayId}
+          templateId={templateId}
+          exercises={exercises}
+          dayMuscleGroupIds={dayMuscleGroupIds}
+        />
       </details>
     </div>
   );

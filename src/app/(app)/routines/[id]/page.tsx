@@ -95,6 +95,7 @@ export default async function RoutineDetailPage({
                   templateId={template.id}
                   dayExercises={day.workout_template_exercises ?? []}
                   exercises={exercises}
+                  dayMuscleGroupIds={day.muscle_group_ids}
                 />
               </CardContent>
             )}

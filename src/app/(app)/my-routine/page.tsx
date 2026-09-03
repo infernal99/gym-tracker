@@ -149,6 +149,7 @@ export default async function MyRoutinePage() {
                     templateId={template.id}
                     dayExercises={dayExercises}
                     exercises={exercises}
+                    dayMuscleGroupIds={day.muscle_group_ids}
                   />
                   <form action={deleteDayAction.bind(null, day.id, template.id)}>
                     <ConfirmSubmitButton
