@@ -29,16 +29,16 @@ export function RestTimer({ seconds }: { seconds: number }) {
   const dashOffset = RING_CIRCUMFERENCE * (1 - progress);
 
   return (
-    <div className="rounded-2xl border bg-card px-4 py-3">
+    <div
+      className={`rounded-2xl border px-4 py-3 transition-colors duration-normal ${done ? "border-success/30 bg-success/5" : "bg-surface"}`}
+    >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">Descanso</p>
-          <p className={`text-3xl font-semibold tabular-nums ${done ? "text-success" : ""}`}>
+          <p className="stat-label">Descanso</p>
+          <p className={`font-mono text-3xl font-bold tabular-nums ${done ? "text-success" : "text-foreground"}`}>
             {done ? "¡Listo!" : formatTime(remaining)}
           </p>
-          <p className="text-xs text-muted-foreground">
-            Descanso sugerido: {formatTime(seconds)} min
-          </p>
+          <p className="text-xs text-muted-foreground">Sugerido {formatTime(seconds)}</p>
         </div>
         <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
           <svg className="absolute inset-0 -rotate-90" viewBox="0 0 64 64">

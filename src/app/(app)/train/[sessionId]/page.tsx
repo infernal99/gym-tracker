@@ -59,6 +59,12 @@ export default async function TrainSessionPage({
   const slotCount = Math.max(current.target_sets ?? 3, currentSets.length, 1);
   const slots = Array.from({ length: slotCount }, (_, i) => i + 1);
 
+  const totalSetsTarget = sessionExercises.reduce(
+    (sum, e) => sum + Math.max(e.target_sets ?? 3, e.sets.length, 1),
+    0,
+  );
+  const totalSetsDone = sessionExercises.reduce((sum, e) => sum + e.sets.length, 0);
+
   const firstIncomplete = slots.find(
     (n) => !currentSets.some((s) => s.set_number === n),
   );
@@ -79,50 +85,67 @@ export default async function TrainSessionPage({
     <div className="mx-auto max-w-xl space-y-4 pb-24">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">{session.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            <ElapsedClock startedAt={session.started_at} />
-          </p>
+          <h1 className="text-xl font-bold tracking-tight">{session.name}</h1>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="font-mono tabular-nums text-foreground/80">
+              <ElapsedClock startedAt={session.started_at} />
+            </span>
+            <span aria-hidden>·</span>
+            <span>
+              {totalSetsDone} / {totalSetsTarget} series
+            </span>
+          </div>
         </div>
         <CancelWorkoutButton sessionId={sessionId} />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
         {sessionExercises.map((ex, i) => {
           const done = ex.sets.length >= (ex.target_sets ?? 1) && ex.sets.length > 0;
+          const isActive = ex.id === current.id;
           return (
-            <Link key={ex.id} href={`/train/${sessionId}?exercise=${ex.id}`}>
-              <Badge variant={ex.id === current.id ? "default" : "secondary"}>
-                {done && <Check className="h-3 w-3" />}
-                {i + 1}. {ex.exercises?.name}
-              </Badge>
+            <Link key={ex.id} href={`/train/${sessionId}?exercise=${ex.id}`} className="shrink-0">
+              <span
+                className={`flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : done
+                      ? "border-success/30 bg-success/10 text-success"
+                      : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                {done ? <Check className="h-3.5 w-3.5" /> : <span className="tabular-nums">{i + 1}</span>}
+                {ex.exercises?.name}
+              </span>
             </Link>
           );
         })}
       </div>
 
-      <Card>
+      <Card key={current.id} className="fade-up">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">{current.exercises?.name}</CardTitle>
+            <CardTitle className="text-lg font-bold tracking-tight">
+              {current.exercises?.name}
+            </CardTitle>
             {current.exercises && <ExerciseInfoDialog exercise={current.exercises} />}
           </div>
           {current.target_sets && (
-            <p className="text-sm text-muted-foreground">
-              Objetivo de rutina: {current.target_sets} series
+            <p className="stat-label">
+              Objetivo {current.target_sets} series
               {current.target_reps_min && current.target_reps_max
                 ? ` · ${current.target_reps_min}-${current.target_reps_max} reps`
                 : ""}
             </p>
           )}
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           {lastPerformance && lastPerformance.sets.length > 0 && (
-            <div className="rounded-xl border bg-muted/30 px-3 py-2">
-              <p className="text-xs font-medium text-muted-foreground">
-                Última vez ({new Date(lastPerformance.completedAt).toLocaleDateString("es-ES")})
+            <div className="rounded-xl border bg-surface px-3 py-2.5">
+              <p className="stat-label">
+                Última vez · {new Date(lastPerformance.completedAt).toLocaleDateString("es-ES")}
               </p>
-              <p className="mt-1 text-sm">
+              <p className="mt-1 text-sm tabular-nums text-foreground/90">
                 {lastPerformance.sets
                   .map((s) => `${s.weight_kg ?? "BW"} kg × ${s.reps ?? "-"}`)
                   .join(" · ")}
@@ -138,7 +161,7 @@ export default async function TrainSessionPage({
               return (
                 <Link key={setNumber} href={setHref(setNumber)} scroll={false}>
                   <span
-                    className={`flex h-9 min-w-9 items-center justify-center rounded-full border px-2 text-sm font-medium transition-colors ${
+                    className={`flex h-9 min-w-9 items-center justify-center rounded-full border px-2 text-sm font-medium transition-[transform,background-color,border-color] duration-150 active:scale-95 ${
                       isActive
                         ? "border-primary bg-primary text-primary-foreground"
                         : slotDone
@@ -155,12 +178,12 @@ export default async function TrainSessionPage({
 
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <p className="stat-label">
                 Serie {activeSet} de {slotCount}
               </p>
               <div className="flex items-center gap-2">
                 {isPR && (
-                  <Badge className="gap-1 bg-success text-success-foreground">
+                  <Badge className="gap-1 bg-success text-success-foreground duration-emphasis fade-up">
                     <Flame className="h-3 w-3" />
                     Nuevo PR
                   </Badge>
@@ -187,7 +210,7 @@ export default async function TrainSessionPage({
             >
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">Peso (kg)</label>
+                  <label className="stat-label">Peso (kg)</label>
                   <Input
                     name="weightKg"
                     type="number"
@@ -195,32 +218,32 @@ export default async function TrainSessionPage({
                     min="0"
                     defaultValue={existing?.weight_kg ?? ""}
                     placeholder="0"
-                    className="h-14 text-center text-2xl font-semibold tabular-nums"
+                    className="h-16 rounded-xl text-center text-3xl font-bold tabular-nums"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">Repeticiones</label>
+                  <label className="stat-label">Reps</label>
                   <Input
                     name="reps"
                     type="number"
                     min="0"
                     defaultValue={existing?.reps ?? ""}
-                    className="h-14 text-center text-2xl font-semibold tabular-nums"
+                    className="h-16 rounded-xl text-center text-3xl font-bold tabular-nums"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">RIR (opcional)</label>
+                  <label className="stat-label">RIR</label>
                   <Input
                     name="rir"
                     type="number"
                     min="0"
                     max="10"
                     defaultValue={existing?.rir ?? ""}
-                    className="h-14 text-center text-2xl font-semibold tabular-nums"
+                    className="h-16 rounded-xl text-center text-3xl font-bold tabular-nums"
                   />
                 </div>
               </div>
-              <Button type="submit" size="lg" className="w-full">
+              <Button type="submit" size="lg" className="w-full duration-fast active:scale-[0.98]">
                 <Check className="h-4 w-4" />
                 {existing ? "Guardar cambios" : "Completar serie"}
               </Button>
