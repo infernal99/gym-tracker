@@ -3,11 +3,13 @@ import { Moon, Play } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getDashboardStats } from "@/lib/services/dashboard";
 import { getWeeklySummary } from "@/lib/services/weekly-summary";
+import { getInsights } from "@/lib/services/insights";
 import { listTrainingDays } from "@/lib/services/training";
 import { startWorkoutAction } from "@/lib/actions/training";
 import { AlternateDayCard } from "@/components/training/alternate-day-card";
 import { MotivationBanner } from "@/components/dashboard/motivation-banner";
 import { WeeklySummaryCard } from "@/components/dashboard/weekly-summary-card";
+import { InsightsCard } from "@/components/dashboard/insights-card";
 import { InstallBanner } from "@/components/pwa/install-banner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,10 +22,11 @@ function greetingForHour(hour: number) {
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  const [stats, trainingDays, weeklySummary] = await Promise.all([
+  const [stats, trainingDays, weeklySummary, insights] = await Promise.all([
     getDashboardStats(profile.id, profile.active_template_id),
     profile.active_template_id ? listTrainingDays(profile.active_template_id) : Promise.resolve([]),
     getWeeklySummary(profile.id),
+    getInsights(profile.id),
   ]);
 
   const otherDays = trainingDays.filter((d) => d.id !== stats.pendingDay?.id);
@@ -129,6 +132,10 @@ export default async function DashboardPage() {
 
       <div className="fade-up [animation-delay:140ms]">
         <WeeklySummaryCard summary={weeklySummary} />
+      </div>
+
+      <div className="fade-up [animation-delay:160ms]">
+        <InsightsCard insights={insights} />
       </div>
 
       {stats.lastSession && (
