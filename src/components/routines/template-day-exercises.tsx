@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { ChevronDown, ChevronUp, GripVertical, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import {
   addTemplateExerciseAction,
@@ -21,6 +21,8 @@ type DayExercise = {
   target_weight_kg: number | null;
   target_rir: number | null;
   rest_seconds: number | null;
+  is_unilateral: boolean;
+  rest_between_sides_seconds: number | null;
   exercises: { name: string } | null;
 };
 
@@ -36,8 +38,13 @@ function ExerciseFieldsGrid({
     targetWeightKg: number | null;
     targetRir: number | null;
     restSeconds: number | null;
+    isUnilateral: boolean;
+    restBetweenSidesSeconds: number | null;
   }>;
 }) {
+  const checkboxId = useId();
+  const [isUnilateral, setIsUnilateral] = useState(defaults?.isUnilateral ?? false);
+
   return (
     <>
       <div>
@@ -94,9 +101,33 @@ function ExerciseFieldsGrid({
           name="restSeconds"
           type="number"
           min={0}
-          defaultValue={defaults?.restSeconds ?? 90}
+          defaultValue={defaults?.restSeconds ?? 180}
         />
       </div>
+      <div className="col-span-2 flex items-center gap-2 rounded-lg border bg-background px-3 py-2">
+        <input
+          id={checkboxId}
+          name="isUnilateral"
+          type="checkbox"
+          defaultChecked={defaults?.isUnilateral ?? false}
+          onChange={(e) => setIsUnilateral(e.target.checked)}
+          className="h-4 w-4 rounded border-border accent-primary"
+        />
+        <Label htmlFor={checkboxId} className="cursor-pointer text-xs font-normal">
+          Unilateral (un lado a la vez)
+        </Label>
+      </div>
+      {isUnilateral && (
+        <div className="col-span-2">
+          <Label className="text-xs">Descanso entre lados (s)</Label>
+          <Input
+            name="restBetweenSidesSeconds"
+            type="number"
+            min={0}
+            defaultValue={defaults?.restBetweenSidesSeconds ?? 60}
+          />
+        </div>
+      )}
     </>
   );
 }
@@ -143,6 +174,8 @@ function ExerciseRow({
               targetWeightKg: exercise.target_weight_kg,
               targetRir: exercise.target_rir,
               restSeconds: exercise.rest_seconds,
+              isUnilateral: exercise.is_unilateral,
+              restBetweenSidesSeconds: exercise.rest_between_sides_seconds,
             }}
           />
         </div>
@@ -187,6 +220,7 @@ function ExerciseRow({
           {exercise.target_weight_kg ? ` · ${exercise.target_weight_kg} kg` : ""}
           {exercise.target_rir !== null ? ` · RIR ${exercise.target_rir}` : ""}
           {` · ${exercise.rest_seconds}s descanso`}
+          {exercise.is_unilateral ? ` · unilateral (+${exercise.rest_between_sides_seconds}s/lado)` : ""}
         </p>
       </div>
       <div className="flex shrink-0 flex-col">

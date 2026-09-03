@@ -124,6 +124,8 @@ async function copyTemplate(templateId: string, name: string, includeExercises: 
       target_rir: ex.target_rir,
       target_rpe: ex.target_rpe,
       rest_seconds: ex.rest_seconds,
+      is_unilateral: ex.is_unilateral,
+      rest_between_sides_seconds: ex.rest_between_sides_seconds,
       notes: ex.notes,
     }));
 
@@ -288,6 +290,8 @@ export async function copyDayExercisesAction(
     target_rir: ex.target_rir,
     target_rpe: ex.target_rpe,
     rest_seconds: ex.rest_seconds,
+    is_unilateral: ex.is_unilateral,
+    rest_between_sides_seconds: ex.rest_between_sides_seconds,
     notes: ex.notes,
   }));
 
@@ -316,7 +320,9 @@ export async function addTemplateExerciseAction(
     targetRepsMax: formData.get("targetRepsMax") || "",
     targetWeightKg: formData.get("targetWeightKg") || "",
     targetRir: formData.get("targetRir") || "",
-    restSeconds: formData.get("restSeconds") || 90,
+    restSeconds: formData.get("restSeconds") || 180,
+    isUnilateral: formData.get("isUnilateral") === "on",
+    restBetweenSidesSeconds: formData.get("restBetweenSidesSeconds") || 60,
     notes: formData.get("notes") || "",
   });
   if (!parsed.success) return;
@@ -341,6 +347,8 @@ export async function addTemplateExerciseAction(
     target_weight_kg: parsed.data.targetWeightKg || null,
     target_rir: parsed.data.targetRir || null,
     rest_seconds: parsed.data.restSeconds,
+    is_unilateral: parsed.data.isUnilateral,
+    rest_between_sides_seconds: parsed.data.restBetweenSidesSeconds,
     notes: parsed.data.notes || null,
   });
 
@@ -362,7 +370,9 @@ export async function updateTemplateExerciseAction(
       targetRepsMax: formData.get("targetRepsMax") || "",
       targetWeightKg: formData.get("targetWeightKg") || "",
       targetRir: formData.get("targetRir") || "",
-      restSeconds: formData.get("restSeconds") || 90,
+      restSeconds: formData.get("restSeconds") || 180,
+      isUnilateral: formData.get("isUnilateral") === "on",
+      restBetweenSidesSeconds: formData.get("restBetweenSidesSeconds") || 60,
       notes: formData.get("notes") || "",
     });
   if (!parsed.success) return;
@@ -377,6 +387,8 @@ export async function updateTemplateExerciseAction(
       target_weight_kg: parsed.data.targetWeightKg || null,
       target_rir: parsed.data.targetRir || null,
       rest_seconds: parsed.data.restSeconds,
+      is_unilateral: parsed.data.isUnilateral,
+      rest_between_sides_seconds: parsed.data.restBetweenSidesSeconds,
       notes: parsed.data.notes || null,
     })
     .eq("id", rowId);

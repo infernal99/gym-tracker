@@ -18,10 +18,10 @@ export default async function TrainSessionPage({
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ exercise?: string; set?: string }>;
+  searchParams: Promise<{ exercise?: string; set?: string; side?: string }>;
 }) {
   const { sessionId } = await params;
-  const { exercise: exerciseParam, set: setParam } = await searchParams;
+  const { exercise: exerciseParam, set: setParam, side: sideParam } = await searchParams;
   const profile = await requireProfile();
   const session = await getSessionWithDetails(sessionId);
 
@@ -55,8 +55,20 @@ export default async function TrainSessionPage({
     getPrSetIds(sessionExercises.flatMap((e) => e.sets.map((s) => s.id))),
   ]);
 
+  const isUnilateral = current.is_unilateral;
   const currentSets = [...current.sets].sort((a, b) => a.set_number - b.set_number);
-  const slotCount = Math.max(current.target_sets ?? 3, currentSets.length, 1);
+  // For unilateral exercises a "slot" (set number) isn't done until both
+  // sides have a row — used for the numbered pill selector and progress math.
+  const slotIsDone = (n: number) =>
+    isUnilateral
+      ? currentSets.some((s) => s.set_number === n && s.side === "left") &&
+        currentSets.some((s) => s.set_number === n && s.side === "right")
+      : currentSets.some((s) => s.set_number === n);
+  const slotCount = Math.max(
+    current.target_sets ?? 3,
+    isUnilateral ? Math.max(0, ...currentSets.map((s) => s.set_number)) : currentSets.length,
+    1,
+  );
   const slots = Array.from({ length: slotCount }, (_, i) => i + 1);
 
   const totalSetsTarget = sessionExercises.reduce(
@@ -65,12 +77,29 @@ export default async function TrainSessionPage({
   );
   const totalSetsDone = sessionExercises.reduce((sum, e) => sum + e.sets.length, 0);
 
-  const firstIncomplete = slots.find(
-    (n) => !currentSets.some((s) => s.set_number === n),
-  );
+  const firstIncomplete = slots.find((n) => !slotIsDone(n));
   const activeSet = Number(setParam) || firstIncomplete || slotCount;
-  const existing = currentSets.find((s) => s.set_number === activeSet);
-  const lastSet = lastPerformance?.sets[activeSet - 1];
+
+  const leftSet = currentSets.find((s) => s.set_number === activeSet && s.side === "left");
+  const rightSet = currentSets.find((s) => s.set_number === activeSet && s.side === "right");
+  const activeSide: "both" | "left" | "right" = !isUnilateral
+    ? "both"
+    : sideParam === "left" || sideParam === "right"
+      ? sideParam
+      : !leftSet
+        ? "left"
+        : !rightSet
+          ? "right"
+          : "left";
+
+  const existing = isUnilateral
+    ? activeSide === "left"
+      ? leftSet
+      : rightSet
+    : currentSets.find((s) => s.set_number === activeSet && s.side === "both");
+  const lastSet = lastPerformance?.sets.find(
+    (s) => s.set_number === activeSet && (!isUnilateral || s.side === activeSide),
+  );
   const isPR = existing && prSetIds.has(existing.id);
   const weightDelta =
     existing?.weight_kg != null && lastSet?.weight_kg != null
@@ -80,6 +109,14 @@ export default async function TrainSessionPage({
   function setHref(n: number) {
     return `/train/${sessionId}?exercise=${current.id}&set=${n}`;
   }
+  function sideHref(side: "left" | "right") {
+    return `/train/${sessionId}?exercise=${current.id}&set=${activeSet}&side=${side}`;
+  }
+
+  // Between-sides rest (unilateral, just finished one side and waiting on
+  // the other) takes priority over the normal between-sets rest.
+  const showSideRest = isUnilateral && !!leftSet && !rightSet;
+  const showSetRest = currentSets.length > 0 && !showSideRest;
 
   return (
     <div className="mx-auto max-w-xl space-y-4 pb-24">
@@ -147,7 +184,10 @@ export default async function TrainSessionPage({
               </p>
               <p className="mt-1 text-sm tabular-nums text-foreground/90">
                 {lastPerformance.sets
-                  .map((s) => `${s.weight_kg ?? "BW"} kg × ${s.reps ?? "-"}`)
+                  .map(
+                    (s) =>
+                      `${s.side === "left" ? "I " : s.side === "right" ? "D " : ""}${s.weight_kg ?? "BW"} kg × ${s.reps ?? "-"}`,
+                  )
                   .join(" · ")}
               </p>
             </div>
@@ -155,8 +195,7 @@ export default async function TrainSessionPage({
 
           <div className="flex flex-wrap gap-2">
             {slots.map((setNumber) => {
-              const slotSet = currentSets.find((s) => s.set_number === setNumber);
-              const slotDone = !!slotSet;
+              const slotDone = slotIsDone(setNumber);
               const isActive = setNumber === activeSet;
               return (
                 <Link key={setNumber} href={setHref(setNumber)} scroll={false}>
@@ -176,10 +215,36 @@ export default async function TrainSessionPage({
             })}
           </div>
 
+          {isUnilateral && (
+            <div className="flex gap-2">
+              {(["left", "right"] as const).map((side) => {
+                const done = side === "left" ? !!leftSet : !!rightSet;
+                const isActive = activeSide === side;
+                return (
+                  <Link key={side} href={sideHref(side)} scroll={false} className="flex-1">
+                    <span
+                      className={`flex h-9 w-full items-center justify-center gap-1.5 rounded-full border text-sm font-medium transition-colors ${
+                        isActive
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : done
+                            ? "border-success/40 bg-success/10 text-success"
+                            : "border-border text-muted-foreground hover:bg-accent"
+                      }`}
+                    >
+                      {done && <Check className="h-3.5 w-3.5" />}
+                      {side === "left" ? "Izquierda" : "Derecha"}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
           <div>
             <div className="mb-2 flex items-center justify-between">
               <p className="stat-label">
                 Serie {activeSet} de {slotCount}
+                {isUnilateral ? ` · ${activeSide === "left" ? "Izquierda" : "Derecha"}` : ""}
               </p>
               <div className="flex items-center gap-2">
                 {isPR && (
@@ -205,7 +270,14 @@ export default async function TrainSessionPage({
               </div>
             </div>
             <form
-              action={logSetAction.bind(null, sessionId, current.id, current.exercise_id, activeSet)}
+              action={logSetAction.bind(
+                null,
+                sessionId,
+                current.id,
+                current.exercise_id,
+                activeSet,
+                activeSide,
+              )}
               className="space-y-3"
             >
               <div className="grid grid-cols-3 gap-2">
@@ -250,8 +322,15 @@ export default async function TrainSessionPage({
             </form>
           </div>
 
-          {currentSets.length > 0 && (
-            <RestTimer key={currentSets.length} seconds={current.rest_seconds ?? 90} />
+          {showSideRest && (
+            <RestTimer
+              key={`side-${currentSets.length}`}
+              seconds={current.rest_between_sides_seconds ?? 60}
+              label="Descanso entre lados"
+            />
+          )}
+          {showSetRest && (
+            <RestTimer key={`set-${currentSets.length}`} seconds={current.rest_seconds ?? 180} />
           )}
         </CardContent>
       </Card>

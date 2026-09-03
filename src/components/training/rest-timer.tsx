@@ -13,7 +13,7 @@ function formatTime(totalSeconds: number) {
 const RING_RADIUS = 26;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-export function RestTimer({ seconds }: { seconds: number }) {
+export function RestTimer({ seconds, label = "Descanso" }: { seconds: number; label?: string }) {
   const [duration, setDuration] = useState(seconds);
   const [remaining, setRemaining] = useState(seconds);
   const [running, setRunning] = useState(true);
@@ -34,7 +34,7 @@ export function RestTimer({ seconds }: { seconds: number }) {
     >
       <div className="flex items-center justify-between">
         <div>
-          <p className="stat-label">Descanso</p>
+          <p className="stat-label">{label}</p>
           <p className={`font-mono text-3xl font-bold tabular-nums ${done ? "text-success" : "text-foreground"}`}>
             {done ? "¡Listo!" : formatTime(remaining)}
           </p>

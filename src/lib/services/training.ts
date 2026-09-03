@@ -148,9 +148,12 @@ export async function getLastPerformance(
   if (!data) return null;
 
   const sessionExercise = data.workout_session_exercises[0];
+  const sideOrder = { left: 0, right: 1, both: 0 } as const;
   return {
     completedAt: data.completed_at as string,
-    sets: [...(sessionExercise?.sets ?? [])].sort((a, b) => a.set_number - b.set_number),
+    sets: [...(sessionExercise?.sets ?? [])].sort(
+      (a, b) => a.set_number - b.set_number || sideOrder[a.side] - sideOrder[b.side],
+    ),
   };
 }
 

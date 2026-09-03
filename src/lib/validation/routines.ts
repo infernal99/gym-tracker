@@ -22,7 +22,9 @@ export const templateExerciseSchema = z.object({
   targetRepsMax: z.coerce.number().int().min(1).max(100).optional().or(z.literal("")),
   targetWeightKg: z.coerce.number().min(0).optional().or(z.literal("")),
   targetRir: z.coerce.number().int().min(0).max(10).optional().or(z.literal("")),
-  restSeconds: z.coerce.number().int().min(0).max(900).default(90),
+  restSeconds: z.coerce.number().int().min(0).max(900).default(180),
+  isUnilateral: z.coerce.boolean().default(false),
+  restBetweenSidesSeconds: z.coerce.number().int().min(0).max(600).default(60),
   notes: z.string().trim().max(280).optional().or(z.literal("")),
 });
 

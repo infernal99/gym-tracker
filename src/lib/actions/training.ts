@@ -61,6 +61,8 @@ export async function startWorkoutAction(dayId: string, countsTowardSequence: bo
         target_weight_kg: ex.target_weight_kg,
         target_rir: ex.target_rir,
         rest_seconds: ex.rest_seconds,
+        is_unilateral: ex.is_unilateral,
+        rest_between_sides_seconds: ex.rest_between_sides_seconds,
       })),
     );
   }
@@ -150,6 +152,7 @@ export async function logSetAction(
   sessionExerciseId: string,
   exerciseId: string,
   setNumber: number,
+  side: "both" | "left" | "right",
   formData: FormData,
 ) {
   const parsed = setSchema.safeParse({
@@ -168,12 +171,13 @@ export async function logSetAction(
       {
         session_exercise_id: sessionExerciseId,
         set_number: setNumber,
+        side,
         weight_kg: parsed.data.weightKg === "" ? null : parsed.data.weightKg,
         reps: parsed.data.reps === "" ? null : parsed.data.reps,
         rir: parsed.data.rir === "" ? null : parsed.data.rir,
         completed_at: new Date().toISOString(),
       },
-      { onConflict: "session_exercise_id,set_number" },
+      { onConflict: "session_exercise_id,set_number,side" },
     )
     .select("id")
     .single();

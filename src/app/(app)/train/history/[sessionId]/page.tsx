@@ -50,7 +50,10 @@ export default async function TrainHistoryDetailPage({
 
       <div className="space-y-3 fade-up [animation-delay:100ms]">
         {sessionExercises.map((ex) => {
-          const sets = [...ex.sets].sort((a, b) => a.set_number - b.set_number);
+          const sideOrder = { left: 0, both: 0, right: 1 } as const;
+          const sets = [...ex.sets].sort(
+            (a, b) => a.set_number - b.set_number || sideOrder[a.side] - sideOrder[b.side],
+          );
           return (
             <Card key={ex.id}>
               <CardHeader>
@@ -65,7 +68,10 @@ export default async function TrainHistoryDetailPage({
                     key={set.id}
                     className="rounded-lg border bg-surface px-2.5 py-1.5 text-sm tabular-nums"
                   >
-                    <span className="text-muted-foreground">S{set.set_number}</span>{" "}
+                    <span className="text-muted-foreground">
+                      S{set.set_number}
+                      {set.side !== "both" ? ` ${set.side === "left" ? "I" : "D"}` : ""}
+                    </span>{" "}
                     <span className="font-semibold">{set.weight_kg ?? "BW"} kg × {set.reps ?? "-"}</span>
                     {set.rir !== null ? (
                       <span className="text-muted-foreground"> · RIR {set.rir}</span>

@@ -989,6 +989,7 @@ export type Database = {
           session_exercise_id: string
           set_number: number
           set_type: Database["public"]["Enums"]["set_type"]
+          side: Database["public"]["Enums"]["set_side"]
           weight_kg: number | null
         }
         Insert: {
@@ -1002,6 +1003,7 @@ export type Database = {
           session_exercise_id: string
           set_number: number
           set_type?: Database["public"]["Enums"]["set_type"]
+          side?: Database["public"]["Enums"]["set_side"]
           weight_kg?: number | null
         }
         Update: {
@@ -1015,6 +1017,7 @@ export type Database = {
           session_exercise_id?: string
           set_number?: number
           set_type?: Database["public"]["Enums"]["set_type"]
+          side?: Database["public"]["Enums"]["set_side"]
           weight_kg?: number | null
         }
         Relationships: [
@@ -1070,8 +1073,10 @@ export type Database = {
         Row: {
           exercise_id: string
           id: string
+          is_unilateral: boolean
           notes: string | null
           order_index: number
+          rest_between_sides_seconds: number
           rest_seconds: number | null
           session_id: string
           target_reps_max: number | null
@@ -1083,8 +1088,10 @@ export type Database = {
         Insert: {
           exercise_id: string
           id?: string
+          is_unilateral?: boolean
           notes?: string | null
-          order_index: number
+          order_index?: number
+          rest_between_sides_seconds?: number
           rest_seconds?: number | null
           session_id: string
           target_reps_max?: number | null
@@ -1096,8 +1103,10 @@ export type Database = {
         Update: {
           exercise_id?: string
           id?: string
+          is_unilateral?: boolean
           notes?: string | null
           order_index?: number
+          rest_between_sides_seconds?: number
           rest_seconds?: number | null
           session_id?: string
           target_reps_max?: number | null
@@ -1232,8 +1241,10 @@ export type Database = {
         Row: {
           exercise_id: string
           id: string
+          is_unilateral: boolean
           notes: string | null
           order_index: number
+          rest_between_sides_seconds: number
           rest_seconds: number
           target_reps_max: number | null
           target_reps_min: number | null
@@ -1246,8 +1257,10 @@ export type Database = {
         Insert: {
           exercise_id: string
           id?: string
+          is_unilateral?: boolean
           notes?: string | null
           order_index: number
+          rest_between_sides_seconds?: number
           rest_seconds?: number
           target_reps_max?: number | null
           target_reps_min?: number | null
@@ -1260,8 +1273,10 @@ export type Database = {
         Update: {
           exercise_id?: string
           id?: string
+          is_unilateral?: boolean
           notes?: string | null
           order_index?: number
+          rest_between_sides_seconds?: number
           rest_seconds?: number
           target_reps_max?: number | null
           target_reps_min?: number | null
@@ -1501,6 +1516,7 @@ export type Database = {
         | "improve_performance"
         | "body_recomposition"
       private_visibility_level: "friends" | "private"
+      set_side: "both" | "left" | "right"
       set_type: "warmup" | "working" | "drop_set" | "rest_pause" | "amrap"
       visibility_level: "public" | "friends" | "private"
     }
@@ -1689,6 +1705,7 @@ export const Constants = {
         "body_recomposition",
       ],
       private_visibility_level: ["friends", "private"],
+      set_side: ["both", "left", "right"],
       set_type: ["warmup", "working", "drop_set", "rest_pause", "amrap"],
       visibility_level: ["public", "friends", "private"],
     },
@@ -1696,4 +1713,4 @@ export const Constants = {
 } as const
 
 
-export type ExerciseDifficulty = Database["public"]["Enums"]["exercise_difficulty"]
+export type ExerciseDifficulty = Database["public"]["Enums"]["exercise_difficulty"];
