@@ -4,8 +4,10 @@ import { DeltaBadge } from "@/components/ui/delta-badge";
 
 // Same row shape as the dashboard's weekly recap (dot/label, value, delta
 // chip) applied per muscle zone instead of per overall metric — used for
-// both "vs last week" and "vs first record" so progress or neglect in one
-// specific zone shows up instead of hiding inside a single volume total.
+// both "vs last week" and "vs first record" so progress or a stall in one
+// specific zone shows up instead of hiding inside a single total. The value
+// is average estimated 1RM (Epley), not volume: the same weight for one
+// more rep should read as an improvement even when volume barely moves.
 export function MuscleChangeList({ changes }: { changes: MuscleZoneChange[] }) {
   if (changes.length === 0) {
     return <p className="text-sm text-muted-foreground">Todavía no hay suficientes datos.</p>;
@@ -23,10 +25,10 @@ export function MuscleChangeList({ changes }: { changes: MuscleZoneChange[] }) {
             {ZONE_LABELS[change.zone]}
           </span>
           <span className="font-semibold tabular-nums">
-            {Math.round(change.currentKg).toLocaleString("es-ES")} kg
+            {Math.round(change.currentE1rmKg).toLocaleString("es-ES")} kg
           </span>
           <span className="w-14 shrink-0 text-right">
-            <DeltaBadge current={change.currentKg} previous={change.referenceKg} unit=" kg" />
+            <DeltaBadge current={change.currentE1rmKg} previous={change.referenceE1rmKg} unit=" kg" />
           </span>
         </div>
       ))}

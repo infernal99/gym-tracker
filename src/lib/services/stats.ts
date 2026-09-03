@@ -12,8 +12,11 @@ export interface WeeklyMuscleVolume {
 
 export interface MuscleZoneChange {
   zone: MuscleZone;
-  currentKg: number;
-  referenceKg: number;
+  /** Average estimated 1RM (Epley) across the zone's sets that week — a
+   *  performance figure, not total weight moved: the same weight for one
+   *  more rep raises this even if volume stays flat. */
+  currentE1rmKg: number;
+  referenceE1rmKg: number;
   /** Label for the reference point (e.g. the first week's date). */
   referenceLabel: string;
 }
@@ -69,6 +72,11 @@ export async function getMuscleVolumeStats(
 
   const weeks: WeeklyMuscleVolume[] = [];
   const byWeekStart = new Map<string, WeeklyMuscleVolume>();
+  // Average estimated 1RM per zone per week, tracked alongside (not inside)
+  // WeeklyMuscleVolume since it's a performance figure for the two change
+  // cards below, not a volume figure the stacked chart should ever plot.
+  const e1rmSumByWeek = new Map<WeeklyMuscleVolume, Record<MuscleZone, number>>();
+  const e1rmCountByWeek = new Map<WeeklyMuscleVolume, Record<MuscleZone, number>>();
   for (let i = 0; i < weekCount; i++) {
     const start = new Date(since);
     start.setDate(start.getDate() + i * 7);
@@ -80,6 +88,8 @@ export async function getMuscleVolumeStats(
     };
     weeks.push(week);
     byWeekStart.set(start.toLocaleDateString("sv-SE"), week);
+    e1rmSumByWeek.set(week, emptyZones());
+    e1rmCountByWeek.set(week, emptyZones());
   }
 
   const zoneTotals = new Map<MuscleZone, { volumeKg: number; sets: number }>();
@@ -89,6 +99,8 @@ export async function getMuscleVolumeStats(
       startOfWeek(new Date(session.completed_at as string)).toLocaleDateString("sv-SE"),
     );
     if (!week) continue;
+    const e1rmSum = e1rmSumByWeek.get(week)!;
+    const e1rmCount = e1rmCountByWeek.get(week)!;
 
     for (const sessionExercise of session.workout_session_exercises ?? []) {
       const zone = muscleZone(sessionExercise.exercises?.muscle_groups?.slug);
@@ -106,8 +118,21 @@ export async function getMuscleVolumeStats(
       total.volumeKg += volumeKg;
       total.sets += sets.length;
       zoneTotals.set(zone, total);
+
+      for (const set of sets) {
+        if (set.weight_kg == null || set.reps == null) continue;
+        const weightKg = Number(set.weight_kg);
+        const reps = Number(set.reps);
+        e1rmSum[zone] += weightKg * (1 + reps / 30);
+        e1rmCount[zone] += 1;
+      }
     }
   }
+
+  const avgE1rm = (week: WeeklyMuscleVolume, zone: MuscleZone) => {
+    const count = e1rmCountByWeek.get(week)?.[zone] ?? 0;
+    return count > 0 ? e1rmSumByWeek.get(week)![zone] / count : 0;
+  };
 
   const zonesWithData = [...zoneTotals.keys()];
   const currentWeek = weeks[weeks.length - 1];
@@ -116,31 +141,31 @@ export async function getMuscleVolumeStats(
   const vsLastWeek: MuscleZoneChange[] = zonesWithData
     .map((zone) => ({
       zone,
-      currentKg: currentWeek.byZone[zone],
-      referenceKg: previousWeek?.byZone[zone] ?? 0,
+      currentE1rmKg: avgE1rm(currentWeek, zone),
+      referenceE1rmKg: previousWeek ? avgE1rm(previousWeek, zone) : 0,
       referenceLabel: "semana pasada",
     }))
-    .filter((c) => c.currentKg > 0 || c.referenceKg > 0);
+    .filter((c) => c.currentE1rmKg > 0 || c.referenceE1rmKg > 0);
 
   // The earliest week (inside this weekCount-week window) that shows any
-  // volume for the zone — this is a "since your first record in view" figure
+  // e1RM for the zone — this is a "since your first record in view" figure
   // rather than a true all-time first, but for how young this app's
   // accounts are the two coincide in practice, and it avoids a second,
   // unbounded query just to find one number.
   const vsFirstRecord: MuscleZoneChange[] = zonesWithData
     .map((zone) => {
-      const firstWeek = weeks.find((w) => w.byZone[zone] > 0);
+      const firstWeek = weeks.find((w) => avgE1rm(w, zone) > 0);
       const isCurrentWeek = firstWeek === currentWeek;
       return {
         zone,
-        currentKg: currentWeek.byZone[zone],
+        currentE1rmKg: avgE1rm(currentWeek, zone),
         // Treated as "no baseline yet" when the only record is this week's,
         // so the UI reads it as new rather than a nonsensical 0% change.
-        referenceKg: isCurrentWeek ? 0 : (firstWeek?.byZone[zone] ?? 0),
+        referenceE1rmKg: isCurrentWeek || !firstWeek ? 0 : avgE1rm(firstWeek, zone),
         referenceLabel: firstWeek && !isCurrentWeek ? firstWeek.label : "primer registro",
       };
     })
-    .filter((c) => c.currentKg > 0 || c.referenceKg > 0);
+    .filter((c) => c.currentE1rmKg > 0 || c.referenceE1rmKg > 0);
 
   return {
     weeks,

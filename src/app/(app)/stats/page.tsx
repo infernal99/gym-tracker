@@ -66,6 +66,9 @@ export default async function StatsPage() {
       <Card className="fade-up [animation-delay:100ms]">
         <CardHeader>
           <CardTitle className="text-base">Esta semana vs la anterior</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Según tu 1RM estimado por grupo: mismo peso a más repeticiones también cuenta como mejora.
+          </p>
         </CardHeader>
         <CardContent>
           <MuscleChangeList changes={vsLastWeek} />
