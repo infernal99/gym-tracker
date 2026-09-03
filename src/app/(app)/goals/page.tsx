@@ -2,7 +2,7 @@ import { Target } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { listGoals } from "@/lib/services/goals";
 import { listExercises } from "@/lib/services/exercises";
-import { getExerciseProgress } from "@/lib/services/training";
+import { getExerciseTrends } from "@/lib/services/training";
 import { estimateGoalEta, type GoalEta } from "@/lib/calculations/strength";
 import { CreateGoalDialog } from "@/components/goals/create-goal-dialog";
 import { GoalCard } from "@/components/goals/goal-card";
@@ -19,16 +19,17 @@ export default async function GoalsPage() {
   // ETA only makes sense for a strength goal tied to a real exercise, whose
   // actual e1RM trend can be extrapolated — projecting from a manually
   // typed "current value" would just be guessing at a rate.
-  const etaByGoalId = new Map<string, GoalEta>();
-  await Promise.all(
-    activeGoals
-      .filter((g) => g.type === "strength" && g.exerciseId)
-      .map(async (g) => {
-        const { points } = await getExerciseProgress(profile.id, g.exerciseId!);
-        const eta = estimateGoalEta(points, g.targetValue);
-        if (eta) etaByGoalId.set(g.id, eta);
-      }),
+  const goalsWithExercise = activeGoals.filter((g) => g.type === "strength" && g.exerciseId);
+  const trends = await getExerciseTrends(
+    profile.id,
+    goalsWithExercise.map((g) => g.exerciseId!),
   );
+
+  const etaByGoalId = new Map<string, GoalEta>();
+  for (const goal of goalsWithExercise) {
+    const eta = estimateGoalEta(trends.get(goal.exerciseId!) ?? [], goal.targetValue);
+    if (eta) etaByGoalId.set(goal.id, eta);
+  }
 
   return (
     <div className="space-y-6">

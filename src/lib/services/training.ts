@@ -226,160 +226,156 @@ export type RestComparison = {
   diffSeconds: number;
 };
 
-// One point per completed session that includes this exercise: the set with
-// the best estimated 1RM (Epley) that session represents that day's top
-// performance, plus that session's total volume for the exercise.
-// sessionPoints carries every individual set (not just the best one) so the
-// chart can also show a single set number's progression across sessions —
-// the first set alone doesn't show whether e.g. set 3 is improving too.
-export async function getExerciseProgress(userId: string, exerciseId: string) {
-  const supabase = await createClient();
-  const [{ data: sessions }, { data: personalRecords }] = await Promise.all([
-    supabase
-      .from("workout_sessions")
-      .select("id, completed_at, workout_session_exercises!inner(id, exercise_id, rest_seconds, sets(*))")
-      .eq("user_id", userId)
-      .eq("workout_session_exercises.exercise_id", exerciseId)
-      .not("completed_at", "is", null)
-      .order("completed_at", { ascending: true }),
-    supabase
-      .from("personal_records")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("exercise_id", exerciseId)
-      .order("achieved_at", { ascending: false }),
-  ]);
+type ExerciseSetRow = {
+  set_number: number;
+  side: "both" | "left" | "right";
+  weight_kg: number | null;
+  reps: number | null;
+  completed_at: string | null;
+};
 
+type ExerciseSessionRow = {
+  completed_at: string;
+  workout_session_exercises: { rest_seconds: number | null; sets: ExerciseSetRow[] }[];
+};
+
+type ValidSet = ExerciseSetRow & { weight_kg: number; reps: number };
+
+const e1rmOf = (weightKg: number, reps: number) => weightKg * (1 + reps / 30);
+const round1 = (value: number) => Math.round(value * 10) / 10;
+
+const setsOf = (session: ExerciseSessionRow): ExerciseSetRow[] =>
+  session.workout_session_exercises[0]?.sets ?? [];
+
+const validSetsOf = (session: ExerciseSessionRow): ValidSet[] =>
+  setsOf(session).filter((s): s is ValidSet => s.weight_kg != null && s.reps != null);
+
+// A unilateral set logs a left and a right row under the same set_number.
+// Anything that treats a set as one data point wants a single row per
+// number: the combined 'both' row when there is one, else whichever side
+// came first.
+function oneRowPerSetNumber<T extends { set_number: number; side: string }>(sets: T[]): T[] {
+  const bySetNumber = new Map<number, T>();
+  for (const set of sets) {
+    const existing = bySetNumber.get(set.set_number);
+    if (!existing || set.side === "both") bySetNumber.set(set.set_number, set);
+  }
+  return [...bySetNumber.values()].sort((a, b) => a.set_number - b.set_number);
+}
+
+// One point per session: its best set by estimated 1RM, plus that session's
+// volume for the exercise. sessionPoints keeps every set number separately,
+// which the chart needs to show e.g. set 3 on its own — the top set alone
+// doesn't say whether the later ones are moving too.
+function buildProgressPoints(sessions: ExerciseSessionRow[]) {
   const points: ExerciseProgressPoint[] = [];
   const sessionPoints: ExerciseSessionSets[] = [];
-  for (const session of sessions ?? []) {
-    const sessionExercise = session.workout_session_exercises[0];
-    const validSets = (sessionExercise?.sets ?? []).filter(
-      (s): s is typeof s & { weight_kg: number; reps: number } =>
-        s.weight_kg != null && s.reps != null,
-    );
+
+  for (const session of sessions) {
+    const validSets = validSetsOf(session);
     if (validSets.length === 0) continue;
 
     const volumeKg = validSets.reduce((sum, s) => sum + s.weight_kg * s.reps, 0);
     const best = validSets.reduce((a, b) =>
-      b.weight_kg * (1 + b.reps / 30) > a.weight_kg * (1 + a.reps / 30) ? b : a,
+      e1rmOf(b.weight_kg, b.reps) > e1rmOf(a.weight_kg, a.reps) ? b : a,
     );
 
     points.push({
-      date: session.completed_at as string,
+      date: session.completed_at,
       weightKg: best.weight_kg,
       reps: best.reps,
-      e1rm: Math.round(best.weight_kg * (1 + best.reps / 30) * 10) / 10,
+      e1rm: round1(e1rmOf(best.weight_kg, best.reps)),
       volumeKg,
     });
 
-    // A unilateral set has a left+right row for the same set_number — prefer
-    // the combined 'both' row when present, otherwise keep the first side
-    // seen, so each set_number appears once per session.
-    const bySetNumber = new Map<number, (typeof validSets)[number]>();
-    for (const s of validSets) {
-      const existing = bySetNumber.get(s.set_number);
-      if (!existing || s.side === "both") bySetNumber.set(s.set_number, s);
-    }
     sessionPoints.push({
-      date: session.completed_at as string,
+      date: session.completed_at,
       volumeKg,
-      sets: [...bySetNumber.values()]
-        .sort((a, b) => a.set_number - b.set_number)
-        .map((s) => ({
-          setNumber: s.set_number,
-          weightKg: s.weight_kg,
-          reps: s.reps,
-          e1rm: Math.round(s.weight_kg * (1 + s.reps / 30) * 10) / 10,
-        })),
+      sets: oneRowPerSetNumber(validSets).map((s) => ({
+        setNumber: s.set_number,
+        weightKg: s.weight_kg,
+        reps: s.reps,
+        e1rm: round1(e1rmOf(s.weight_kg, s.reps)),
+      })),
     });
   }
 
-  // Left/right balance for unilateral exercises, from the last 5 sessions
-  // that actually logged separate sides (a session logged as 'both' — or
-  // an exercise that was never done unilaterally — contributes nothing
-  // here). Recent-only on purpose: this should reflect current form, not
-  // get diluted by an imbalance the user already corrected months ago.
-  const unilateralSessions = (sessions ?? [])
-    .filter((session) =>
-      (session.workout_session_exercises[0]?.sets ?? []).some((s) => s.side === "left" || s.side === "right"),
-    )
+  return { points, sessionPoints };
+}
+
+// Left/right balance, from the last 5 sessions that actually logged separate
+// sides. Recent-only on purpose: an imbalance the user already corrected
+// months ago shouldn't keep dragging the average.
+function computeSideBalance(sessions: ExerciseSessionRow[]): SideBalance | null {
+  const unilateral = sessions
+    .filter((session) => setsOf(session).some((s) => s.side === "left" || s.side === "right"))
     .slice(-5);
+  if (unilateral.length === 0) return null;
 
-  let sideBalance: SideBalance | null = null;
-  if (unilateralSessions.length > 0) {
-    let leftSum = 0;
-    let leftCount = 0;
-    let rightSum = 0;
-    let rightCount = 0;
-    for (const session of unilateralSessions) {
-      for (const s of session.workout_session_exercises[0]?.sets ?? []) {
-        if (s.weight_kg == null || s.reps == null) continue;
-        const e1rm = s.weight_kg * (1 + s.reps / 30);
-        if (s.side === "left") {
-          leftSum += e1rm;
-          leftCount += 1;
-        } else if (s.side === "right") {
-          rightSum += e1rm;
-          rightCount += 1;
-        }
-      }
+  const totals = { left: { sum: 0, count: 0 }, right: { sum: 0, count: 0 } };
+  for (const session of unilateral) {
+    for (const set of validSetsOf(session)) {
+      if (set.side === "both") continue;
+      const side = totals[set.side];
+      side.sum += e1rmOf(set.weight_kg, set.reps);
+      side.count += 1;
     }
-    if (leftCount > 0 && rightCount > 0) {
-      const leftAvg = leftSum / leftCount;
-      const rightAvg = rightSum / rightCount;
-      const weaker = Math.min(leftAvg, rightAvg);
-      sideBalance = {
-        leftE1rm: Math.round(leftAvg * 10) / 10,
-        rightE1rm: Math.round(rightAvg * 10) / 10,
-        diffPct: weaker > 0 ? (Math.abs(leftAvg - rightAvg) / weaker) * 100 : 0,
-        strongerSide: leftAvg === rightAvg ? null : leftAvg > rightAvg ? "left" : "right",
-      };
+  }
+  if (totals.left.count === 0 || totals.right.count === 0) return null;
+
+  const leftAvg = totals.left.sum / totals.left.count;
+  const rightAvg = totals.right.sum / totals.right.count;
+  const weaker = Math.min(leftAvg, rightAvg);
+
+  return {
+    leftE1rm: round1(leftAvg),
+    rightE1rm: round1(rightAvg),
+    diffPct: weaker > 0 ? (Math.abs(leftAvg - rightAvg) / weaker) * 100 : 0,
+    strongerSide: leftAvg === rightAvg ? null : leftAvg > rightAvg ? "left" : "right",
+  };
+}
+
+// Actual rest vs. target, over the last 5 sessions. There's no rest-timer
+// log, so the gap between consecutive sets' completed_at stands in for it —
+// that also includes however long the next set took, so it reads slightly
+// high, but it's the only signal in the data.
+function computeRestComparison(sessions: ExerciseSessionRow[]): RestComparison | null {
+  const gaps: number[] = [];
+  let targetSeconds: number | null = null;
+
+  for (const session of sessions.slice(-5)) {
+    const sessionExercise = session.workout_session_exercises[0];
+    if (!sessionExercise) continue;
+    if (sessionExercise.rest_seconds != null) targetSeconds = sessionExercise.rest_seconds;
+
+    const times = oneRowPerSetNumber(sessionExercise.sets.filter((s) => s.completed_at)).map((s) =>
+      new Date(s.completed_at as string).getTime(),
+    );
+    for (let i = 1; i < times.length; i++) {
+      const gapSeconds = (times[i] - times[i - 1]) / 1000;
+      // Over 15 minutes is an interruption (a call, another exercise in
+      // between), not rest.
+      if (gapSeconds > 0 && gapSeconds < 900) gaps.push(gapSeconds);
     }
   }
 
-  // Actual rest vs. the exercise's target, from the last 5 sessions. There's
-  // no dedicated rest-timer log, so this uses the gap between consecutive
-  // sets' completed_at as a proxy — it also includes however long the next
-  // set itself took, so it slightly overestimates true rest, but it's the
-  // only signal the data actually has.
-  let restComparison: RestComparison | null = null;
-  {
-    const gaps: number[] = [];
-    let targetSeconds: number | null = null;
-    for (const session of (sessions ?? []).slice(-5)) {
-      const sessionExercise = session.workout_session_exercises[0];
-      if (!sessionExercise) continue;
-      if (sessionExercise.rest_seconds != null) targetSeconds = sessionExercise.rest_seconds;
+  if (gaps.length < 3 || !targetSeconds) return null;
+  const avgGap = gaps.reduce((sum, g) => sum + g, 0) / gaps.length;
+  return {
+    targetSeconds,
+    actualSeconds: Math.round(avgGap),
+    diffSeconds: Math.round(avgGap - targetSeconds),
+  };
+}
 
-      const bySetNumber = new Map<number, string>();
-      for (const s of sessionExercise.sets ?? []) {
-        if (!s.completed_at) continue;
-        const existing = bySetNumber.get(s.set_number);
-        if (!existing || s.side === "both") bySetNumber.set(s.set_number, s.completed_at);
-      }
-      const ordered = [...bySetNumber.entries()]
-        .sort((a, b) => a[0] - b[0])
-        .map(([, completedAt]) => new Date(completedAt).getTime());
-      for (let i = 1; i < ordered.length; i++) {
-        const gapSeconds = (ordered[i] - ordered[i - 1]) / 1000;
-        // Excludes gaps over 15 min — almost certainly an interruption
-        // (phone call, another exercise in between) rather than rest.
-        if (gapSeconds > 0 && gapSeconds < 900) gaps.push(gapSeconds);
-      }
-    }
-    if (gaps.length >= 3 && targetSeconds) {
-      const avgGap = gaps.reduce((sum, g) => sum + g, 0) / gaps.length;
-      restComparison = {
-        targetSeconds,
-        actualSeconds: Math.round(avgGap),
-        diffSeconds: Math.round(avgGap - targetSeconds),
-      };
-    }
-  }
-
-  const now = new Date();
-  const thisWeekStart = startOfWeek(now);
+// Week-over-week reads on the same data at two levels: the session's single
+// best set (weekOverWeek) and every set number's own % change averaged
+// together (the "combined" figures). The two differ because set 1 and set 3
+// sit at different absolute weights — averaging their raw e1RM would just
+// track whichever set is heaviest, so each set's own percentage is computed
+// first and only the percentages get averaged.
+function computeWeeklyChanges(points: ExerciseProgressPoint[], sessionPoints: ExerciseSessionSets[]) {
+  const thisWeekStart = startOfWeek(new Date());
   const lastWeekStart = new Date(thisWeekStart);
   lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
@@ -390,24 +386,15 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
     });
     return inRange.length > 0 ? Math.max(...inRange.map((p) => p.e1rm)) : null;
   };
-
   const bestThisWeek = bestE1rmIn(thisWeekStart);
   const bestLastWeek = bestE1rmIn(lastWeekStart, thisWeekStart);
 
-  // Best estimated 1RM per set number per week — the basis for the two
-  // "combined" figures below. Kept separate from `points` (that session's
-  // single best set, whichever number it was) because set 1 and set 3
-  // usually sit at different absolute weights; averaging their raw e1RM
-  // together would just track whichever set happens to be heaviest, so
-  // instead each set number's own % change is computed first and only
-  // those percentages are averaged.
   const setNumberWeekly = new Map<number, Map<string, number>>();
   for (const sp of sessionPoints) {
     const weekKey = dayKey(startOfWeek(new Date(sp.date)));
     for (const s of sp.sets) {
       const weekly = setNumberWeekly.get(s.setNumber) ?? new Map<string, number>();
-      const existing = weekly.get(weekKey) ?? 0;
-      if (s.e1rm > existing) weekly.set(weekKey, s.e1rm);
+      if (s.e1rm > (weekly.get(weekKey) ?? 0)) weekly.set(weekKey, s.e1rm);
       setNumberWeekly.set(s.setNumber, weekly);
     }
   }
@@ -430,45 +417,114 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
       perSet.push({ setNumber, changePct });
     }
     perSet.sort((a, b) => a.setNumber - b.setNumber);
-    if (changes.length === 0) return { changePct: null, setCount: 0, perSet };
     return {
-      changePct: changes.reduce((sum, c) => sum + c, 0) / changes.length,
+      changePct: changes.length > 0 ? changes.reduce((sum, c) => sum + c, 0) / changes.length : null,
       setCount: changes.length,
       perSet,
     };
   }
 
-  const combinedWeekOverWeek = averageChangeAcrossSets((weekly) => weekly.get(lastWeekKey) ?? null);
+  return {
+    weekOverWeek: {
+      bestThisWeek,
+      bestLastWeek,
+      changePct:
+        bestThisWeek !== null && bestLastWeek
+          ? ((bestThisWeek - bestLastWeek) / bestLastWeek) * 100
+          : null,
+    },
+    combinedWeekOverWeek: averageChangeAcrossSets((weekly) => weekly.get(lastWeekKey) ?? null),
+    // A true all-time first here (unlike the muscle stats page, this query
+    // isn't windowed): the earliest week that set number appears, skipping
+    // this week so a set done for the first time ever today reads as having
+    // no baseline rather than a 0% change.
+    combinedSinceFirst: averageChangeAcrossSets((weekly) => {
+      let firstKey: string | null = null;
+      for (const key of weekly.keys()) {
+        if (key === thisWeekKey) continue;
+        if (firstKey === null || key < firstKey) firstKey = key;
+      }
+      return firstKey === null ? null : weekly.get(firstKey)!;
+    }),
+  };
+}
 
-  // "Since first record" here is a true all-time first (unlike the muscle
-  // stats page, this query already fetches full history, not a 12-week
-  // window) — the earliest week that set number appears, excluding this
-  // week itself so a set trained for the first time ever this week reads
-  // as having no baseline yet rather than a 0% change.
-  const combinedSinceFirst = averageChangeAcrossSets((weekly) => {
-    let firstKey: string | null = null;
-    for (const key of weekly.keys()) {
-      if (key === thisWeekKey) continue;
-      if (firstKey === null || key < firstKey) firstKey = key;
-    }
-    return firstKey === null ? null : weekly.get(firstKey)!;
-  });
+export async function getExerciseProgress(userId: string, exerciseId: string) {
+  const supabase = await createClient();
+  const [{ data: sessions }, { data: personalRecords }] = await Promise.all([
+    supabase
+      .from("workout_sessions")
+      .select("id, completed_at, workout_session_exercises!inner(id, exercise_id, rest_seconds, sets(*))")
+      .eq("user_id", userId)
+      .eq("workout_session_exercises.exercise_id", exerciseId)
+      .not("completed_at", "is", null)
+      .order("completed_at", { ascending: true }),
+    supabase
+      .from("personal_records")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("exercise_id", exerciseId)
+      .order("achieved_at", { ascending: false }),
+  ]);
+
+  const rows = (sessions ?? []) as unknown as ExerciseSessionRow[];
+  const { points, sessionPoints } = buildProgressPoints(rows);
 
   return {
     points,
     sessionPoints,
     personalRecords: personalRecords ?? [],
-    weekOverWeek: {
-      bestThisWeek,
-      bestLastWeek,
-      changePct:
-        bestThisWeek !== null && bestLastWeek ? ((bestThisWeek - bestLastWeek) / bestLastWeek) * 100 : null,
-    },
-    combinedWeekOverWeek,
-    combinedSinceFirst,
-    sideBalance,
-    restComparison,
+    ...computeWeeklyChanges(points, sessionPoints),
+    sideBalance: computeSideBalance(rows),
+    restComparison: computeRestComparison(rows),
   };
+}
+
+// Just the e1RM trend, for several exercises at once. The goals page needs
+// this for every strength goal it shows: calling getExerciseProgress per
+// goal meant one query each, plus computing five other things per call only
+// to throw them away.
+export async function getExerciseTrends(
+  userId: string,
+  exerciseIds: string[],
+): Promise<Map<string, ExerciseProgressPoint[]>> {
+  const byExercise = new Map<string, ExerciseProgressPoint[]>();
+  if (exerciseIds.length === 0) return byExercise;
+
+  const supabase = await createClient();
+  const { data: sessions } = await supabase
+    .from("workout_sessions")
+    .select("completed_at, workout_session_exercises!inner(exercise_id, sets(weight_kg, reps))")
+    .eq("user_id", userId)
+    .in("workout_session_exercises.exercise_id", exerciseIds)
+    .not("completed_at", "is", null)
+    .order("completed_at", { ascending: true });
+
+  for (const session of sessions ?? []) {
+    // A session can contain several of the requested exercises, so unlike
+    // the single-exercise query above this can't just take [0].
+    for (const sessionExercise of session.workout_session_exercises ?? []) {
+      const validSets = (sessionExercise.sets ?? []).filter(
+        (s): s is { weight_kg: number; reps: number } => s.weight_kg != null && s.reps != null,
+      );
+      if (validSets.length === 0) continue;
+
+      const best = validSets.reduce((a, b) =>
+        e1rmOf(b.weight_kg, b.reps) > e1rmOf(a.weight_kg, a.reps) ? b : a,
+      );
+      const list = byExercise.get(sessionExercise.exercise_id) ?? [];
+      list.push({
+        date: session.completed_at as string,
+        weightKg: best.weight_kg,
+        reps: best.reps,
+        e1rm: round1(e1rmOf(best.weight_kg, best.reps)),
+        volumeKg: validSets.reduce((sum, s) => sum + s.weight_kg * s.reps, 0),
+      });
+      byExercise.set(sessionExercise.exercise_id, list);
+    }
+  }
+
+  return byExercise;
 }
 
 export async function listCompletedSessions(userId: string, limit = 30) {
