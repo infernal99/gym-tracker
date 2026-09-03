@@ -51,7 +51,10 @@ export default async function BodyPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between fade-up">
-        <h1 className="text-2xl font-bold tracking-tight">Peso corporal</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Peso corporal</h1>
+          <p className="text-sm text-muted-foreground">Recomendado: a diario o 1 vez/semana.</p>
+        </div>
         <LogWeightDialog defaultWeightKg={currentWeight} />
       </div>
 
@@ -109,7 +112,10 @@ export default async function BodyPage() {
 
       <Card className="fade-up [animation-delay:180ms]">
         <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-base">Medidas</CardTitle>
+          <div>
+            <CardTitle className="text-base">Medidas</CardTitle>
+            <p className="text-sm text-muted-foreground">Recomendado: una vez al mes.</p>
+          </div>
           <LogMeasurementDialog />
         </CardHeader>
         <CardContent>
