@@ -2,10 +2,13 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/services/profile";
+import { findUserFork } from "@/lib/services/routines";
 import { templateSchema, daySchema, templateExerciseSchema } from "@/lib/validation/routines";
 import { REST_DAY_SENTINEL } from "@/lib/routines-constants";
+import type { Database } from "@/types/database.types";
 
 export async function createTemplateAction(formData: FormData) {
   const parsed = templateSchema.safeParse({
@@ -74,35 +77,26 @@ export async function toggleArchiveTemplateAction(templateId: string, archived: 
   revalidatePath("/routines");
 }
 
-async function copyTemplate(templateId: string, name: string, includeExercises: boolean) {
-  const profile = await requireProfile();
-  const supabase = await createClient();
+// Copies every day (and optionally its exercises) from one template onto
+// another, already-created one — shared by copyTemplate (new target row)
+// and resetTemplateToOriginalAction (existing target row, days wiped first).
+async function copyDaysAndExercises(
+  supabase: SupabaseClient<Database>,
+  sourceTemplateId: string,
+  targetTemplateId: string,
+  includeExercises: boolean,
+) {
+  const { data: sourceDays } = await supabase
+    .from("workout_template_days")
+    .select("*, workout_template_exercises(*)")
+    .eq("template_id", sourceTemplateId)
+    .order("day_order");
 
-  const { data: original } = await supabase
-    .from("workout_templates")
-    .select("*, workout_template_days(*, workout_template_exercises(*))")
-    .eq("id", templateId)
-    .single();
-
-  if (!original) return null;
-
-  const { data: copy } = await supabase
-    .from("workout_templates")
-    .insert({
-      user_id: profile.id,
-      name,
-      description: original.description,
-    })
-    .select("id")
-    .single();
-
-  if (!copy) return null;
-
-  for (const day of original.workout_template_days ?? []) {
+  for (const day of sourceDays ?? []) {
     const { data: newDay } = await supabase
       .from("workout_template_days")
       .insert({
-        template_id: copy.id,
+        template_id: targetTemplateId,
         day_order: day.day_order,
         name: day.name,
         is_rest_day: day.is_rest_day,
@@ -133,8 +127,102 @@ async function copyTemplate(templateId: string, name: string, includeExercises: 
       await supabase.from("workout_template_exercises").insert(exercises);
     }
   }
+}
+
+async function copyTemplate(
+  templateId: string,
+  name: string,
+  includeExercises: boolean,
+  forkedFromId?: string,
+) {
+  const profile = await requireProfile();
+  const supabase = await createClient();
+
+  const { data: original } = await supabase
+    .from("workout_templates")
+    .select("description")
+    .eq("id", templateId)
+    .single();
+
+  if (!original) return null;
+
+  const { data: copy } = await supabase
+    .from("workout_templates")
+    .insert({
+      user_id: profile.id,
+      name,
+      description: original.description,
+      forked_from_id: forkedFromId ?? null,
+    })
+    .select("id")
+    .single();
+
+  if (!copy) return null;
+
+  await copyDaysAndExercises(supabase, templateId, copy.id, includeExercises);
 
   return copy.id;
+}
+
+// A "De serie" template must look the same to everyone, so it can't be
+// edited in place — the first time anyone (owner included) tries to change
+// one, they get their own private, fully independent copy instead. Reuses
+// an existing fork rather than creating a second one on repeat visits.
+export async function personalizeTemplateAction(templateId: string) {
+  const profile = await requireProfile();
+  const supabase = await createClient();
+
+  const existingFork = await findUserFork(profile.id, templateId);
+  if (existingFork) redirect(`/routines/${existingFork.id}`);
+
+  const { data: original } = await supabase
+    .from("workout_templates")
+    .select("name")
+    .eq("id", templateId)
+    .single();
+
+  const copyId = await copyTemplate(templateId, original?.name ?? "Rutina", true, templateId);
+  if (!copyId) redirect(`/routines/${templateId}`);
+
+  revalidatePath("/routines");
+  redirect(`/routines/${copyId}`);
+}
+
+// Discards every local change to a personalized copy and re-copies the
+// current state of its "De serie" source back in — a full reset, not a
+// merge, so a stray edit can't be half-undone into a broken mix of both.
+export async function resetTemplateToOriginalAction(templateId: string) {
+  const supabase = await createClient();
+  const { data: template } = await supabase
+    .from("workout_templates")
+    .select("forked_from_id")
+    .eq("id", templateId)
+    .single();
+
+  if (!template?.forked_from_id) return;
+
+  const { data: original } = await supabase
+    .from("workout_templates")
+    .select("name, description")
+    .eq("id", template.forked_from_id)
+    .single();
+
+  if (!original) return;
+
+  // Cascades to workout_template_exercises and workout_template_weekday_slots.
+  await supabase.from("workout_template_days").delete().eq("template_id", templateId);
+
+  await supabase
+    .from("workout_templates")
+    .update({ name: original.name, description: original.description })
+    .eq("id", templateId);
+
+  await copyDaysAndExercises(supabase, template.forked_from_id, templateId, true);
+
+  revalidatePath(`/routines/${templateId}`);
+  revalidatePath(`/routines/${templateId}/setup`);
+  revalidatePath("/my-routine");
+  revalidatePath("/routines");
 }
 
 export async function duplicateTemplateAction(templateId: string) {

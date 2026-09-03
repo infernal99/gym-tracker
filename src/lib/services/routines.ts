@@ -22,6 +22,20 @@ export async function listPublicTemplates() {
   return data ?? [];
 }
 
+// Whether the viewer already has their own personal copy of a public
+// template, so "Personalizar" can jump straight to it instead of forking
+// a second time.
+export async function findUserFork(userId: string, forkedFromId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("workout_templates")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("forked_from_id", forkedFromId)
+    .maybeSingle();
+  return data;
+}
+
 export async function getTemplate(templateId: string) {
   const supabase = await createClient();
   const { data } = await supabase

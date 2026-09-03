@@ -1346,6 +1346,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          forked_from_id: string | null
           id: string
           is_archived: boolean
           is_public: boolean
@@ -1356,6 +1357,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          forked_from_id?: string | null
           id?: string
           is_archived?: boolean
           is_public?: boolean
@@ -1366,6 +1368,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          forked_from_id?: string | null
           id?: string
           is_archived?: boolean
           is_public?: boolean
@@ -1374,6 +1377,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "workout_templates_forked_from_id_fkey"
+            columns: ["forked_from_id"]
+            isOneToOne: false
+            referencedRelation: "workout_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "workout_templates_user_id_fkey"
             columns: ["user_id"]

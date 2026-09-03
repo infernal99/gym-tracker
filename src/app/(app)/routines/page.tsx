@@ -52,6 +52,11 @@ export default async function RoutinesPage() {
                       De serie
                     </Badge>
                   )}
+                  {template.forked_from_id && (
+                    <Badge variant="outline" className="shrink-0">
+                      Personalizada
+                    </Badge>
+                  )}
                   {template.is_archived && (
                     <Badge variant="secondary" className="shrink-0">
                       Archivada
