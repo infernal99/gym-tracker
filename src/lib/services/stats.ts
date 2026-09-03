@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { MUSCLE_ZONES, muscleZone, type MuscleZone } from "@/lib/muscle-colors";
 import { countCompletedSets } from "@/lib/set-utils";
+import { dayKey, startOfWeek } from "@/lib/date-utils";
 
 export interface WeeklyMuscleVolume {
   /** ISO date of that week's Monday. */
@@ -30,13 +31,6 @@ export interface MuscleVolumeStats {
   zoneTotals: { zone: MuscleZone; volumeKg: number; sets: number }[];
   vsLastWeek: MuscleZoneChange[];
   vsFirstRecord: MuscleZoneChange[];
-}
-
-function startOfWeek(date: Date) {
-  const d = new Date(date);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // Monday = 0
-  d.setHours(0, 0, 0, 0);
-  return d;
 }
 
 const emptyZones = (): Record<MuscleZone, number> => ({
@@ -87,7 +81,7 @@ export async function getMuscleVolumeStats(
       byZone: emptyZones(),
     };
     weeks.push(week);
-    const key = start.toLocaleDateString("sv-SE");
+    const key = dayKey(start);
     byWeekStart.set(key, week);
     weekIndexByKey.set(key, i);
   }
@@ -99,7 +93,7 @@ export async function getMuscleVolumeStats(
   const exerciseWeeklyBest = new Map<string, { zone: MuscleZone; weekly: Map<number, number> }>();
 
   for (const session of sessions ?? []) {
-    const weekKey = startOfWeek(new Date(session.completed_at as string)).toLocaleDateString("sv-SE");
+    const weekKey = dayKey(startOfWeek(new Date(session.completed_at as string)));
     const week = byWeekStart.get(weekKey);
     if (!week) continue;
     const weekIndex = weekIndexByKey.get(weekKey)!;
@@ -282,9 +276,7 @@ export const HIGH_SETS_THRESHOLD = 20;
 // quiet is exactly what this is meant to surface.
 export async function getWeeklyVolumeStatus(userId: string): Promise<ZoneWeeklyVolume[]> {
   const supabase = await createClient();
-  const weekStart = new Date();
-  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
-  weekStart.setHours(0, 0, 0, 0);
+  const weekStart = startOfWeek(new Date());
 
   const { data: sessions } = await supabase
     .from("workout_sessions")

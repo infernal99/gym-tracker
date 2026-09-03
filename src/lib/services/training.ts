@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { dayKey, startOfWeek } from "@/lib/date-utils";
 
 export async function getActiveSession(userId: string) {
   const supabase = await createClient();
@@ -190,13 +191,6 @@ export async function getPrSetIds(setIds: string[]) {
   return new Set((data ?? []).map((r) => r.session_set_id).filter((id): id is string => !!id));
 }
 
-function startOfWeek(date: Date) {
-  const d = new Date(date);
-  const day = (d.getDay() + 6) % 7; // Monday = 0
-  d.setDate(d.getDate() - day);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
 
 export type ExerciseProgressPoint = {
   date: string;
@@ -409,7 +403,7 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
   // those percentages are averaged.
   const setNumberWeekly = new Map<number, Map<string, number>>();
   for (const sp of sessionPoints) {
-    const weekKey = startOfWeek(new Date(sp.date)).toISOString();
+    const weekKey = dayKey(startOfWeek(new Date(sp.date)));
     for (const s of sp.sets) {
       const weekly = setNumberWeekly.get(s.setNumber) ?? new Map<string, number>();
       const existing = weekly.get(weekKey) ?? 0;
@@ -418,8 +412,8 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
     }
   }
 
-  const thisWeekKey = thisWeekStart.toISOString();
-  const lastWeekKey = lastWeekStart.toISOString();
+  const thisWeekKey = dayKey(thisWeekStart);
+  const lastWeekKey = dayKey(lastWeekStart);
 
   function averageChangeAcrossSets(baselineFor: (weekly: Map<string, number>) => number | null) {
     const changes: number[] = [];

@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { countCompletedSets } from "@/lib/set-utils";
-import { calculateCurrentStreak } from "@/lib/services/dashboard";
+import { currentStreak, dayKey, daysBetween, startOfWeek } from "@/lib/date-utils";
 
 export interface WeekTotals {
   workouts: number;
@@ -22,14 +22,7 @@ export interface WeeklySummary {
   topExercise: { name: string; slug: string; volumeKg: number } | null;
 }
 
-function startOfWeek(date: Date) {
-  const d = new Date(date);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // Monday = 0
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-const emptyTotals = (): WeekTotals => ({ workouts: 0, volumeKg: 0, sets: 0, minutes: 0, prs: 0 });
+const emptyTotals =(): WeekTotals => ({ workouts: 0, volumeKg: 0, sets: 0, minutes: 0, prs: 0 });
 
 // Everything the dashboard's weekly recap needs, in two round trips: the
 // sessions (with their sets, so series are counted per set_number rather
@@ -112,17 +105,8 @@ export async function getWeeklySummary(userId: string): Promise<WeeklySummary> {
   }
 
   const completedDates = (recentSessions ?? []).map((s) => s.completed_at as string);
-  const todayIso = new Date().toLocaleDateString("sv-SE"); // local YYYY-MM-DD
-  const trainedToday = completedDates.some((iso) => new Date(iso).toLocaleDateString("sv-SE") === todayIso);
-
-  let daysSinceLastWorkout: number | null = null;
-  if (completedDates.length > 0) {
-    const last = new Date(completedDates[0]);
-    last.setHours(0, 0, 0, 0);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    daysSinceLastWorkout = Math.round((today.getTime() - last.getTime()) / 86_400_000);
-  }
+  const today = new Date();
+  const trainedToday = completedDates.some((iso) => dayKey(iso) === dayKey(today));
 
   const topExercise =
     [...volumeByExercise.values()].sort((a, b) => b.volumeKg - a.volumeKg)[0] ?? null;
@@ -131,9 +115,10 @@ export async function getWeeklySummary(userId: string): Promise<WeeklySummary> {
     thisWeek,
     lastWeek,
     weekdaysTrained,
-    currentStreak: calculateCurrentStreak(completedDates),
+    currentStreak: currentStreak(completedDates),
     trainedToday,
-    daysSinceLastWorkout,
+    // recentSessions comes back newest-first, so [0] is the latest one.
+    daysSinceLastWorkout: completedDates.length > 0 ? daysBetween(completedDates[0], today) : null,
     topExercise: topExercise && topExercise.volumeKg > 0 ? topExercise : null,
   };
 }

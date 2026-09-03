@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { calculateCurrentStreak } from "@/lib/services/dashboard";
+import { currentStreak, longestStreak, startOfWeek } from "@/lib/date-utils";
 import { muscleZone, ZONE_LABELS, type MuscleZone } from "@/lib/muscle-colors";
 
 export type InsightIcon = "flame" | "trending-up" | "calendar" | "sparkles" | "alert";
@@ -10,30 +10,6 @@ export interface Insight {
   icon: InsightIcon;
   title: string;
   body: string;
-}
-
-function startOfWeek(date: Date) {
-  const d = new Date(date);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // Monday = 0
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-// All-time longest run of consecutive training days, as opposed to
-// calculateCurrentStreak's *current* one (which is 0 the moment a day is
-// missed and so never surfaces what the personal best actually was).
-function longestStreak(datesIso: string[]): number {
-  const days = Array.from(new Set(datesIso.map((iso) => iso.slice(0, 10)))).sort();
-  let best = 0;
-  let run = 0;
-  let prev: Date | null = null;
-  for (const day of days) {
-    const d = new Date(day);
-    run = prev && Math.round((d.getTime() - prev.getTime()) / 86_400_000) === 1 ? run + 1 : 1;
-    best = Math.max(best, run);
-    prev = d;
-  }
-  return best;
 }
 
 const WEEKDAY_NAMES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
@@ -99,16 +75,16 @@ export async function getInsights(userId: string): Promise<Insight[]> {
 
   // Longest streak ever vs. the current one.
   const allDates = sessions.map((s) => s.completed_at);
-  const currentStreak = calculateCurrentStreak(allDates);
+  const streak = currentStreak(allDates);
   const bestStreak = longestStreak(allDates);
-  if (bestStreak >= 3 && bestStreak === currentStreak) {
+  if (bestStreak >= 3 && bestStreak === streak) {
     insights.push({
       id: "streak-record",
       icon: "flame",
       title: "¡Racha récord!",
       body: `Estás en tu mejor racha: ${bestStreak} días seguidos entrenando.`,
     });
-  } else if (bestStreak >= 3 && bestStreak > currentStreak) {
+  } else if (bestStreak >= 3 && bestStreak > streak) {
     insights.push({
       id: "streak-record",
       icon: "flame",

@@ -1,8 +1,7 @@
 import { Check, Flame, Users, X } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import {
-  getFriendsLeaderboard,
-  listFriends,
+  getFriendsWithStats,
   listIncomingRequests,
   listOutgoingRequests,
 } from "@/lib/services/friends";
@@ -20,12 +19,14 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default async function FriendsPage() {
   const profile = await requireProfile();
-  const [friends, incoming, outgoing, leaderboard] = await Promise.all([
-    listFriends(profile.id),
+  const [everyone, incoming, outgoing] = await Promise.all([
+    getFriendsWithStats(profile.id),
     listIncomingRequests(profile.id),
     listOutgoingRequests(profile.id),
-    getFriendsLeaderboard(profile.id),
   ]);
+
+  // The ranking includes the user; the friends list below is just the others.
+  const friends = everyone.filter((f) => !f.isMe);
 
   return (
     <div className="space-y-6">
@@ -88,7 +89,7 @@ export default async function FriendsPage() {
 
       {friends.length > 0 && (
         <div className="fade-up [animation-delay:120ms]">
-          <FriendsLeaderboard entries={leaderboard} />
+          <FriendsLeaderboard entries={everyone} />
         </div>
       )}
 

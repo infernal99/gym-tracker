@@ -1,7 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { calculateCurrentStreak } from "@/lib/services/dashboard";
+import { currentStreak } from "@/lib/date-utils";
 import type { Database } from "@/types/database.types";
 
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -59,14 +59,11 @@ export async function getProfileStats(userId: string): Promise<ProfileStats> {
   ]);
 
   const totalVolumeKg = (sessions ?? []).reduce((sum, s) => sum + s.total_volume_kg, 0);
-  const currentStreak = calculateCurrentStreak(
-    (sessions ?? []).map((s) => s.completed_at as string),
-  );
 
   return {
     totalWorkouts: totalWorkouts ?? 0,
     totalVolumeKg,
     totalPrs: totalPrs ?? 0,
-    currentStreak,
+    currentStreak: currentStreak((sessions ?? []).map((s) => s.completed_at as string)),
   };
 }

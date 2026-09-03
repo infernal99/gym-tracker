@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Flame } from "lucide-react";
-import type { LeaderboardEntry } from "@/lib/services/friends";
+import type { FriendStats } from "@/lib/services/friends";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -10,28 +10,28 @@ const metrics = [
   {
     key: "volume",
     label: "Volumen",
-    value: (e: LeaderboardEntry) => e.volumeThisWeekKg,
+    value: (e: FriendStats) => e.volumeThisWeekKg,
     format: (v: number) => `${Math.round(v).toLocaleString("es-ES")} kg`,
     caption: "esta semana",
   },
   {
     key: "workouts",
     label: "Entrenos",
-    value: (e: LeaderboardEntry) => e.workoutsThisWeek,
+    value: (e: FriendStats) => e.workoutsThisWeek,
     format: (v: number) => String(v),
     caption: "esta semana",
   },
   {
     key: "streak",
     label: "Racha",
-    value: (e: LeaderboardEntry) => e.currentStreak,
+    value: (e: FriendStats) => e.currentStreak,
     format: (v: number) => `${v} d`,
     caption: "días seguidos",
   },
   {
     key: "xp",
     label: "Nivel",
-    value: (e: LeaderboardEntry) => e.xp,
+    value: (e: FriendStats) => e.xp,
     format: (v: number) => `${v.toLocaleString("es-ES")} XP`,
     caption: "total",
   },
@@ -42,7 +42,7 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 // Ranks the user against their friends on one metric at a time. Weekly
 // figures rather than all-time ones, so someone who just joined can still
 // win a week — an all-time board would be decided permanently on day one.
-export function FriendsLeaderboard({ entries }: { entries: LeaderboardEntry[] }) {
+export function FriendsLeaderboard({ entries }: { entries: FriendStats[] }) {
   const [metricKey, setMetricKey] = useState<(typeof metrics)[number]["key"]>("volume");
   const metric = metrics.find((m) => m.key === metricKey)!;
 

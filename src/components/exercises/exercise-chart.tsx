@@ -11,13 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import type { ExerciseProgressPoint, ExerciseSessionSets } from "@/lib/services/training";
-
-function startOfWeek(date: Date) {
-  const d = new Date(date);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // Monday = 0
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
+import { startOfWeek } from "@/lib/date-utils";
 
 const metrics = [
   { key: "e1rm", label: "1RM estimado", unit: "kg" },
