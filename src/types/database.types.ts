@@ -327,6 +327,7 @@ export type Database = {
           description: string | null
           end_date: string
           exercise_id: string | null
+          group_id: string | null
           id: string
           is_duel: boolean
           metric: Database["public"]["Enums"]["challenge_metric"]
@@ -341,6 +342,7 @@ export type Database = {
           description?: string | null
           end_date: string
           exercise_id?: string | null
+          group_id?: string | null
           id?: string
           is_duel?: boolean
           metric: Database["public"]["Enums"]["challenge_metric"]
@@ -355,6 +357,7 @@ export type Database = {
           description?: string | null
           end_date?: string
           exercise_id?: string | null
+          group_id?: string | null
           id?: string
           is_duel?: boolean
           metric?: Database["public"]["Enums"]["challenge_metric"]
@@ -376,6 +379,13 @@ export type Database = {
             columns: ["exercise_id"]
             isOneToOne: false
             referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
             referencedColumns: ["id"]
           },
         ]
@@ -710,6 +720,89 @@ export type Database = {
           },
           {
             foreignKeyName: "goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groups_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          role: Database["public"]["Enums"]["group_role"]
+          share_prs: boolean
+          share_streak: boolean
+          share_workouts: boolean
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["group_role"]
+          share_prs?: boolean
+          share_streak?: boolean
+          share_workouts?: boolean
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["group_role"]
+          share_prs?: boolean
+          share_streak?: boolean
+          share_workouts?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_members_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1533,6 +1626,7 @@ export type Database = {
         | "frequency"
         | "volume"
         | "custom"
+      group_role: "owner" | "member"
       movement_type: "compound" | "isolation" | "cardio" | "mobility"
       notification_type:
         | "friend_request"
@@ -1720,6 +1814,7 @@ export const Constants = {
         "volume",
         "custom",
       ],
+      group_role: ["owner", "member"],
       movement_type: ["compound", "isolation", "cardio", "mobility"],
       notification_type: [
         "friend_request",
