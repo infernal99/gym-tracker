@@ -258,6 +258,68 @@ export async function useTemplateAction(templateId: string) {
   redirect(`/routines/${copyId}/setup`);
 }
 
+// Returns the routine's share token, generating one the first time it's
+// needed — a template with no token yet just hasn't been shared before.
+export async function getOrCreateShareTokenAction(templateId: string): Promise<string | null> {
+  const profile = await requireProfile();
+  const supabase = await createClient();
+
+  const { data: template } = await supabase
+    .from("workout_templates")
+    .select("share_token")
+    .eq("id", templateId)
+    .eq("user_id", profile.id)
+    .single();
+
+  if (!template) return null;
+  if (template.share_token) return template.share_token;
+
+  const token = crypto.randomUUID();
+  const { error } = await supabase
+    .from("workout_templates")
+    .update({ share_token: token })
+    .eq("id", templateId)
+    .eq("user_id", profile.id);
+
+  return error ? null : token;
+}
+
+export async function shareTemplateWithFriendAction(templateId: string, friendId: string): Promise<void> {
+  const profile = await requireProfile();
+  const token = await getOrCreateShareTokenAction(templateId);
+  if (!token) return;
+
+  const supabase = await createClient();
+  await supabase.from("template_shares").insert({
+    template_id: templateId,
+    share_token: token,
+    shared_by: profile.id,
+    shared_with: friendId,
+  });
+
+  revalidatePath(`/routines/${templateId}`);
+}
+
+export async function dismissTemplateShareAction(shareId: string): Promise<void> {
+  const supabase = await createClient();
+  await supabase.from("template_shares").delete().eq("id", shareId);
+  revalidatePath("/routines");
+}
+
+// Clones a shared routine into the caller's own account via the token-gated
+// RPC (see migration routine_sharing) — no direct read access to the
+// source template is needed, so this works whether the share came through
+// an in-app "compartir con amigo" or a copied link.
+export async function forkSharedTemplateAction(token: string): Promise<void> {
+  await requireProfile();
+  const supabase = await createClient();
+  const { data: newId, error } = await supabase.rpc("fork_shared_template", { p_token: token });
+  if (error || !newId) return;
+
+  revalidatePath("/routines");
+  redirect(`/routines/${newId}`);
+}
+
 export async function addDayAction(templateId: string, formData: FormData) {
   const parsed = daySchema.safeParse({
     name: formData.get("name"),

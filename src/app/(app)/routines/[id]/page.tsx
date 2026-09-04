@@ -1,12 +1,13 @@
 import { notFound, redirect } from "next/navigation";
 import { Sparkles, Trash2, Moon } from "lucide-react";
-import { getTemplate, findUserFork } from "@/lib/services/routines";
+import { getTemplate, findUserFork, listShareCandidates } from "@/lib/services/routines";
 import { listExercises, listMuscleGroups } from "@/lib/services/exercises";
 import { requireProfile } from "@/lib/services/profile";
 import { deleteDayAction, personalizeTemplateAction } from "@/lib/actions/routines";
 import { TemplateDayExercises } from "@/components/routines/template-day-exercises";
 import { AddDayCard } from "@/components/routines/add-day-card";
 import { RenameTemplateDialog } from "@/components/routines/rename-template-dialog";
+import { ShareRoutineDialog } from "@/components/routines/share-routine-dialog";
 import { EditDayDialog } from "@/components/routines/edit-day-dialog";
 import { ResetTemplateButton } from "@/components/routines/reset-template-button";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,8 @@ export default async function RoutineDetailPage({
     if (existingFork) redirect(`/routines/${existingFork.id}`);
   }
   const readOnly = template.is_public;
+  const shareCandidates =
+    isOwner && !readOnly ? await listShareCandidates(profile.id, template.id) : [];
 
   const days = [...(template.workout_template_days ?? [])].sort(
     (a, b) => a.day_order - b.day_order,
@@ -71,6 +74,7 @@ export default async function RoutineDetailPage({
         ) : (
           <div className="flex shrink-0 items-center gap-1">
             {template.forked_from_id && <ResetTemplateButton templateId={template.id} />}
+            <ShareRoutineDialog templateId={template.id} candidates={shareCandidates} />
             <RenameTemplateDialog
               templateId={template.id}
               name={template.name}

@@ -124,67 +124,67 @@ export type Database = {
       body_measurements: {
         Row: {
           arm_cm: number | null
-          neck_cm: number | null
           arm_left_cm: number | null
           arm_right_cm: number | null
-          forearm_left_cm: number | null
-          forearm_right_cm: number | null
-          thigh_left_cm: number | null
-          thigh_right_cm: number | null
+          calf_cm: number | null
           calf_left_cm: number | null
           calf_right_cm: number | null
-          calf_cm: number | null
           chest_cm: number | null
           created_at: string
           forearm_cm: number | null
+          forearm_left_cm: number | null
+          forearm_right_cm: number | null
           hip_cm: number | null
           id: string
+          neck_cm: number | null
           recorded_at: string
           thigh_cm: number | null
+          thigh_left_cm: number | null
+          thigh_right_cm: number | null
           user_id: string
           waist_cm: number | null
         }
         Insert: {
           arm_cm?: number | null
-          neck_cm?: number | null
           arm_left_cm?: number | null
           arm_right_cm?: number | null
-          forearm_left_cm?: number | null
-          forearm_right_cm?: number | null
-          thigh_left_cm?: number | null
-          thigh_right_cm?: number | null
+          calf_cm?: number | null
           calf_left_cm?: number | null
           calf_right_cm?: number | null
-          calf_cm?: number | null
           chest_cm?: number | null
           created_at?: string
           forearm_cm?: number | null
+          forearm_left_cm?: number | null
+          forearm_right_cm?: number | null
           hip_cm?: number | null
           id?: string
+          neck_cm?: number | null
           recorded_at?: string
           thigh_cm?: number | null
+          thigh_left_cm?: number | null
+          thigh_right_cm?: number | null
           user_id: string
           waist_cm?: number | null
         }
         Update: {
           arm_cm?: number | null
-          neck_cm?: number | null
           arm_left_cm?: number | null
           arm_right_cm?: number | null
-          forearm_left_cm?: number | null
-          forearm_right_cm?: number | null
-          thigh_left_cm?: number | null
-          thigh_right_cm?: number | null
+          calf_cm?: number | null
           calf_left_cm?: number | null
           calf_right_cm?: number | null
-          calf_cm?: number | null
           chest_cm?: number | null
           created_at?: string
           forearm_cm?: number | null
+          forearm_left_cm?: number | null
+          forearm_right_cm?: number | null
           hip_cm?: number | null
           id?: string
+          neck_cm?: number | null
           recorded_at?: string
           thigh_cm?: number | null
+          thigh_left_cm?: number | null
+          thigh_right_cm?: number | null
           user_id?: string
           waist_cm?: number | null
         }
@@ -730,41 +730,6 @@ export type Database = {
           },
         ]
       }
-      groups: {
-        Row: {
-          avatar_url: string | null
-          created_at: string
-          creator_id: string
-          description: string | null
-          id: string
-          name: string
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          creator_id: string
-          description?: string | null
-          id?: string
-          name: string
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string
-          creator_id?: string
-          description?: string | null
-          id?: string
-          name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "groups_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       group_members: {
         Row: {
           group_id: string
@@ -807,6 +772,41 @@ export type Database = {
           {
             foreignKeyName: "group_members_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groups_creator_id_fkey"
+            columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1153,6 +1153,55 @@ export type Database = {
           },
         ]
       }
+      template_shares: {
+        Row: {
+          created_at: string
+          id: string
+          share_token: string
+          shared_by: string
+          shared_with: string
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          share_token: string
+          shared_by: string
+          shared_with: string
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          share_token?: string
+          shared_by?: string
+          shared_with?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_shares_shared_by_fkey"
+            columns: ["shared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_shares_shared_with_fkey"
+            columns: ["shared_with"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_shares_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "workout_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_achievements: {
         Row: {
           achievement_id: string
@@ -1474,6 +1523,7 @@ export type Database = {
           is_archived: boolean
           is_public: boolean
           name: string
+          share_token: string | null
           updated_at: string
           user_id: string
         }
@@ -1485,6 +1535,7 @@ export type Database = {
           is_archived?: boolean
           is_public?: boolean
           name: string
+          share_token?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1496,6 +1547,7 @@ export type Database = {
           is_archived?: boolean
           is_public?: boolean
           name?: string
+          share_token?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1582,11 +1634,26 @@ export type Database = {
           username: string
         }[]
       }
+      fork_shared_template: { Args: { p_token: string }; Returns: string }
+      get_shared_template_preview: {
+        Args: { p_token: string }
+        Returns: {
+          day_count: number
+          description: string
+          exercise_count: number
+          id: string
+          name: string
+          owner_display_name: string
+        }[]
+      }
       is_blocked: { Args: { a: string; b: string }; Returns: boolean }
       is_challenge_participant: {
         Args: { p_challenge_id: string }
         Returns: boolean
       }
+      is_group_creator: { Args: { p_group_id: string }; Returns: boolean }
+      is_group_member: { Args: { p_group_id: string }; Returns: boolean }
+      is_group_owner: { Args: { p_group_id: string }; Returns: boolean }
       owns_session: { Args: { p_session_id: string }; Returns: boolean }
       owns_session_exercise: {
         Args: { p_session_exercise_id: string }
@@ -1848,6 +1915,5 @@ export const Constants = {
     },
   },
 } as const
-
 
 export type ExerciseDifficulty = Database["public"]["Enums"]["exercise_difficulty"];
