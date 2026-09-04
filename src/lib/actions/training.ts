@@ -101,6 +101,8 @@ async function checkAndRecordPRs(
   weightKg: number,
   reps: number,
 ) {
+  let beatARecord = false;
+
   const { data: bestWeight } = await supabase
     .from("personal_records")
     .select("value")
@@ -121,6 +123,7 @@ async function checkAndRecordPRs(
       reps,
       session_set_id: setId,
     });
+    beatARecord = true;
   }
 
   const estimated1rm = weightKg * (1 + reps / 30);
@@ -143,6 +146,22 @@ async function checkAndRecordPRs(
       weight_kg: weightKg,
       reps,
       session_set_id: setId,
+    });
+    beatARecord = true;
+  }
+
+  // One feed entry per set at most, even if both record types were beaten —
+  // that's still a single PR moment from the user's point of view. The
+  // exercise name isn't otherwise available here, so it's fetched only on
+  // this (rare) path rather than on every set logged.
+  if (beatARecord) {
+    const { data: exercise } = await supabase.from("exercises").select("name").eq("id", exerciseId).single();
+    await supabase.from("activity_feed").insert({
+      user_id: userId,
+      type: "new_pr",
+      related_type: "exercise",
+      related_id: exerciseId,
+      metadata: { exerciseName: exercise?.name ?? "", weightKg, reps },
     });
   }
 }
@@ -206,7 +225,7 @@ export async function finishWorkoutAction(sessionId: string) {
   const supabase = await createClient();
   const { data: session } = await supabase
     .from("workout_sessions")
-    .select("started_at, user_id, counts_toward_sequence")
+    .select("name, started_at, user_id, counts_toward_sequence, total_volume_kg")
     .eq("id", sessionId)
     .single();
 
@@ -230,6 +249,14 @@ export async function finishWorkoutAction(sessionId: string) {
       .update({ sequence_anchor_day_id: null })
       .eq("id", session.user_id);
   }
+
+  await supabase.from("activity_feed").insert({
+    user_id: session.user_id,
+    type: "workout_completed",
+    related_type: "workout_session",
+    related_id: sessionId,
+    metadata: { sessionName: session.name, volumeKg: session.total_volume_kg, durationSeconds },
+  });
 
   await supabase.rpc("evaluate_achievements", { p_user_id: session.user_id });
   await supabase.rpc("check_exercise_milestones", { p_user_id: session.user_id });

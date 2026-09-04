@@ -3,11 +3,13 @@ import { Flame, Trophy, Users, Weight, X } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getGroupDetail, listInviteCandidates } from "@/lib/services/groups";
 import { listGroupChallenges } from "@/lib/services/group-challenges";
+import { listGroupActivity } from "@/lib/services/group-activity";
 import { listExercises } from "@/lib/services/exercises";
 import { removeMemberAction, leaveGroupAction } from "@/lib/actions/groups";
 import { GroupRanking } from "@/components/groups/group-ranking";
 import { CreateGroupChallengeDialog } from "@/components/groups/create-group-challenge-dialog";
 import { GroupChallengeCard } from "@/components/groups/group-challenge-card";
+import { GroupActivityFeed } from "@/components/groups/group-activity-feed";
 import { InviteFriendDialog } from "@/components/groups/invite-friend-dialog";
 import { SharingSettingsForm } from "@/components/groups/sharing-settings-form";
 import { BackButton } from "@/components/ui/back-button";
@@ -24,7 +26,11 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
 
   const isOwner = group.viewerRole === "owner";
   const candidates = isOwner ? await listInviteCandidates(id, profile.id) : [];
-  const [challenges, exercises] = await Promise.all([listGroupChallenges(id), listExercises()]);
+  const [challenges, exercises, activity] = await Promise.all([
+    listGroupChallenges(id),
+    listExercises(),
+    listGroupActivity(id),
+  ]);
   const exerciseOptions = exercises.map((e) => ({ id: e.id, name: e.name }));
   const me = group.members.find((m) => m.isMe)!;
 
@@ -86,6 +92,15 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
         </CardHeader>
         <CardContent>
           <GroupRanking members={group.members} />
+        </CardContent>
+      </Card>
+
+      <Card className="fade-up [animation-delay:110ms]">
+        <CardHeader>
+          <CardTitle className="text-base">Actividad</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <GroupActivityFeed entries={activity} />
         </CardContent>
       </Card>
 

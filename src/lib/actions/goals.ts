@@ -67,7 +67,7 @@ export async function updateGoalProgressAction(
 
   const { data: goal } = await supabase
     .from("goals")
-    .select("initial_value, target_value, status")
+    .select("title, initial_value, target_value, status")
     .eq("id", goalId)
     .eq("user_id", profile.id)
     .single();
@@ -94,6 +94,13 @@ export async function updateGoalProgressAction(
   }
 
   if (reachedGoal) {
+    await supabase.from("activity_feed").insert({
+      user_id: profile.id,
+      type: "goal_completed",
+      related_type: "goal",
+      related_id: goalId,
+      metadata: { title: goal.title },
+    });
     await supabase.rpc("evaluate_achievements", { p_user_id: profile.id });
     revalidatePath("/achievements");
   }
