@@ -329,6 +329,7 @@ export type Database = {
           exercise_id: string | null
           group_id: string | null
           id: string
+          is_collective: boolean
           is_duel: boolean
           metric: Database["public"]["Enums"]["challenge_metric"]
           name: string
@@ -344,6 +345,7 @@ export type Database = {
           exercise_id?: string | null
           group_id?: string | null
           id?: string
+          is_collective?: boolean
           is_duel?: boolean
           metric: Database["public"]["Enums"]["challenge_metric"]
           name: string
@@ -359,6 +361,7 @@ export type Database = {
           exercise_id?: string | null
           group_id?: string | null
           id?: string
+          is_collective?: boolean
           is_duel?: boolean
           metric?: Database["public"]["Enums"]["challenge_metric"]
           name?: string
@@ -1615,6 +1618,7 @@ export type Database = {
         | "exercise"
         | "distance"
         | "custom"
+        | "streak"
       challenge_status: "upcoming" | "active" | "completed" | "cancelled"
       exercise_difficulty: "beginner" | "intermediate" | "advanced"
       friend_request_status: "pending" | "accepted" | "rejected" | "cancelled"
@@ -1801,6 +1805,7 @@ export const Constants = {
         "exercise",
         "distance",
         "custom",
+        "streak",
       ],
       challenge_status: ["upcoming", "active", "completed", "cancelled"],
       exercise_difficulty: ["beginner", "intermediate", "advanced"],

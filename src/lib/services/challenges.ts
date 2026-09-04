@@ -1,9 +1,12 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { Challenge } from "@/lib/challenge-utils";
+import { longestStreak } from "@/lib/date-utils";
 
-
-async function computeCurrentValue(
+// Exported so group challenges (which need this per-participant, not just
+// for the viewer) can reuse the exact same metric definitions instead of a
+// second implementation that could quietly drift from this one.
+export async function computeChallengeValue(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   metric: string,
@@ -42,6 +45,30 @@ async function computeCurrentValue(
     return count ?? 0;
   }
 
+  if (metric === "volume") {
+    const { data: sessions } = await supabase
+      .from("workout_sessions")
+      .select("total_volume_kg")
+      .eq("user_id", userId)
+      .not("completed_at", "is", null)
+      .gte("completed_at", startDate);
+    return (sessions ?? []).reduce((sum, s) => sum + Number(s.total_volume_kg ?? 0), 0);
+  }
+
+  if (metric === "streak") {
+    // Longest run achieved *during the challenge window*, not the streak
+    // right now — someone who built a 10-day streak in week one and then
+    // broke it should still be shown as having reached 10, matching "quién
+    // mantiene la racha más larga" rather than "quién está en racha hoy".
+    const { data: sessions } = await supabase
+      .from("workout_sessions")
+      .select("completed_at")
+      .eq("user_id", userId)
+      .not("completed_at", "is", null)
+      .gte("completed_at", startDate);
+    return longestStreak((sessions ?? []).map((s) => s.completed_at as string));
+  }
+
   if (metric === "custom") {
     const { data } = await supabase
       .from("body_weight_entries")
@@ -72,7 +99,7 @@ export async function listChallenges(userId: string): Promise<Challenge[]> {
   return Promise.all(
     (rows ?? []).map(async (row): Promise<Challenge> => {
       const participant = row.challenge_participants[0];
-      const computed = await computeCurrentValue(
+      const computed = await computeChallengeValue(
         supabase,
         userId,
         row.metric,

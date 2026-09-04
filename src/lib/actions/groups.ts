@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/services/profile";
 import { createGroupSchema } from "@/lib/validation/groups";
+import { createGroupChallengeSchema } from "@/lib/validation/group-challenges";
 
 export async function createGroupAction(formData: FormData) {
   const parsed = createGroupSchema.safeParse({
@@ -77,5 +78,68 @@ export async function updateSharingSettingsAction(groupId: string, formData: For
     })
     .eq("group_id", groupId)
     .eq("user_id", profile.id);
+  revalidatePath(`/groups/${groupId}`);
+}
+
+export async function createGroupChallengeAction(groupId: string, formData: FormData) {
+  const parsed = createGroupChallengeSchema.safeParse({
+    metric: formData.get("metric"),
+    name: formData.get("name"),
+    exerciseId: formData.get("exerciseId") || "",
+    targetValue: formData.get("targetValue"),
+    startDate: formData.get("startDate"),
+    endDate: formData.get("endDate"),
+    isCollective: formData.get("isCollective") === "on",
+  });
+  if (!parsed.success) return;
+
+  const d = parsed.data;
+  if (d.endDate <= d.startDate) return;
+  if (d.metric === "exercise" && !d.exerciseId) return;
+
+  const profile = await requireProfile();
+  const supabase = await createClient();
+
+  const today = new Date().toISOString().slice(0, 10);
+  const status = d.startDate <= today ? "active" : "upcoming";
+  const challengeId = crypto.randomUUID();
+
+  // Same id-generated-client-side, no-RETURNING shape as createGroupAction —
+  // this row isn't visible via challenges_select (is_challenge_participant)
+  // until a challenge_participants row exists for the creator, which is the
+  // very next statement.
+  const { error } = await supabase.from("challenges").insert({
+    id: challengeId,
+    creator_id: profile.id,
+    group_id: groupId,
+    is_collective: d.isCollective,
+    name: d.name,
+    metric: d.metric,
+    exercise_id: d.metric === "exercise" ? d.exerciseId || null : null,
+    target_value: d.targetValue,
+    start_date: d.startDate,
+    end_date: d.endDate,
+    status,
+  });
+  if (error) return;
+
+  // Every current group member joins automatically — a group challenge
+  // with an opt-in step would need its own invite/accept flow, and the
+  // spec's examples ("Participantes: Ian, Alex, Marc, Pau") show the whole
+  // group entered from the start. challenge_participants_insert already
+  // lets a challenge's creator add any user_id to their own challenge, with
+  // no separate friendship check, so this doesn't need an RLS change.
+  const { data: members } = await supabase.from("group_members").select("user_id").eq("group_id", groupId);
+  if (members && members.length > 0) {
+    await supabase.from("challenge_participants").insert(
+      members.map((m) => ({
+        challenge_id: challengeId,
+        user_id: m.user_id,
+        initial_value: 0,
+        current_value: 0,
+      })),
+    );
+  }
+
   revalidatePath(`/groups/${groupId}`);
 }

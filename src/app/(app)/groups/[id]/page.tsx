@@ -2,8 +2,12 @@ import { notFound } from "next/navigation";
 import { Flame, Trophy, Users, Weight, X } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getGroupDetail, listInviteCandidates } from "@/lib/services/groups";
+import { listGroupChallenges } from "@/lib/services/group-challenges";
+import { listExercises } from "@/lib/services/exercises";
 import { removeMemberAction, leaveGroupAction } from "@/lib/actions/groups";
 import { GroupRanking } from "@/components/groups/group-ranking";
+import { CreateGroupChallengeDialog } from "@/components/groups/create-group-challenge-dialog";
+import { GroupChallengeCard } from "@/components/groups/group-challenge-card";
 import { InviteFriendDialog } from "@/components/groups/invite-friend-dialog";
 import { SharingSettingsForm } from "@/components/groups/sharing-settings-form";
 import { BackButton } from "@/components/ui/back-button";
@@ -20,6 +24,8 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
 
   const isOwner = group.viewerRole === "owner";
   const candidates = isOwner ? await listInviteCandidates(id, profile.id) : [];
+  const [challenges, exercises] = await Promise.all([listGroupChallenges(id), listExercises()]);
+  const exerciseOptions = exercises.map((e) => ({ id: e.id, name: e.name }));
   const me = group.members.find((m) => m.isMe)!;
 
   // Group totals only add up figures that are actually shared — a member
@@ -82,6 +88,22 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
           <GroupRanking members={group.members} />
         </CardContent>
       </Card>
+
+      <div className="space-y-3 fade-up [animation-delay:120ms]">
+        <div className="flex items-center justify-between">
+          <h2 className="stat-label">Retos del grupo</h2>
+          <CreateGroupChallengeDialog groupId={group.id} exercises={exerciseOptions} />
+        </div>
+        {challenges.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Todavía no hay ningún reto en este grupo.</p>
+        ) : (
+          <div className="space-y-2">
+            {challenges.map((c) => (
+              <GroupChallengeCard key={c.id} challenge={c} />
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="fade-up [animation-delay:140ms]">
         <SharingSettingsForm groupId={group.id} sharing={me.sharing} />
