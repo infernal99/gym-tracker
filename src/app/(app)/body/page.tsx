@@ -3,20 +3,13 @@ import { requireProfile } from "@/lib/services/profile";
 import { listWeightEntries, listMeasurements } from "@/lib/services/body";
 import { WeightChart } from "@/components/body/weight-chart";
 import { MeasurementChart } from "@/components/body/measurement-chart";
+import { PAIRED_MEASUREMENTS, SINGLE_MEASUREMENTS } from "@/lib/body-measurements";
 import { LogWeightDialog } from "@/components/body/log-weight-dialog";
 import { LogMeasurementDialog } from "@/components/body/log-measurement-dialog";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const measurementFields = [
-  { key: "chestCm", label: "Pecho" },
-  { key: "waistCm", label: "Cintura" },
-  { key: "hipCm", label: "Cadera" },
-  { key: "armCm", label: "Brazo" },
-  { key: "forearmCm", label: "Antebrazo" },
-  { key: "thighCm", label: "Muslo" },
-  { key: "calfCm", label: "Gemelo" },
-] as const;
+
 
 export default async function BodyPage() {
   const profile = await requireProfile();
@@ -123,15 +116,48 @@ export default async function BodyPage() {
             <p className="text-sm text-muted-foreground">Todavía no has añadido medidas.</p>
           ) : (
             <div className="space-y-5">
-              <div className="grid grid-cols-3 gap-3">
-                {measurementFields.map((f) => {
+              <div className="grid grid-cols-4 gap-2">
+                {SINGLE_MEASUREMENTS.map((f) => {
                   const value = latestMeasurement[f.key];
                   return (
                     <div key={f.key} className="rounded-xl border bg-surface p-3 text-center">
-                      <p className="text-lg font-semibold tabular-nums">
-                        {value !== null ? `${value}` : "—"}
-                      </p>
+                      <p className="text-lg font-semibold tabular-nums">{value ?? "—"}</p>
                       <p className="stat-label mt-0.5">{f.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-2">
+                {PAIRED_MEASUREMENTS.map((m) => {
+                  const left = latestMeasurement[m.left];
+                  const right = latestMeasurement[m.right];
+                  if (left == null && right == null) return null;
+                  const diff = left != null && right != null ? Math.abs(left - right) : null;
+                  return (
+                    <div key={m.label} className="rounded-xl border bg-surface p-3">
+                      <div className="flex items-center justify-between">
+                        <p className="stat-label">{m.label}</p>
+                        {/* Reported plainly. A difference between sides is
+                            common and this makes no claim about it. */}
+                        {diff !== null && (
+                          <p className="text-xs text-muted-foreground">
+                            {diff === 0
+                              ? "Sin diferencia"
+                              : `Diferencia ${diff.toFixed(1)} cm`}
+                          </p>
+                        )}
+                      </div>
+                      <div className="mt-1 grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-lg font-semibold tabular-nums">{left ?? "—"}</p>
+                          <p className="stat-label">Izquierdo</p>
+                        </div>
+                        <div>
+                          <p className="text-lg font-semibold tabular-nums">{right ?? "—"}</p>
+                          <p className="stat-label">Derecho</p>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}

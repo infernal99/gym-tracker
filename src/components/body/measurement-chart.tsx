@@ -10,24 +10,19 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { MeasurementEntry } from "@/lib/services/body";
-
-const fields = [
-  { key: "chestCm", label: "Pecho" },
-  { key: "waistCm", label: "Cintura" },
-  { key: "hipCm", label: "Cadera" },
-  { key: "armCm", label: "Brazo" },
-  { key: "forearmCm", label: "Antebrazo" },
-  { key: "thighCm", label: "Muslo" },
-  { key: "calfCm", label: "Gemelo" },
-] as const;
+import {
+  ALL_MEASUREMENT_FIELDS,
+  type MeasurementEntry,
+  type MeasurementKey,
+} from "@/lib/body-measurements";
 
 // Evolution over time for one measurement at a time — mirrors WeightChart's
-// shape, but needs a metric picker first since a measurement entry holds
-// seven independent numbers instead of weight's single value.
+// shape, but needs a metric picker first since an entry holds a dozen
+// independent numbers instead of weight's single value. Left and right are
+// separate options, so a side can be tracked on its own.
 export function MeasurementChart({ entries }: { entries: MeasurementEntry[] }) {
-  const availableFields = fields.filter((f) => entries.some((e) => e[f.key] != null));
-  const [field, setField] = useState<(typeof fields)[number]["key"] | null>(availableFields[0]?.key ?? null);
+  const availableFields = ALL_MEASUREMENT_FIELDS.filter((f) => entries.some((e) => e[f.key] != null));
+  const [field, setField] = useState<MeasurementKey | null>(availableFields[0]?.key ?? null);
 
   const data = useMemo(() => {
     if (!field) return [];
@@ -97,7 +92,7 @@ export function MeasurementChart({ entries }: { entries: MeasurementEntry[] }) {
                 stroke="var(--muted-foreground)"
               />
               <Tooltip
-                formatter={(value) => [`${value} cm`, fields.find((f) => f.key === field)?.label]}
+                formatter={(value) => [`${value} cm`, ALL_MEASUREMENT_FIELDS.find((f) => f.key === field)?.label]}
                 cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
                 contentStyle={{
                   fontSize: 12,

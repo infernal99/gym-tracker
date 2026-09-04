@@ -1,5 +1,9 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { MEASUREMENT_COLUMNS, type MeasurementEntry } from "@/lib/body-measurements";
+
+export type { MeasurementEntry };
+export { MEASUREMENT_COLUMNS };
 
 export interface WeightEntry {
   id: string;
@@ -24,18 +28,6 @@ export async function listWeightEntries(userId: string): Promise<WeightEntry[]> 
   }));
 }
 
-export interface MeasurementEntry {
-  id: string;
-  recordedAt: string;
-  waistCm: number | null;
-  chestCm: number | null;
-  armCm: number | null;
-  forearmCm: number | null;
-  thighCm: number | null;
-  calfCm: number | null;
-  hipCm: number | null;
-}
-
 export async function listMeasurements(userId: string): Promise<MeasurementEntry[]> {
   const supabase = await createClient();
   const { data } = await supabase
@@ -47,12 +39,19 @@ export async function listMeasurements(userId: string): Promise<MeasurementEntry
   return (data ?? []).map((r) => ({
     id: r.id,
     recordedAt: r.recorded_at,
-    waistCm: r.waist_cm,
+    neckCm: r.neck_cm,
     chestCm: r.chest_cm,
-    armCm: r.arm_cm,
-    forearmCm: r.forearm_cm,
-    thighCm: r.thigh_cm,
-    calfCm: r.calf_cm,
+    waistCm: r.waist_cm,
     hipCm: r.hip_cm,
+    armLeftCm: r.arm_left_cm,
+    armRightCm: r.arm_right_cm,
+    forearmLeftCm: r.forearm_left_cm,
+    forearmRightCm: r.forearm_right_cm,
+    thighLeftCm: r.thigh_left_cm,
+    thighRightCm: r.thigh_right_cm,
+    calfLeftCm: r.calf_left_cm,
+    calfRightCm: r.calf_right_cm,
   }));
 }
+
+

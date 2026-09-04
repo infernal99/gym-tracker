@@ -124,6 +124,15 @@ export type Database = {
       body_measurements: {
         Row: {
           arm_cm: number | null
+          neck_cm: number | null
+          arm_left_cm: number | null
+          arm_right_cm: number | null
+          forearm_left_cm: number | null
+          forearm_right_cm: number | null
+          thigh_left_cm: number | null
+          thigh_right_cm: number | null
+          calf_left_cm: number | null
+          calf_right_cm: number | null
           calf_cm: number | null
           chest_cm: number | null
           created_at: string
@@ -137,6 +146,15 @@ export type Database = {
         }
         Insert: {
           arm_cm?: number | null
+          neck_cm?: number | null
+          arm_left_cm?: number | null
+          arm_right_cm?: number | null
+          forearm_left_cm?: number | null
+          forearm_right_cm?: number | null
+          thigh_left_cm?: number | null
+          thigh_right_cm?: number | null
+          calf_left_cm?: number | null
+          calf_right_cm?: number | null
           calf_cm?: number | null
           chest_cm?: number | null
           created_at?: string
@@ -150,6 +168,15 @@ export type Database = {
         }
         Update: {
           arm_cm?: number | null
+          neck_cm?: number | null
+          arm_left_cm?: number | null
+          arm_right_cm?: number | null
+          forearm_left_cm?: number | null
+          forearm_right_cm?: number | null
+          thigh_left_cm?: number | null
+          thigh_right_cm?: number | null
+          calf_left_cm?: number | null
+          calf_right_cm?: number | null
           calf_cm?: number | null
           chest_cm?: number | null
           created_at?: string

@@ -5,12 +5,21 @@ export const logWeightSchema = z.object({
   note: z.string().max(200).optional().or(z.literal("")),
 });
 
+// Every measurement is optional — people rarely record all of them in one
+// sitting, and a half-filled entry is still worth keeping.
+const optionalCm = z.coerce.number().positive().max(300).optional().or(z.literal(""));
+
 export const logMeasurementSchema = z.object({
-  waistCm: z.coerce.number().positive().optional().or(z.literal("")),
-  chestCm: z.coerce.number().positive().optional().or(z.literal("")),
-  armCm: z.coerce.number().positive().optional().or(z.literal("")),
-  forearmCm: z.coerce.number().positive().optional().or(z.literal("")),
-  thighCm: z.coerce.number().positive().optional().or(z.literal("")),
-  calfCm: z.coerce.number().positive().optional().or(z.literal("")),
-  hipCm: z.coerce.number().positive().optional().or(z.literal("")),
+  neckCm: optionalCm,
+  chestCm: optionalCm,
+  waistCm: optionalCm,
+  hipCm: optionalCm,
+  armLeftCm: optionalCm,
+  armRightCm: optionalCm,
+  forearmLeftCm: optionalCm,
+  forearmRightCm: optionalCm,
+  thighLeftCm: optionalCm,
+  thighRightCm: optionalCm,
+  calfLeftCm: optionalCm,
+  calfRightCm: optionalCm,
 });

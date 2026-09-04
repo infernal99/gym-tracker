@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/services/profile";
 import { logWeightSchema, logMeasurementSchema } from "@/lib/validation/body";
+import { MEASUREMENT_COLUMNS, type MeasurementKey } from "@/lib/body-measurements";
 import type { ActionResult } from "@/lib/actions/auth";
 
 export async function logWeightAction(
@@ -53,34 +54,31 @@ export async function logMeasurementAction(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const parsed = logMeasurementSchema.safeParse({
-    waistCm: formData.get("waistCm") || "",
-    chestCm: formData.get("chestCm") || "",
-    armCm: formData.get("armCm") || "",
-    forearmCm: formData.get("forearmCm") || "",
-    thighCm: formData.get("thighCm") || "",
-    calfCm: formData.get("calfCm") || "",
-    hipCm: formData.get("hipCm") || "",
-  });
+  const keys = Object.keys(MEASUREMENT_COLUMNS) as MeasurementKey[];
+  const parsed = logMeasurementSchema.safeParse(
+    Object.fromEntries(keys.map((key) => [key, formData.get(key) || ""])),
+  );
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos no válidos" };
   }
 
+  const values = parsed.data as Record<MeasurementKey, number | "" | undefined>;
+  const row = Object.fromEntries(
+    keys.map((key) => [MEASUREMENT_COLUMNS[key], values[key] || null]),
+  );
+
+  // An entry with nothing filled in is just noise in the history.
+  if (Object.values(row).every((value) => value === null)) {
+    return { error: "Introduce al menos una medida" };
+  }
+
   const profile = await requireProfile();
   const supabase = await createClient();
-  const d = parsed.data;
 
-  const { error } = await supabase.from("body_measurements").insert({
-    user_id: profile.id,
-    waist_cm: d.waistCm || null,
-    chest_cm: d.chestCm || null,
-    arm_cm: d.armCm || null,
-    forearm_cm: d.forearmCm || null,
-    thigh_cm: d.thighCm || null,
-    calf_cm: d.calfCm || null,
-    hip_cm: d.hipCm || null,
-  });
+  const { error } = await supabase
+    .from("body_measurements")
+    .insert({ user_id: profile.id, ...row });
 
   if (error) {
     return { error: "No se pudieron guardar las medidas" };
