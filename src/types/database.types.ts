@@ -1654,6 +1654,7 @@ export type Database = {
       is_group_creator: { Args: { p_group_id: string }; Returns: boolean }
       is_group_member: { Args: { p_group_id: string }; Returns: boolean }
       is_group_owner: { Args: { p_group_id: string }; Returns: boolean }
+      is_username_taken: { Args: { p_username: string }; Returns: boolean }
       owns_session: { Args: { p_session_id: string }; Returns: boolean }
       owns_session_exercise: {
         Args: { p_session_exercise_id: string }
@@ -1915,5 +1916,6 @@ export const Constants = {
     },
   },
 } as const
+
 
 export type ExerciseDifficulty = Database["public"]["Enums"]["exercise_difficulty"];

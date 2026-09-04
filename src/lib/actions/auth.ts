@@ -35,6 +35,18 @@ export async function registerAction(
   const { data } = parsed;
   const supabase = await createClient();
 
+  // profiles.username is unique in the DB regardless, but that failure
+  // surfaces through signUp as an opaque "Database error saving new user"
+  // (the trigger that creates the profile row runs after the auth user is
+  // already inserted) — checking first gives a message that actually says
+  // what's wrong.
+  const { data: taken } = await supabase.rpc("is_username_taken", {
+    p_username: data.username,
+  });
+  if (taken) {
+    return { error: "Ese nombre de usuario ya está en uso" };
+  }
+
   const { error } = await supabase.auth.signUp({
     email: data.email,
     password: data.password,
@@ -50,6 +62,12 @@ export async function registerAction(
   if (error) {
     if (error.message.toLowerCase().includes("already registered")) {
       return { error: "Ese email ya está registrado" };
+    }
+    // The username-taken case above covers the normal path; this is only
+    // the rare race where two people submit the same brand-new username at
+    // the same instant, which still surfaces as this opaque message.
+    if (error.message.toLowerCase().includes("database error saving new user")) {
+      return { error: "Ese nombre de usuario ya está en uso" };
     }
     return { error: error.message };
   }

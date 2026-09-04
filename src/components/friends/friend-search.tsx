@@ -17,7 +17,12 @@ export function FriendSearch() {
       <form action={formAction} className="flex gap-2">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input name="username" placeholder="Buscar por username exacto..." className="pl-8" />
+          <Input
+            name="username"
+            placeholder="Buscar por username exacto..."
+            className="pl-8"
+            autoComplete="off"
+          />
         </div>
         <Button type="submit" disabled={pending}>
           {pending ? "..." : "Buscar"}
