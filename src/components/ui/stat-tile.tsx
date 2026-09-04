@@ -6,7 +6,7 @@ export function StatTile({
   value,
   trend,
 }: {
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string | number;
   trend?: { value: string; positive: boolean } | null;

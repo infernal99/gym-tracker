@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Flame, Target, TrendingUp, RotateCcw, Trophy } from "lucide-react";
 import type { ChallengeTone, DailyChallenge } from "@/lib/services/daily-challenge";
 
-const TONE_ICONS: Record<ChallengeTone, React.ElementType> = {
+const TONE_ICONS: Record<ChallengeTone, React.ComponentType<{ className?: string }>> = {
   near_pr: Target,
   just_set_pr: Trophy,
   stalled: Flame,

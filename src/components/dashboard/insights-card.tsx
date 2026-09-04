@@ -2,7 +2,7 @@ import { AlertTriangle, Calendar, Flame, Sparkles, TrendingUp } from "lucide-rea
 import type { Insight, InsightIcon } from "@/lib/services/insights";
 import { Card, CardContent } from "@/components/ui/card";
 
-const ICONS: Record<InsightIcon, React.ElementType> = {
+const ICONS: Record<InsightIcon, React.ComponentType<{ className?: string }>> = {
   flame: Flame,
   "trending-up": TrendingUp,
   calendar: Calendar,

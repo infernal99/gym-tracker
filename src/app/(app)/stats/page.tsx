@@ -4,7 +4,8 @@ import { getMuscleVolumeStats, getWeeklyVolumeStatus } from "@/lib/services/stat
 import { MuscleVolumeChart } from "@/components/stats/muscle-volume-chart";
 import { MuscleChangeList } from "@/components/stats/muscle-change-list";
 import { WeeklyVolumeSemaphore } from "@/components/stats/weekly-volume-semaphore";
-import { ZONE_LABELS, muscleZoneColor } from "@/lib/muscle-colors";
+import { MuscleBody3D, type ZoneInfo } from "@/components/stats/muscle-body/muscle-body-3d";
+import { MUSCLE_ZONES, ZONE_LABELS, muscleZoneColor } from "@/lib/muscle-colors";
 import { BackButton } from "@/components/ui/back-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -17,10 +18,35 @@ export default async function StatsPage() {
 
   const totalVolume = zoneTotals.reduce((sum, z) => sum + z.volumeKg, 0);
 
+  const zoneInfo = Object.fromEntries(
+    MUSCLE_ZONES.map((zone) => {
+      const totals = zoneTotals.find((z) => z.zone === zone);
+      const weekly = weeklyVolumeStatus.find((z) => z.zone === zone);
+      const change = vsLastWeek.find((z) => z.zone === zone);
+      const info: ZoneInfo = {
+        setsThisWeek: weekly?.sets ?? 0,
+        sets: totals?.sets ?? 0,
+        volumeKg: totals?.volumeKg ?? 0,
+        changePct: change?.changePct ?? null,
+        status: weekly?.status ?? "low",
+      };
+      return [zone, info];
+    }),
+  ) as Record<(typeof MUSCLE_ZONES)[number], ZoneInfo>;
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <BackButton fallbackHref="/profile" />
       <h1 className="text-2xl font-bold tracking-tight fade-up">Estadísticas</h1>
+
+      <Card className="fade-up [animation-delay:10ms]">
+        <CardHeader>
+          <CardTitle className="text-base">Grupos musculares</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MuscleBody3D info={zoneInfo} />
+        </CardContent>
+      </Card>
 
       <Card className="fade-up [animation-delay:20ms]">
         <CardHeader>
