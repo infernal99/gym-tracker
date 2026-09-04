@@ -4,12 +4,14 @@ import { requireProfile } from "@/lib/services/profile";
 import { getDashboardStats } from "@/lib/services/dashboard";
 import { getWeeklySummary } from "@/lib/services/weekly-summary";
 import { getInsights } from "@/lib/services/insights";
+import { getDailyChallenge } from "@/lib/services/daily-challenge";
 import { listTrainingDays } from "@/lib/services/training";
 import { startWorkoutAction } from "@/lib/actions/training";
 import { AlternateDayCard } from "@/components/training/alternate-day-card";
 import { MotivationBanner } from "@/components/dashboard/motivation-banner";
 import { WeeklySummaryCard } from "@/components/dashboard/weekly-summary-card";
 import { InsightsCard } from "@/components/dashboard/insights-card";
+import { DailyChallengeCard } from "@/components/dashboard/daily-challenge-card";
 import { InstallBanner } from "@/components/pwa/install-banner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,11 +24,14 @@ function greetingForHour(hour: number) {
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  const [stats, trainingDays, weeklySummary, insights] = await Promise.all([
-    getDashboardStats(profile.id, profile.active_template_id),
+  // The daily challenge needs to know which day is planned, so it waits on
+  // stats; everything else still runs alongside it.
+  const stats = await getDashboardStats(profile.id, profile.active_template_id);
+  const [trainingDays, weeklySummary, insights, dailyChallenge] = await Promise.all([
     profile.active_template_id ? listTrainingDays(profile.active_template_id) : Promise.resolve([]),
     getWeeklySummary(profile.id),
     getInsights(profile.id),
+    getDailyChallenge(profile.id, stats.pendingDay?.is_rest_day ? null : (stats.pendingDay?.id ?? null)),
   ]);
 
   const otherDays = trainingDays.filter((d) => d.id !== stats.pendingDay?.id);
@@ -108,6 +113,12 @@ export default async function DashboardPage() {
                   {stats.pendingDayExerciseCount} ejercicios · {stats.pendingDaySetCount} series
                 </p>
               </div>
+              {dailyChallenge && (
+                <DailyChallengeCard
+                  challenge={dailyChallenge}
+                  exerciseHref={`/exercises/${dailyChallenge.exercise.slug}`}
+                />
+              )}
               <form action={startWorkoutAction.bind(null, stats.pendingDay.id, true)}>
                 <Button type="submit" size="lg" className="w-full">
                   <Play className="h-4 w-4" />
