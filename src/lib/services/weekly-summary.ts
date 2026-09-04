@@ -20,6 +20,14 @@ export interface WeeklySummary {
   trainedToday: boolean;
   daysSinceLastWorkout: number | null;
   topExercise: { name: string; slug: string; volumeKg: number } | null;
+  /**
+   * Whether "lastWeek" reflects a genuine full week of activity rather than
+   * however-many-days-old the account happened to be — without this, a
+   * brand-new account's partial first week reads as a tiny baseline, and
+   * comparing 9 workouts to that produces something like "+200%" that isn't
+   * a real trend, just an artifact of when the user signed up.
+   */
+  hasComparisonBaseline: boolean;
 }
 
 const emptyTotals =(): WeekTotals => ({ workouts: 0, volumeKg: 0, sets: 0, minutes: 0, prs: 0 });
@@ -35,7 +43,7 @@ export async function getWeeklySummary(userId: string): Promise<WeeklySummary> {
   const lastWeekStart = new Date(thisWeekStart);
   lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
-  const [{ data: sessions }, { data: prs }, { data: recentSessions }] = await Promise.all([
+  const [{ data: sessions }, { data: prs }, { data: recentSessions }, { data: profile }] = await Promise.all([
     supabase
       .from("workout_sessions")
       .select(
@@ -57,6 +65,7 @@ export async function getWeeklySummary(userId: string): Promise<WeeklySummary> {
       .not("completed_at", "is", null)
       .order("completed_at", { ascending: false })
       .limit(90),
+    supabase.from("profiles").select("created_at").eq("id", userId).single(),
   ]);
 
   const thisWeek = emptyTotals();
@@ -111,6 +120,15 @@ export async function getWeeklySummary(userId: string): Promise<WeeklySummary> {
   const topExercise =
     [...volumeByExercise.values()].sort((a, b) => b.volumeKg - a.volumeKg)[0] ?? null;
 
+  // The account has to have existed for the *whole* of "last week" for a
+  // week-over-week comparison to mean anything — otherwise "last week" is
+  // really just however many days-old the account was, and a real number of
+  // workouts against that sliver of a baseline reads as a huge, meaningless
+  // percentage (9 workouts vs. 3 partial days looks like "+200%").
+  const hasComparisonBaseline = profile?.created_at
+    ? new Date(profile.created_at) <= lastWeekStart
+    : false;
+
   return {
     thisWeek,
     lastWeek,
@@ -120,5 +138,6 @@ export async function getWeeklySummary(userId: string): Promise<WeeklySummary> {
     // recentSessions comes back newest-first, so [0] is the latest one.
     daysSinceLastWorkout: completedDates.length > 0 ? daysBetween(completedDates[0], today) : null,
     topExercise: topExercise && topExercise.volumeKg > 0 ? topExercise : null,
+    hasComparisonBaseline,
   };
 }

@@ -13,6 +13,7 @@ function Row({
   current,
   previous,
   unit,
+  showDelta,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
@@ -20,6 +21,7 @@ function Row({
   current: number;
   previous: number;
   unit?: string;
+  showDelta: boolean;
 }) {
   return (
     <div className="flex items-center gap-3 py-2">
@@ -27,7 +29,7 @@ function Row({
       <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{label}</span>
       <span className="font-semibold tabular-nums">{value}</span>
       <span className="w-14 shrink-0 text-right">
-        <DeltaBadge current={current} previous={previous} unit={unit} />
+        {showDelta && <DeltaBadge current={current} previous={previous} unit={unit} />}
       </span>
     </div>
   );
@@ -37,7 +39,7 @@ function Row({
 // raw number for coming back tomorrow, and the weekday strip makes the gaps
 // in the current week obvious at a glance.
 export function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
-  const { thisWeek, lastWeek, weekdaysTrained, topExercise } = summary;
+  const { thisWeek, lastWeek, weekdaysTrained, topExercise, hasComparisonBaseline } = summary;
   const todayIndex = (new Date().getDay() + 6) % 7;
 
   return (
@@ -51,7 +53,9 @@ export function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
               {summary.currentStreak} d de racha
             </span>
           ) : (
-            <span className="text-xs text-muted-foreground">vs. semana pasada</span>
+            <span className="text-xs text-muted-foreground">
+              {hasComparisonBaseline ? "vs. semana pasada" : "primera semana"}
+            </span>
           )}
         </div>
 
@@ -89,6 +93,7 @@ export function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
             value={String(thisWeek.workouts)}
             current={thisWeek.workouts}
             previous={lastWeek.workouts}
+            showDelta={hasComparisonBaseline}
           />
           <Row
             icon={Layers}
@@ -97,6 +102,7 @@ export function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
             current={thisWeek.volumeKg}
             previous={lastWeek.volumeKg}
             unit=" kg"
+            showDelta={hasComparisonBaseline}
           />
           <Row
             icon={Layers}
@@ -104,6 +110,7 @@ export function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
             value={String(thisWeek.sets)}
             current={thisWeek.sets}
             previous={lastWeek.sets}
+            showDelta={hasComparisonBaseline}
           />
           <Row
             icon={Clock}
@@ -112,6 +119,7 @@ export function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
             current={thisWeek.minutes}
             previous={lastWeek.minutes}
             unit=" min"
+            showDelta={hasComparisonBaseline}
           />
           <Row
             icon={Trophy}
@@ -119,8 +127,15 @@ export function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
             value={String(thisWeek.prs)}
             current={thisWeek.prs}
             previous={lastWeek.prs}
+            showDelta={hasComparisonBaseline}
           />
         </div>
+
+        {!hasComparisonBaseline && (
+          <p className="text-xs text-muted-foreground">
+            Aún necesitamos otra semana completa de datos para poder comparar.
+          </p>
+        )}
 
         {topExercise && (
           <Link
