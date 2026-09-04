@@ -11,6 +11,7 @@ import {
   removeFriendAction,
 } from "@/lib/actions/friends";
 import { FriendSearch } from "@/components/friends/friend-search";
+import { CopyInviteLinkButton } from "@/components/friends/copy-invite-link-button";
 import { FriendsLeaderboard } from "@/components/friends/friends-leaderboard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -32,8 +33,11 @@ export default async function FriendsPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight fade-up">Amigos</h1>
 
-      <div className="fade-up [animation-delay:40ms]">
+      <div className="space-y-3 fade-up [animation-delay:40ms]">
         <FriendSearch />
+        <div className="flex items-center justify-center">
+          <CopyInviteLinkButton username={profile.username} />
+        </div>
       </div>
 
       {incoming.length > 0 && (

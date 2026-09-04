@@ -8,6 +8,10 @@ const PUBLIC_PATHS = [
   "/reset-password",
   "/verify-email",
   "/auth/callback",
+  // Invite links must be openable by someone who isn't signed in yet — the
+  // page itself only shows a generic "you've been invited" card until they
+  // log in, no profile data is read for an anonymous visitor.
+  "/invite",
 ];
 
 function isPublicPath(pathname: string) {

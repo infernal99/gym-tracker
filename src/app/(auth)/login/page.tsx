@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { loginAction, type ActionResult } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,16 @@ import {
 
 const initialState: ActionResult = { error: null };
 
+// Reads the ?redirect= param (set by the middleware when it bounces someone
+// off a protected page, or by an invite link) so a successful login can send
+// them back where they meant to go instead of always landing on /dashboard.
+// Split out because useSearchParams needs a Suspense boundary above it.
+function RedirectField() {
+  const redirectTo = useSearchParams().get("redirect");
+  if (!redirectTo) return null;
+  return <input type="hidden" name="redirectTo" value={redirectTo} />;
+}
+
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, initialState);
 
@@ -27,6 +38,9 @@ export default function LoginPage() {
       </CardHeader>
       <CardContent>
         <form action={formAction} className="space-y-4">
+          <Suspense fallback={null}>
+            <RedirectField />
+          </Suspense>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" name="email" type="email" required autoComplete="email" />

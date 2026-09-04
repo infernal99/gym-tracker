@@ -78,7 +78,12 @@ export async function loginAction(
   }
 
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  const redirectTo = formData.get("redirectTo");
+  // Only ever follow an internal path — never let a redirect target chosen
+  // via a form field send someone off-site.
+  redirect(typeof redirectTo === "string" && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+    ? redirectTo
+    : "/dashboard");
 }
 
 export async function logoutAction() {
