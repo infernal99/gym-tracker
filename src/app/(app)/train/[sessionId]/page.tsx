@@ -9,6 +9,7 @@ import { ElapsedClock } from "@/components/training/elapsed-clock";
 import { RestTimer } from "@/components/training/rest-timer";
 import { CancelWorkoutButton } from "@/components/training/cancel-workout-button";
 import { ExerciseInfoDialog } from "@/components/exercises/exercise-info-dialog";
+import { LastTimeReference } from "@/components/training/last-time-reference";
 import { Button } from "@/components/ui/button";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Input } from "@/components/ui/input";
@@ -103,6 +104,10 @@ export default async function TrainSessionPage({
     (s) => s.set_number === activeSet && (!isUnilateral || s.side === activeSide),
   );
   const isPR = existing && prSetIds.has(existing.id);
+  // Prefill a new set with what this same set number weighed last time —
+  // matching it, not beating it. Saves retyping the common case and leaves
+  // the decision to go up, hold or back off entirely with the user.
+  const prefill = existing ?? lastSet ?? null;
   const weightDelta =
     existing?.weight_kg != null && lastSet?.weight_kg != null
       ? existing.weight_kg - lastSet.weight_kg
@@ -180,22 +185,6 @@ export default async function TrainSessionPage({
           )}
         </CardHeader>
         <CardContent className="space-y-5">
-          {lastPerformance && lastPerformance.sets.length > 0 && (
-            <div className="rounded-xl border bg-surface px-3 py-2.5">
-              <p className="stat-label">
-                Última vez · {new Date(lastPerformance.completedAt).toLocaleDateString("es-ES")}
-              </p>
-              <p className="mt-1 text-sm tabular-nums text-foreground/90">
-                {lastPerformance.sets
-                  .map(
-                    (s) =>
-                      `${s.side === "left" ? "I " : s.side === "right" ? "D " : ""}${s.weight_kg ?? "BW"} kg × ${s.reps ?? "-"}`,
-                  )
-                  .join(" · ")}
-              </p>
-            </div>
-          )}
-
           <div className="flex flex-wrap gap-2">
             {slots.map((setNumber) => {
               const slotDone = slotIsDone(setNumber);
@@ -276,7 +265,19 @@ export default async function TrainSessionPage({
                 )}
               </div>
             </div>
+            <div className="mb-3">
+              <LastTimeReference
+                lastPerformance={lastPerformance}
+                activeSet={activeSet}
+                activeSide={activeSide}
+                isUnilateral={isUnilateral}
+              />
+            </div>
             <form
+              // Remount the inputs when the target set changes, so their
+              // defaultValue actually re-applies — React otherwise keeps the
+              // same uncontrolled DOM node and silently ignores the new prefill.
+              key={`${current.id}-${activeSet}-${activeSide}`}
               action={logSetAction.bind(
                 null,
                 sessionId,
@@ -295,7 +296,7 @@ export default async function TrainSessionPage({
                     type="number"
                     step="0.5"
                     min="0"
-                    defaultValue={existing?.weight_kg ?? ""}
+                    defaultValue={prefill?.weight_kg ?? ""}
                     placeholder="0"
                     className="h-16 rounded-xl text-center text-3xl font-bold tabular-nums"
                   />
@@ -306,7 +307,7 @@ export default async function TrainSessionPage({
                     name="reps"
                     type="number"
                     min="0"
-                    defaultValue={existing?.reps ?? ""}
+                    defaultValue={prefill?.reps ?? ""}
                     className="h-16 rounded-xl text-center text-3xl font-bold tabular-nums"
                   />
                 </div>
