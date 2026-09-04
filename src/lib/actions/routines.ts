@@ -526,6 +526,26 @@ export async function addTemplateExerciseAction(
     notes: parsed.data.notes || null,
   });
 
+  // Picking an exercise from outside the day's own tags (the search box
+  // searches the whole library, not just the tagged pool) should widen the
+  // day's tags to match, rather than leaving it tagged "Piernas" with an
+  // ab exercise silently sitting in it.
+  const [{ data: exercise }, { data: day }] = await Promise.all([
+    supabase
+      .from("exercises")
+      .select("primary_muscle_group_id")
+      .eq("id", parsed.data.exerciseId)
+      .single(),
+    supabase.from("workout_template_days").select("muscle_group_ids").eq("id", dayId).single(),
+  ]);
+
+  if (exercise?.primary_muscle_group_id && day && !day.muscle_group_ids.includes(exercise.primary_muscle_group_id)) {
+    await supabase
+      .from("workout_template_days")
+      .update({ muscle_group_ids: [...day.muscle_group_ids, exercise.primary_muscle_group_id] })
+      .eq("id", dayId);
+  }
+
   revalidatePath(`/routines/${templateId}`);
   revalidatePath(`/routines/${templateId}/setup`);
   revalidatePath("/my-routine");

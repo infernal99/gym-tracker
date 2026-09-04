@@ -279,20 +279,23 @@ function AddExerciseForm({
 
   // Scoped to the day's own muscle tags by default (a "Piernas" day should
   // suggest leg exercises, not the whole 600+ library) — "Ver todos" backs
-  // out of that in case the exercise you want isn't tagged that way.
+  // out of that in case the exercise you want isn't tagged that way. This
+  // only applies to the browsable (no query) list — once you're actually
+  // typing a name, search the whole library regardless: someone typing
+  // "abdominales" on a "Piernas" day means it, the tag filter shouldn't
+  // hide it. Picking one from outside the day's tags widens them to match
+  // (see addTemplateExerciseAction).
   const pool = showAll
     ? exercises
     : exercises.filter(
         (e) => e.primary_muscle_group_id && dayMuscleGroupIds.includes(e.primary_muscle_group_id),
       );
 
-  // With no query, show the full list (browsable) rather than nothing — the
-  // exercise might be there under a different name than what comes to mind.
   const matches =
     selected || !open
       ? []
       : query.trim()
-        ? pool.filter((e) => matchesExerciseQuery(e.name, query)).slice(0, 8)
+        ? exercises.filter((e) => matchesExerciseQuery(e.name, query)).slice(0, 8)
         : pool.slice(0, 50);
 
   return (
