@@ -107,10 +107,14 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
       <div className="space-y-3 fade-up [animation-delay:120ms]">
         <div className="flex items-center justify-between">
           <h2 className="stat-label">Retos del grupo</h2>
-          <CreateGroupChallengeDialog groupId={group.id} exercises={exerciseOptions} />
+          {isOwner && <CreateGroupChallengeDialog groupId={group.id} exercises={exerciseOptions} />}
         </div>
         {challenges.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Todavía no hay ningún reto en este grupo.</p>
+          <p className="text-sm text-muted-foreground">
+            {isOwner
+              ? "Todavía no hay ningún reto en este grupo."
+              : "El admin del grupo todavía no ha creado ningún reto."}
+          </p>
         ) : (
           <div className="space-y-2">
             {challenges.map((c) => (
