@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, ContactShadows } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -16,20 +16,64 @@ const VIEW_POSITIONS: Record<AnatomyView, THREE.Vector3> = {
   free: new THREE.Vector3(0, 0.1, 3.4),
 };
 
-// Drives the camera to a preset front/back/side position with a smooth
-// ease whenever `view` changes, then just stops updating — OrbitControls
-// (always mounted, never disabled) picks up free dragging from wherever
-// the camera ends up, no explicit "hand back control" step needed.
-function CameraRig({ view, controlsRef }: { view: AnatomyView; controlsRef: React.RefObject<OrbitControlsImpl | null> }) {
+// Drives the camera to a preset front/back/side position with a smooth ease
+// only right after a view button is pressed, then gets out of the way
+// completely. It used to re-check the distance to that preset on *every*
+// frame regardless of why the camera had moved — so any manual drag away
+// from a preset was immediately fought and pulled back, which is why
+// rotating used to feel like it "snapped back" on its own. A drag start
+// also cancels a running animation outright, so grabbing the model
+// mid-transition doesn't fight the user either.
+//
+// Triggers off `requestId` rather than `view` alone: re-pressing the
+// already-selected preset (after drifting away from it with a manual drag)
+// needs to re-trigger the animation too, and a same-value `view` prop
+// wouldn't do that on its own.
+function CameraRig({
+  view,
+  requestId,
+  controlsRef,
+}: {
+  view: AnatomyView;
+  requestId: number;
+  controlsRef: React.RefObject<OrbitControlsImpl | null>;
+}) {
   const { camera } = useThree();
-  const target = useRef(VIEW_POSITIONS[view].clone());
+  const currentView = useRef(view);
+  const animating = useRef(true); // true on mount so it eases into the initial front view too
+  const lastRequestId = useRef(requestId);
 
-  target.current = VIEW_POSITIONS[view];
+  useEffect(() => {
+    currentView.current = view;
+    if (requestId !== lastRequestId.current) {
+      lastRequestId.current = requestId;
+      animating.current = true;
+    }
+  }, [view, requestId]);
+
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    const cancel = () => {
+      animating.current = false;
+    };
+    controls.addEventListener("start", cancel);
+    return () => controls.removeEventListener("start", cancel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controlsRef.current]);
 
   useFrame((_, delta) => {
-    const dist = camera.position.distanceTo(target.current);
-    if (dist < 0.01) return;
-    camera.position.lerp(target.current, Math.min(1, delta * 4));
+    if (animating.current) {
+      const target = VIEW_POSITIONS[currentView.current];
+      const dist = camera.position.distanceTo(target);
+      if (dist < 0.01) {
+        animating.current = false;
+      } else {
+        camera.position.lerp(target, Math.min(1, delta * 4));
+      }
+    }
+    // Needed every frame regardless of the rig's own animation — this is
+    // also what makes OrbitControls' damping (inertia) actually apply.
     controlsRef.current?.update();
   });
 
@@ -39,13 +83,13 @@ function CameraRig({ view, controlsRef }: { view: AnatomyView; controlsRef: Reac
 export function MuscleBodyScene({
   active,
   hovered,
-  view,
+  viewRequest,
   onSelect,
   onHover,
 }: {
   active: AnatomyGroup | null;
   hovered: AnatomyGroup | null;
-  view: AnatomyView;
+  viewRequest: { view: AnatomyView; requestId: number };
   onSelect: (group: AnatomyGroup) => void;
   onHover: (group: AnatomyGroup | null) => void;
 }) {
@@ -72,10 +116,13 @@ export function MuscleBodyScene({
         <ContactShadows position={[0, -0.9, 0]} opacity={0.35} blur={2.2} far={1.2} />
       </Suspense>
 
-      <CameraRig view={view} controlsRef={controlsRef} />
+      <CameraRig view={viewRequest.view} requestId={viewRequest.requestId} controlsRef={controlsRef} />
       <OrbitControls
         ref={controlsRef}
         enablePan={false}
+        enableDamping
+        dampingFactor={0.12}
+        rotateSpeed={0.4}
         minDistance={2.2}
         maxDistance={5}
         target={[0, 0.1, 0]}

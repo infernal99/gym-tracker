@@ -33,7 +33,15 @@ const STATUS_LABEL: Record<ZoneInfo["status"], string> = {
 export function AnatomyViewer({ info }: { info: Record<MuscleZone, ZoneInfo> }) {
   const [active, setActive] = useState<AnatomyGroup | null>(null);
   const [hovered, setHovered] = useState<AnatomyGroup | null>(null);
-  const [view, setView] = useState<AnatomyView>("front");
+  // `requestId` increments on every button press, even re-pressing the
+  // already-selected view — the camera may have drifted from a free drag
+  // since the last time that preset was chosen, and it should snap back to
+  // it every time, not just the first. A plain `view` value wouldn't change
+  // on a repeat press, so the scene would never notice.
+  const [viewRequest, setViewRequest] = useState<{ view: AnatomyView; requestId: number }>({
+    view: "front",
+    requestId: 0,
+  });
 
   function toggle(group: AnatomyGroup) {
     setActive((current) => (current === group ? null : group));
@@ -50,13 +58,16 @@ export function AnatomyViewer({ info }: { info: Record<MuscleZone, ZoneInfo> }) 
         <MuscleBodyScene
           active={active}
           hovered={hovered}
-          view={view}
+          viewRequest={viewRequest}
           onSelect={toggle}
           onHover={setHovered}
         />
       </div>
 
-      <AnatomyControls view={view} onChange={setView} />
+      <AnatomyControls
+        view={viewRequest.view}
+        onChange={(view) => setViewRequest((r) => ({ view, requestId: r.requestId + 1 }))}
+      />
 
       <div className="min-h-16 rounded-xl border bg-surface p-3">
         {active && zone && activeInfo ? (

@@ -33,18 +33,30 @@ export function HumanModel({
   // position — both need to happen once per loaded scene, and both only
   // need to read geometry, so they share this one pass instead of two.
   const { scale, center } = useMemo(() => {
-    const box = new THREE.Box3();
+    // The centering box only measures the 12 muscle meshes, never the
+    // skeleton — the skeleton geometry in the source file turns out to be
+    // measurably asymmetric left/right (confirmed by direct inspection: the
+    // muscle groups are all centered within a millimeter of x=0, but the
+    // skeleton's own bounding box center sits ~0.33 units off to one side).
+    // Centering on the combined box shifted the correctly-centered torso off
+    // to the side to compensate for the skeleton's own lopsidedness.
+    const muscleBox = new THREE.Box3();
+    // Only the skeleton reliably spans full head-to-toe height (the muscles
+    // don't cover the skull or feet) — still used for vertical size/centering,
+    // just not for the horizontal (X) center.
+    const fullBox = new THREE.Box3();
     let skeletonMesh: THREE.Mesh | null = null;
 
     scene.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
-      box.expandByObject(child);
+      fullBox.expandByObject(child);
 
       // The mesh's own name is blank — gltfpack's -kn flag preserved the
       // *parent* group's name ("zone__chest" etc.), not the mesh's (see
       // groupFromObject's comment in MuscleRegion.tsx).
       const group = groupFromObject(child);
       if (group) {
+        muscleBox.expandByObject(child);
         const mat = createRegionMaterial();
         regionMaterials.current.set(group, mat);
         child.material = mat;
@@ -62,9 +74,12 @@ export function HumanModel({
     }
 
     const size = new THREE.Vector3();
-    box.getSize(size);
+    fullBox.getSize(size);
     const boxCenter = new THREE.Vector3();
-    box.getCenter(boxCenter);
+    fullBox.getCenter(boxCenter);
+    const muscleCenter = new THREE.Vector3();
+    muscleBox.getCenter(muscleCenter);
+    boxCenter.x = muscleCenter.x;
     const targetHeight = 1.8;
     return { scale: targetHeight / (size.y || 1), center: boxCenter };
     // eslint-disable-next-line react-hooks/exhaustive-deps
