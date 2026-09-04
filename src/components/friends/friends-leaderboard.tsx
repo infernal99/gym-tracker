@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Flame } from "lucide-react";
 import type { FriendStats } from "@/lib/services/friends";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { useFlipList } from "@/lib/hooks/use-flip-list";
 
 const metrics = [
   {
@@ -45,6 +46,8 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 export function FriendsLeaderboard({ entries }: { entries: FriendStats[] }) {
   const [metricKey, setMetricKey] = useState<(typeof metrics)[number]["key"]>("volume");
   const metric = metrics.find((m) => m.key === metricKey)!;
+  const listRef = useRef<HTMLDivElement>(null);
+  useFlipList(listRef, metricKey);
 
   const ranked = [...entries].sort((a, b) => {
     const diff = metric.value(b) - metric.value(a);
@@ -82,12 +85,13 @@ export function FriendsLeaderboard({ entries }: { entries: FriendStats[] }) {
           ))}
         </div>
 
-        <div className="divide-y divide-border/60">
+        <div ref={listRef} className="divide-y divide-border/60">
           {ranked.map((entry, index) => {
             const value = metric.value(entry);
             return (
               <div
                 key={entry.id}
+                data-flip-key={entry.id}
                 className={`flex items-center gap-3 py-2.5 ${entry.isMe ? "-mx-2 rounded-lg bg-primary/5 px-2" : ""}`}
               >
                 <span className="w-6 shrink-0 text-center text-sm font-semibold tabular-nums text-muted-foreground">

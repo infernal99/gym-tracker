@@ -240,7 +240,7 @@ export default async function TrainSessionPage({
               </p>
               <div className="flex items-center gap-2">
                 {isPR && (
-                  <Badge className="gap-1 bg-success text-success-foreground duration-emphasis fade-up">
+                  <Badge className="gap-1 bg-success text-success-foreground pr-pop">
                     <Flame className="h-3 w-3" />
                     Nuevo PR
                   </Badge>

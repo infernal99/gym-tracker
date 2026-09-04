@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { CheckCircle2, Pencil, TrendingUp, Trash2 } from "lucide-react";
 import { updateGoalProgressAction, deleteGoalAction } from "@/lib/actions/goals";
 import { goalProgress, type Goal } from "@/lib/goal-utils";
@@ -32,11 +32,26 @@ export function GoalCard({ goal, eta = null }: { goal: Goal; eta?: GoalEta | nul
   const pct = goalProgress(goal);
   const completed = goal.status === "completed";
 
+  // Fires only on the render where `completed` flips false → true, so a
+  // goal that was already completed on page load stays quiet — this is
+  // for the moment it happens, not a permanent decoration.
+  const wasCompleted = useRef(completed);
+  const [justCompleted, setJustCompleted] = useState(false);
+  useEffect(() => {
+    if (completed && !wasCompleted.current) {
+      setJustCompleted(true);
+      const timer = setTimeout(() => setJustCompleted(false), 700);
+      wasCompleted.current = completed;
+      return () => clearTimeout(timer);
+    }
+    wasCompleted.current = completed;
+  }, [completed]);
+
   return (
     <div
       className={`space-y-3 rounded-xl border p-4 transition-colors duration-normal ${
         completed ? "border-success/30 bg-success/5" : "bg-card"
-      }`}
+      } ${justCompleted ? "goal-celebrate" : ""}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">

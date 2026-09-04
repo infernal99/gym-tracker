@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Flame } from "lucide-react";
 import type { GroupMemberStats } from "@/lib/services/groups";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useFlipList } from "@/lib/hooks/use-flip-list";
 
 const metrics = [
   {
@@ -45,6 +46,8 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 export function GroupRanking({ members }: { members: GroupMemberStats[] }) {
   const [metricKey, setMetricKey] = useState<(typeof metrics)[number]["key"]>("volume");
   const metric = metrics.find((m) => m.key === metricKey)!;
+  const listRef = useRef<HTMLDivElement>(null);
+  useFlipList(listRef, metricKey);
 
   const ranked = [...members].sort((a, b) => {
     const av = metric.value(a);
@@ -75,7 +78,7 @@ export function GroupRanking({ members }: { members: GroupMemberStats[] }) {
         ))}
       </div>
 
-      <div className="divide-y divide-border/60">
+      <div ref={listRef} className="divide-y divide-border/60">
         {ranked.map((member) => {
           const value = metric.value(member);
           const hidden = value === null;
@@ -84,6 +87,7 @@ export function GroupRanking({ members }: { members: GroupMemberStats[] }) {
           return (
             <div
               key={member.id}
+              data-flip-key={member.id}
               className={`flex items-center gap-3 py-2.5 ${member.isMe ? "-mx-2 rounded-lg bg-primary/5 px-2" : ""}`}
             >
               <span className="w-6 shrink-0 text-center text-sm font-semibold tabular-nums text-muted-foreground">
