@@ -7,6 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/services/profile";
 import { getActiveSession } from "@/lib/services/training";
+import { recordChallengeWinsForUser } from "@/lib/services/group-challenges";
 import type { Database } from "@/types/database.types";
 
 // dayId is required so the caller (the "Hoy" screen) always decides which
@@ -260,6 +261,7 @@ export async function finishWorkoutAction(sessionId: string) {
 
   await supabase.rpc("evaluate_achievements", { p_user_id: session.user_id });
   await supabase.rpc("check_exercise_milestones", { p_user_id: session.user_id });
+  await recordChallengeWinsForUser(supabase, session.user_id);
 
   revalidatePath("/dashboard");
   revalidatePath("/train/history");

@@ -103,3 +103,59 @@ export async function listGroupChallenges(groupId: string): Promise<GroupChallen
     }),
   );
 }
+
+// Checked once, at the end of finishWorkoutAction — every metric a group
+// challenge can track (exercise/volume/workouts/streak) only changes when a
+// session completes, so that single call site covers all of them, rather
+// than needing a second check inside set-logging.
+//
+// "Won" means first: challenge_results only gets a row for whoever reaches
+// the target before anyone else does. The (challenge_id, user_id) unique
+// constraint makes a duplicate call a no-op rather than a second entry.
+export async function recordChallengeWinsForUser(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<void> {
+  const { data: participations } = await supabase
+    .from("challenge_participants")
+    .select(
+      "challenge_id, challenges!inner(id, name, group_id, metric, exercise_id, target_value, start_date, status, is_collective)",
+    )
+    .eq("user_id", userId)
+    .eq("challenges.is_collective", false)
+    .eq("challenges.status", "active")
+    .not("challenges.group_id", "is", null);
+
+  for (const p of participations ?? []) {
+    const challenge = p.challenges;
+    if (!challenge) continue;
+
+    const { count: alreadyWon } = await supabase
+      .from("challenge_results")
+      .select("id", { count: "exact", head: true })
+      .eq("challenge_id", challenge.id);
+    if ((alreadyWon ?? 0) > 0) continue; // someone already got there first
+
+    const value = await computeChallengeValue(
+      supabase,
+      userId,
+      challenge.metric,
+      challenge.exercise_id,
+      challenge.start_date,
+    );
+    if (value == null || value < (challenge.target_value ?? 0)) continue;
+
+    const { error } = await supabase
+      .from("challenge_results")
+      .insert({ challenge_id: challenge.id, user_id: userId, final_value: value, final_rank: 1 });
+    if (error) continue; // unique-constraint race with another participant — they got it first
+
+    await supabase.from("activity_feed").insert({
+      user_id: userId,
+      type: "challenge_won",
+      related_type: "challenge",
+      related_id: challenge.id,
+      metadata: { challengeName: challenge.name },
+    });
+  }
+}
