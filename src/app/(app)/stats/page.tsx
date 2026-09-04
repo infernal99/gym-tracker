@@ -4,7 +4,7 @@ import { getMuscleVolumeStats, getWeeklyVolumeStatus } from "@/lib/services/stat
 import { MuscleVolumeChart } from "@/components/stats/muscle-volume-chart";
 import { MuscleChangeList } from "@/components/stats/muscle-change-list";
 import { WeeklyVolumeSemaphore } from "@/components/stats/weekly-volume-semaphore";
-import { MuscleBody3D, type ZoneInfo } from "@/components/stats/muscle-body/muscle-body-3d";
+import { AnatomyViewer, type ZoneInfo } from "@/components/anatomy/AnatomyViewer";
 import { MUSCLE_ZONES, ZONE_LABELS, muscleZoneColor } from "@/lib/muscle-colors";
 import { BackButton } from "@/components/ui/back-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,7 +44,7 @@ export default async function StatsPage() {
           <CardTitle className="text-base">Grupos musculares</CardTitle>
         </CardHeader>
         <CardContent>
-          <MuscleBody3D info={zoneInfo} />
+          <AnatomyViewer info={zoneInfo} />
         </CardContent>
       </Card>
 
