@@ -7,13 +7,20 @@ import { ChatInput } from "@/components/ai/chat-input";
 import { AISuggestions } from "@/components/ai/ai-suggestions";
 import { AIStatusBadge } from "@/components/ai/ai-status-badge";
 import { ConversationHistory } from "@/components/ai/conversation-history";
+import { ProposalCard } from "@/components/ai/proposal-card";
 import {
   getConversationMessagesAction,
   deleteConversationAction,
 } from "@/lib/actions/ai-chat";
 import type { AIConversationSummary, AIStoredMessage } from "@/lib/services/ai-chat";
+import type { AIProposal } from "@/lib/ai/proposals";
 
-type ChatMessageState = { id: string; role: "user" | "assistant"; content: string };
+type ChatMessageState = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  proposal?: AIProposal;
+};
 
 const STATUS_POLL_MS = 20_000;
 
@@ -126,6 +133,7 @@ export function AIChatShell({
             | { type: "conversation"; conversationId: string }
             | { type: "status"; text: string }
             | { type: "token"; text: string }
+            | { type: "proposal"; proposal: AIProposal }
             | { type: "error"; text: string }
             | { type: "done" };
 
@@ -142,6 +150,8 @@ export function AIChatShell({
           } else if (event.type === "token") {
             setStatusText(null);
             setMessages((prev) => appendToLastAssistant(prev, event.text));
+          } else if (event.type === "proposal") {
+            setMessages((prev) => attachProposalToLastAssistant(prev, event.proposal));
           } else if (event.type === "error") {
             setStatusText(null);
             setMessages((prev) => setLastAssistant(prev, event.text));
@@ -192,12 +202,14 @@ export function AIChatShell({
         {messages.map((m, i) => {
           const isLastAssistant = m.role === "assistant" && i === messages.length - 1;
           return (
-            <ChatMessage
-              key={m.id}
-              role={m.role}
-              content={m.content}
-              pending={isLastAssistant && streaming && !statusText && !m.content}
-            />
+            <div key={m.id} className="space-y-3">
+              <ChatMessage
+                role={m.role}
+                content={m.content}
+                pending={isLastAssistant && streaming && !statusText && !m.content}
+              />
+              {m.proposal && <ProposalCard proposal={m.proposal} />}
+            </div>
           );
         })}
 
@@ -222,6 +234,18 @@ function appendToLastAssistant(messages: ChatMessageState[], chunk: string): Cha
   const lastIndex = next.length - 1;
   if (lastIndex >= 0 && next[lastIndex].role === "assistant") {
     next[lastIndex] = { ...next[lastIndex], content: next[lastIndex].content + chunk };
+  }
+  return next;
+}
+
+function attachProposalToLastAssistant(
+  messages: ChatMessageState[],
+  proposal: AIProposal,
+): ChatMessageState[] {
+  const next = [...messages];
+  const lastIndex = next.length - 1;
+  if (lastIndex >= 0 && next[lastIndex].role === "assistant") {
+    next[lastIndex] = { ...next[lastIndex], proposal };
   }
   return next;
 }

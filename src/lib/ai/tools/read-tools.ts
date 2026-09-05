@@ -9,23 +9,16 @@ import {
 } from "@/lib/services/training";
 import { listGoals } from "@/lib/services/goals";
 import { listWeightEntries } from "@/lib/services/body";
-import { listExercises } from "@/lib/services/exercises";
+import { listExercises, listMuscleGroups } from "@/lib/services/exercises";
 import { getWeeklySummary } from "@/lib/services/weekly-summary";
 import { getWeeklyVolumeStatus } from "@/lib/services/stats";
-import type { AIToolDefinition } from "@/lib/ai/types";
+import type { AITool } from "@/lib/ai/tools/types";
 
-export interface ToolContext {
-  userId: string;
-}
-
-export interface ReadTool {
-  definition: AIToolDefinition;
-  execute: (ctx: ToolContext, args: Record<string, unknown>) => Promise<unknown>;
-}
+type ReadTool = AITool;
 
 // Fuzzy-matches a name the model typed (e.g. "press banca") against the
 // real exercise library — the model must never invent an exercise id.
-async function resolveExercise(name: string) {
+export async function resolveExercise(name: string) {
   const matches = await listExercises({ search: name });
   return matches[0] ?? null;
 }
@@ -310,19 +303,46 @@ const findExercises: ReadTool = {
   definition: {
     name: "find_exercises",
     description:
-      "Busca ejercicios en la biblioteca de Gym Tracker por nombre, grupo muscular o equipamiento. Úsalo antes de proponer una rutina, para usar solo ejercicios que existen realmente.",
+      "Busca ejercicios REALES en la biblioteca de Gym Tracker. Úsalo antes de proponer una rutina, para usar solo ejercicios que existen. Busca por nombre de ejercicio ('press', 'sentadilla') o grupo muscular concreto ('pecho', 'espalda', 'piernas', 'hombros', 'bíceps', 'tríceps', 'glúteos', 'core'). NUNCA busques un concepto de entrenamiento como 'hipertrofia' o 'fuerza' — eso no es un ejercicio ni un grupo muscular y no devolverá nada.",
     parameters: {
       type: "object",
       properties: {
-        search: { type: "string", description: "Texto de búsqueda, ej. 'press' o 'pecho'" },
+        search: { type: "string", description: "Nombre de ejercicio o grupo muscular, ej. 'press' o 'pecho'" },
       },
     },
   },
   execute: async (_ctx, args) => {
-    const results = await listExercises({ search: args.search ? String(args.search) : undefined });
+    const raw = args.search ? String(args.search) : "";
+    // The model sometimes sends several terms in one call ("pecho,espalda,
+    // piernas") — the underlying search does an AND across whitespace
+    // tokens, so a comma-joined string alone would never match anything.
+    // Splitting on common separators and searching each term separately
+    // (then merging) makes that case work instead of just failing.
+    const terms = raw
+      .split(/[,;/]+| y | and /i)
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    const searches = terms.length > 1 ? terms : [raw];
+    const byId = new Map<string, Awaited<ReturnType<typeof listExercises>>[number]>();
+    for (const term of searches) {
+      const found = await listExercises({ search: term || undefined });
+      for (const exercise of found) byId.set(exercise.id, exercise);
+    }
+    const results = [...byId.values()];
+
+    if (results.length === 0 && raw) {
+      const groups = await listMuscleGroups();
+      return {
+        count: 0,
+        exercises: [],
+        hint: `'${raw}' no es un ejercicio ni un grupo muscular real. Vuelve a llamar a find_exercises, una vez por cada uno de estos grupos musculares: ${groups.map((g) => g.name).join(", ")}.`,
+      };
+    }
+
     return {
       count: results.length,
-      exercises: results.slice(0, 25).map((e) => ({
+      exercises: results.slice(0, 30).map((e) => ({
         name: e.name,
         muscleGroup: e.muscle_groups?.name,
         equipment: e.equipment?.name,
