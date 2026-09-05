@@ -12,6 +12,9 @@ const PUBLIC_PATHS = [
   // page itself only shows a generic "you've been invited" card until they
   // log in, no profile data is read for an anonymous visitor.
   "/invite",
+  // Must stay reachable without a session — app store review and anyone
+  // linked to them from a store listing won't necessarily be logged in.
+  "/legal",
 ];
 
 function isPublicPath(pathname: string) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { logoutAction } from "@/lib/actions/auth";
 import { moreNavLinks } from "@/components/nav/links";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -54,6 +54,11 @@ export function UserMenu({
             </DropdownMenuItem>
           );
         })}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem render={<Link href="/settings" />}>
+          <Settings className="mr-2 h-4 w-4" />
+          Ajustes
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<form action={logoutAction} />}>
           <button type="submit" className="flex w-full items-center">

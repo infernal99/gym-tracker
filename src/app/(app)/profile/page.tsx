@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, ChevronRight, Dumbbell, Flame, Scale, Trophy, Weight } from "lucide-react";
+import { BarChart3, ChevronRight, Dumbbell, Flame, Scale, Settings, Trophy, Weight } from "lucide-react";
 import { requireProfile, getProfileStats } from "@/lib/services/profile";
 import { listWorkoutActivity } from "@/lib/services/training";
 import { listWeightEntries } from "@/lib/services/body";
@@ -7,7 +7,6 @@ import { listAchievementsWithProgress } from "@/lib/services/achievements";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { WorkoutHeatmap } from "@/components/profile/workout-heatmap";
 import { CalorieCalculatorButton } from "@/components/profile/calorie-calculator-button";
-import { InstallAppCard } from "@/components/pwa/install-app-card";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -138,6 +137,22 @@ export default async function ProfilePage() {
           </div>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </Link>
+
+        <Link
+          href="/settings"
+          className="card-interactive flex items-center justify-between rounded-xl border bg-card p-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <Settings className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="stat-label">Ajustes</p>
+              <p className="font-semibold">Cuenta, privacidad y más</p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Link>
       </div>
 
       <CalorieCalculatorButton profile={profile} />
@@ -157,15 +172,6 @@ export default async function ProfilePage() {
         </CardHeader>
         <CardContent>
           <ProfileForm profile={profile} />
-        </CardContent>
-      </Card>
-
-      <Card className="fade-up [animation-delay:200ms]">
-        <CardHeader>
-          <CardTitle>Ajustes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <InstallAppCard />
         </CardContent>
       </Card>
 

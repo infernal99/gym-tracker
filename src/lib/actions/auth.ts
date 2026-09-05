@@ -111,6 +111,19 @@ export async function logoutAction() {
   redirect("/login");
 }
 
+export async function deleteAccountAction(): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_own_account");
+
+  if (error) {
+    return { error: "No se pudo eliminar la cuenta. Inténtalo de nuevo." };
+  }
+
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect("/login?deleted=1");
+}
+
 export type ForgotPasswordResult = { status: "idle" } | { status: "error"; message: string } | { status: "sent" };
 
 export async function forgotPasswordAction(

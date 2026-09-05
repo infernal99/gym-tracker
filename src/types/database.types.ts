@@ -1619,6 +1619,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      delete_own_account: { Args: never; Returns: undefined }
       ensure_default_rest_day: {
         Args: { p_template_id: string }
         Returns: string
@@ -1916,6 +1917,5 @@ export const Constants = {
     },
   },
 } as const
-
 
 export type ExerciseDifficulty = Database["public"]["Enums"]["exercise_difficulty"];

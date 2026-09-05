@@ -27,6 +27,16 @@ function RedirectField() {
   return <input type="hidden" name="redirectTo" value={redirectTo} />;
 }
 
+function DeletedAccountNotice() {
+  const deleted = useSearchParams().get("deleted");
+  if (!deleted) return null;
+  return (
+    <p className="mb-4 rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">
+      Tu cuenta se ha eliminado correctamente.
+    </p>
+  );
+}
+
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, initialState);
 
@@ -37,6 +47,9 @@ export default function LoginPage() {
         <CardDescription>Vuelve a tu entrenamiento.</CardDescription>
       </CardHeader>
       <CardContent>
+        <Suspense fallback={null}>
+          <DeletedAccountNotice />
+        </Suspense>
         <form action={formAction} className="space-y-4">
           <Suspense fallback={null}>
             <RedirectField />
