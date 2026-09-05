@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Términos de servicio — Gym Tracker" };
 
 const LAST_UPDATED = "5 de septiembre de 2026";
-const SUPPORT_EMAIL = "dmonfil@gmail.com";
+const SUPPORT_EMAIL = "velouraianuri@gmail.com";
 
 export default function TermsPage() {
   return (

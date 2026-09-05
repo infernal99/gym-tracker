@@ -18,7 +18,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const SUPPORT_EMAIL = "dmonfil@gmail.com";
+const SUPPORT_EMAIL = "velouraianuri@gmail.com";
 const APP_VERSION = "1.0.0";
 
 function SettingsLink({
