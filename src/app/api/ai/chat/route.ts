@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { runAIChat } from "@/lib/ai/service";
+import { DAILY_MESSAGE_LIMIT } from "@/lib/ai/limits";
 import {
   appendMessage,
+  countMessagesToday,
   createConversation,
   getConversationMessages,
 } from "@/lib/services/ai-chat";
@@ -9,10 +11,12 @@ import type { AIMessage } from "@/lib/ai/types";
 
 const MAX_MESSAGE_LENGTH = 2000;
 
-// Very lightweight per-user rate limit — this is a single-developer local
-// tool today (no billing, no multi-tenant abuse surface), so an in-memory
-// window is enough to stop a runaway client loop rather than a real quota
-// system. Resets on server restart.
+// A short in-memory burst guard on top of the DB-backed daily limit below —
+// catches a runaway client loop within one warm server instance. It resets
+// on cold start / a new instance, which is exactly why the real limit (one
+// person can't use up the whole day's shared free quota and lock everyone
+// else out) lives in the database instead, counted from messages already
+// being persisted.
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 20;
 const requestLog = new Map<string, number[]>();
@@ -34,6 +38,14 @@ export async function POST(request: Request) {
 
   if (isRateLimited(user.id)) {
     return new Response("Demasiados mensajes, espera un momento.", { status: 429 });
+  }
+
+  const usedToday = await countMessagesToday(user.id);
+  if (usedToday >= DAILY_MESSAGE_LIMIT) {
+    return new Response(
+      `Has usado tus ${DAILY_MESSAGE_LIMIT} mensajes gratuitos de hoy con Gym Tracker AI. Vuelve mañana para seguir usándolo.`,
+      { status: 429 },
+    );
   }
 
   const body = await request.json().catch(() => null);

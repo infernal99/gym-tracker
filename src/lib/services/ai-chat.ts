@@ -53,6 +53,26 @@ export async function getConversationMessages(
   }));
 }
 
+// Counts today's user-authored messages across every conversation this
+// user has — the durable half of the daily rate limit. Kept as a query
+// against messages already being persisted anyway, rather than a separate
+// counter table, since Vercel's serverless functions don't share memory
+// between invocations (an in-memory counter would just silently reset).
+export async function countMessagesToday(userId: string): Promise<number> {
+  const supabase = await createClient();
+  const startOfDay = new Date();
+  startOfDay.setUTCHours(0, 0, 0, 0);
+
+  const { count } = await supabase
+    .from("ai_messages")
+    .select("id, ai_conversations!inner(user_id)", { count: "exact", head: true })
+    .eq("role", "user")
+    .eq("ai_conversations.user_id", userId)
+    .gte("created_at", startOfDay.toISOString());
+
+  return count ?? 0;
+}
+
 export async function createConversation(userId: string, firstMessage: string): Promise<string> {
   const supabase = await createClient();
   const title = firstMessage.trim().slice(0, 60) || "Nueva conversación";

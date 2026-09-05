@@ -1,9 +1,17 @@
 import { cn } from "@/lib/utils";
 
-export function AIStatusBadge({ available }: { available: boolean | null }) {
+export function AIStatusBadge({
+  available,
+  usage,
+}: {
+  available: boolean | null;
+  usage?: { usedToday: number; dailyLimit: number } | null;
+}) {
   if (available === null) {
     return <span className="text-xs text-muted-foreground">Comprobando...</span>;
   }
+
+  const nearLimit = Boolean(usage && usage.usedToday >= usage.dailyLimit * 0.8);
 
   return (
     <span
@@ -19,6 +27,11 @@ export function AIStatusBadge({ available }: { available: boolean | null }) {
         )}
       />
       {available ? "En línea" : "No disponible"}
+      {available && usage && (
+        <span className={cn("font-normal text-muted-foreground", nearLimit && "text-destructive")}>
+          · {usage.usedToday}/{usage.dailyLimit} hoy
+        </span>
+      )}
     </span>
   );
 }

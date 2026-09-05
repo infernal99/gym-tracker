@@ -47,6 +47,8 @@ export function AIChatShell({
   const [streaming, setStreaming] = useState(false);
   const [statusText, setStatusText] = useState<string | null>(null);
   const [aiAvailable, setAiAvailable] = useState<boolean | null>(null);
+  const [usage, setUsage] = useState<{ usedToday: number; dailyLimit: number } | null>(null);
+  const limitReached = Boolean(usage && usage.usedToday >= usage.dailyLimit);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,7 +57,11 @@ export function AIChatShell({
       try {
         const res = await fetch("/api/ai/status", { cache: "no-store" });
         const data = await res.json();
-        if (!cancelled) setAiAvailable(Boolean(data.available));
+        if (cancelled) return;
+        setAiAvailable(Boolean(data.available));
+        if (typeof data.usedToday === "number" && typeof data.dailyLimit === "number") {
+          setUsage({ usedToday: data.usedToday, dailyLimit: data.dailyLimit });
+        }
       } catch {
         if (!cancelled) setAiAvailable(false);
       }
@@ -67,6 +73,20 @@ export function AIChatShell({
       clearInterval(interval);
     };
   }, []);
+
+  // Refreshed right after each message too, so the counter in the header
+  // updates immediately instead of waiting for the next background poll.
+  async function refreshUsage() {
+    try {
+      const res = await fetch("/api/ai/status", { cache: "no-store" });
+      const data = await res.json();
+      if (typeof data.usedToday === "number" && typeof data.dailyLimit === "number") {
+        setUsage({ usedToday: data.usedToday, dailyLimit: data.dailyLimit });
+      }
+    } catch {
+      // Best-effort — the next background poll will pick it up.
+    }
+  }
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -93,7 +113,7 @@ export function AIChatShell({
 
   async function sendMessage(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || streaming) return;
+    if (!trimmed || streaming || limitReached) return;
 
     const isFirstMessage = messages.length === 0;
     setInput("");
@@ -171,6 +191,7 @@ export function AIChatShell({
     } finally {
       setStreaming(false);
       setStatusText(null);
+      refreshUsage();
     }
   }
 
@@ -183,7 +204,7 @@ export function AIChatShell({
           </div>
           <div>
             <p className="text-sm font-semibold leading-none">Gym Tracker AI</p>
-            <AIStatusBadge available={aiAvailable} />
+            <AIStatusBadge available={aiAvailable} usage={usage} />
           </div>
         </div>
         <ConversationHistory
@@ -201,7 +222,7 @@ export function AIChatShell({
             <p className="text-center text-sm text-muted-foreground">
               Pregúntame lo que quieras sobre tu entrenamiento, tu progreso o tus rutinas.
             </p>
-            <AISuggestions onPick={sendMessage} />
+            {!limitReached && <AISuggestions onPick={sendMessage} />}
           </div>
         )}
 
@@ -230,7 +251,18 @@ export function AIChatShell({
       </div>
 
       <div className="shrink-0">
-        <ChatInput value={input} onChange={setInput} onSend={() => sendMessage(input)} disabled={streaming} />
+        {limitReached ? (
+          <p className="border-t py-3 text-center text-xs text-muted-foreground">
+            Has usado tus {usage?.dailyLimit} mensajes gratuitos de hoy. Vuelve mañana.
+          </p>
+        ) : (
+          <ChatInput
+            value={input}
+            onChange={setInput}
+            onSend={() => sendMessage(input)}
+            disabled={streaming}
+          />
+        )}
       </div>
     </div>
   );
