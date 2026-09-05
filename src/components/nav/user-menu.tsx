@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { LogOut, Settings } from "lucide-react";
 import { logoutAction } from "@/lib/actions/auth";
-import { moreNavLinks } from "@/components/nav/links";
+import { navLinks } from "@/components/nav/links";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -18,12 +18,15 @@ export function UserMenu({
   username,
   avatarUrl,
   level,
+  bottomNavHrefs,
 }: {
   displayName: string;
   username: string;
   avatarUrl: string | null;
   level: number;
+  bottomNavHrefs: string[];
 }) {
+  const otherLinks = navLinks.filter((link) => !bottomNavHrefs.includes(link.href));
   const initials = displayName
     .split(" ")
     .map((part) => part[0])
@@ -45,7 +48,7 @@ export function UserMenu({
           <p className="text-xs text-muted-foreground">@{username} · Nivel {level}</p>
         </div>
         <DropdownMenuSeparator />
-        {moreNavLinks.map((link) => {
+        {otherLinks.map((link) => {
           const Icon = link.icon;
           return (
             <DropdownMenuItem key={link.href} render={<Link href={link.href} />}>

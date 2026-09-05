@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { mobileNavLinks } from "@/components/nav/links";
+import { resolveBottomNavLinks } from "@/components/nav/links";
 
-export function MobileNav() {
+export function MobileNav({ hrefs }: { hrefs: string[] }) {
   const pathname = usePathname();
+  const links = resolveBottomNavLinks(hrefs);
 
   return (
     <nav className="sticky bottom-0 z-50 flex shrink-0 border-t bg-background/95 backdrop-blur">
-      {mobileNavLinks.map((link) => {
+      {links.map((link) => {
         const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
         const Icon = link.icon;
         return (

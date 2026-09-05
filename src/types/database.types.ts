@@ -942,6 +942,7 @@ export type Database = {
           activity_level: Database["public"]["Enums"]["activity_level"]
           avatar_url: string | null
           bio: string | null
+          bottom_nav_links: string[]
           created_at: string
           date_of_birth: string | null
           display_name: string
@@ -966,6 +967,7 @@ export type Database = {
           activity_level?: Database["public"]["Enums"]["activity_level"]
           avatar_url?: string | null
           bio?: string | null
+          bottom_nav_links?: string[]
           created_at?: string
           date_of_birth?: string | null
           display_name: string
@@ -990,6 +992,7 @@ export type Database = {
           activity_level?: Database["public"]["Enums"]["activity_level"]
           avatar_url?: string | null
           bio?: string | null
+          bottom_nav_links?: string[]
           created_at?: string
           date_of_birth?: string | null
           display_name?: string

@@ -13,6 +13,7 @@ import { requireProfile } from "@/lib/services/profile";
 import { createClient } from "@/lib/supabase/server";
 import { logoutAction } from "@/lib/actions/auth";
 import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";
+import { CustomizeBottomNav } from "@/components/settings/customize-bottom-nav";
 import { InstallAppCard } from "@/components/pwa/install-app-card";
 import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
@@ -135,6 +136,15 @@ export default async function SettingsPage() {
 
       <Card className="fade-up [animation-delay:200ms]">
         <CardHeader>
+          <CardTitle className="text-base">Barra inferior</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CustomizeBottomNav initialHrefs={profile.bottom_nav_links} />
+        </CardContent>
+      </Card>
+
+      <Card className="fade-up [animation-delay:220ms]">
+        <CardHeader>
           <CardTitle className="text-base">Instalar</CardTitle>
         </CardHeader>
         <CardContent>
@@ -142,7 +152,7 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-destructive/30 fade-up [animation-delay:240ms]">
+      <Card className="border-destructive/30 fade-up [animation-delay:260ms]">
         <CardHeader>
           <CardTitle className="text-base text-destructive">Zona de peligro</CardTitle>
         </CardHeader>

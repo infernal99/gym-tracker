@@ -29,10 +29,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             username={profile.username}
             avatarUrl={profile.avatar_url}
             level={profile.level}
+            bottomNavHrefs={profile.bottom_nav_links}
           />
         </header>
         <main className="flex-1 overflow-y-auto px-4 pb-6 pt-6">{children}</main>
-        <MobileNav />
+        <MobileNav hrefs={profile.bottom_nav_links} />
       </div>
       <MilestoneCelebration milestones={milestones} />
     </div>

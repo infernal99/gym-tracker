@@ -21,8 +21,8 @@ export type NavLink = {
   icon: LucideIcon;
 };
 
-// Full nav — source list for the bottom tab bar (mobileNavLinks) and the
-// header's "Más" overflow menu (moreNavLinks).
+// Full nav — source list for the bottom tab bar and the header's "Más"
+// overflow menu, both resolved per-user from this master list.
 export const navLinks: NavLink[] = [
   { href: "/dashboard", label: "Hoy", icon: LayoutDashboard },
   { href: "/my-routine", label: "Mi rutina", icon: Star },
@@ -39,17 +39,27 @@ export const navLinks: NavLink[] = [
   { href: "/profile", label: "Perfil", icon: User },
 ];
 
-// Curated subset for the bottom tab bar — keeps it to 5 tabs so it stays
-// usable on a phone-width frame; the rest live in the header's "Más" menu.
-export const mobileNavLinks: NavLink[] = [
-  { href: "/dashboard", label: "Hoy", icon: LayoutDashboard },
-  { href: "/routines", label: "Rutinas", icon: ListChecks },
-  { href: "/exercises", label: "Ejercicios", icon: Dumbbell },
-  { href: "/goals", label: "Objetivos", icon: Target },
-  { href: "/profile", label: "Perfil", icon: User },
+// Default bottom tab bar — keeps it to 5 tabs so it stays usable on a
+// phone-width frame. Users can swap which 5 show (Ajustes → personalizar
+// barra inferior); this is only the fallback for accounts that haven't
+// customized it (profiles.bottom_nav_links defaults to these same hrefs).
+export const DEFAULT_BOTTOM_NAV_HREFS = [
+  "/dashboard",
+  "/routines",
+  "/exercises",
+  "/goals",
+  "/profile",
 ];
 
-// Everything not already in the bottom bar, surfaced via the header's "Más" menu.
-export const moreNavLinks: NavLink[] = navLinks.filter(
-  (link) => !mobileNavLinks.some((tab) => tab.href === link.href),
-);
+export const BOTTOM_NAV_SLOT_COUNT = DEFAULT_BOTTOM_NAV_HREFS.length;
+
+// Turns a user's chosen hrefs into the actual link objects, in the master
+// navLinks order. Falls back to the default set if anything is missing or
+// malformed (e.g. an href that no longer exists).
+export function resolveBottomNavLinks(hrefs: string[]): NavLink[] {
+  const set = new Set(hrefs);
+  const resolved = navLinks.filter((link) => set.has(link.href));
+  return resolved.length === BOTTOM_NAV_SLOT_COUNT
+    ? resolved
+    : navLinks.filter((link) => DEFAULT_BOTTOM_NAV_HREFS.includes(link.href));
+}
