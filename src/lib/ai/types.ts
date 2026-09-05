@@ -15,6 +15,11 @@ export interface AIToolCall {
   id: string;
   name: string;
   arguments: Record<string, unknown>;
+  // The provider's own wire-format object for this call, if it has one
+  // (e.g. Gemini attaches a thought_signature that must round-trip back
+  // unchanged on the next turn or it rejects the request). Providers that
+  // don't need this just ignore it.
+  raw?: unknown;
 }
 
 export interface AIToolParameterSchema {

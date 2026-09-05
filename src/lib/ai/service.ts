@@ -1,5 +1,7 @@
 import "server-only";
 import { OllamaProvider } from "@/lib/ai/providers/ollama";
+import { GroqProvider } from "@/lib/ai/providers/groq";
+import { GeminiProvider } from "@/lib/ai/providers/gemini";
 import { buildSystemPrompt } from "@/lib/ai/system-prompt";
 import { ALL_TOOLS } from "@/lib/ai/tools";
 import type { AIMessage } from "@/lib/ai/types";
@@ -7,9 +9,21 @@ import type { AIProvider } from "@/lib/ai/provider";
 import type { AIProposal } from "@/lib/ai/proposals";
 import type { AIChart } from "@/lib/ai/charts";
 
-// Swapping providers later means changing this one line (or reading an env
-// var to pick a class) — nothing downstream references Ollama directly.
-const provider: AIProvider = new OllamaProvider();
+// Ollama runs on a developer's own machine — Vercel's servers can never
+// reach it, so the deployed app needs a reachable provider instead. Rather
+// than a build-time switch, this picks per-request by whichever API key is
+// set (in Vercel's env vars for production; unset in plain local dev keeps
+// using free local Ollama). Gemini first: Groq's free tier turned out to
+// cap this account at 8,000 tokens/minute, too tight for our system prompt
+// plus ~14 tool schemas. Swapping providers later, or adding a third, means
+// writing one more class here — nothing else changes.
+function selectProvider(): AIProvider {
+  if (process.env.GEMINI_API_KEY) return new GeminiProvider();
+  if (process.env.GROQ_API_KEY) return new GroqProvider();
+  return new OllamaProvider();
+}
+
+const provider: AIProvider = selectProvider();
 
 const MAX_TOOL_ROUNDS = 4;
 

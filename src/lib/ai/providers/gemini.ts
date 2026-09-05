@@ -10,32 +10,42 @@ import {
   type OpenAIMessage,
 } from "@/lib/ai/providers/openai-compat";
 
-const BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
-const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b-instruct";
+const API_KEY = process.env.GEMINI_API_KEY;
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.6-flash";
 
-// Ollama's OpenAI-compatible endpoint — used instead of its native /api/chat
-// so the message/tool-call shape here matches the format most other
-// providers speak too, which is what keeps a provider swap cheap.
-const CHAT_URL = `${BASE_URL}/v1/chat/completions`;
+// Google AI Studio's free tier — tried after Groq's free tier turned out to
+// cap this account at 8,000 tokens/minute, too tight for a system prompt
+// plus ~14 tool schemas across a multi-round tool-calling turn. Gemini
+// exposes an OpenAI-compatible endpoint too, so this reuses the exact same
+// message/tool plumbing as the other providers.
+const CHAT_URL = `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`;
 
 async function post(body: Record<string, unknown>): Promise<Response> {
+  if (!API_KEY) throw new AIProviderUnavailableError("Falta GEMINI_API_KEY");
+
   let res: Response;
   try {
     res = await fetch(CHAT_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${API_KEY}`,
+      },
       body: JSON.stringify({ model: MODEL, ...body }),
     });
   } catch {
     throw new AIProviderUnavailableError();
   }
+  if (res.status === 429) {
+    throw new AIProviderUnavailableError("Límite de uso gratuito alcanzado, inténtalo en unos minutos");
+  }
   if (!res.ok) {
-    throw new AIProviderUnavailableError(`Ollama respondió ${res.status}`);
+    throw new AIProviderUnavailableError(`Gemini respondió ${res.status}`);
   }
   return res;
 }
 
-export class OllamaProvider implements AIProvider {
+export class GeminiProvider implements AIProvider {
   async chat(messages: AIMessage[], tools: AIToolDefinition[]): Promise<AIChatTurn> {
     const res = await post({
       messages: toOpenAIMessages(messages),
@@ -58,10 +68,12 @@ export class OllamaProvider implements AIProvider {
   }
 
   async isAvailable(): Promise<boolean> {
+    if (!API_KEY) return false;
     try {
-      const res = await fetch(`${BASE_URL}/api/version`, {
-        signal: AbortSignal.timeout(1500),
-      });
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`,
+        { signal: AbortSignal.timeout(3000) },
+      );
       return res.ok;
     } catch {
       return false;

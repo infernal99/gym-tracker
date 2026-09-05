@@ -2,16 +2,24 @@ import { Fragment } from "react";
 import { Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// The model writes light markdown (**bold**, "1." lists, "- " bullets).
-// Rendering it raw looks broken, and pulling in a full markdown parser for
-// three constructs would be overkill — this covers what it actually emits.
+// The model writes light markdown (**bold**, *italic*, "1." lists, "- "
+// bullets). Rendering it raw looks broken, and pulling in a full markdown
+// parser for four constructs would be overkill — this covers what it
+// actually emits.
 function renderInline(text: string, keyPrefix: string) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
+  return text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g).map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       return (
         <strong key={`${keyPrefix}-${i}`} className="font-semibold">
           {part.slice(2, -2)}
         </strong>
+      );
+    }
+    if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
+      return (
+        <em key={`${keyPrefix}-${i}`} className="italic">
+          {part.slice(1, -1)}
+        </em>
       );
     }
     return <Fragment key={`${keyPrefix}-${i}`}>{part}</Fragment>;
