@@ -19,7 +19,15 @@ import {
 
 const initialState: ActionResult = { error: null };
 
-export function UploadProgressPhotoDialog({ defaultAngle = "front" }: { defaultAngle?: PhotoAngle }) {
+export function UploadProgressPhotoDialog({
+  defaultAngle = "front",
+  triggerVariant = "default",
+  triggerLabel = "Añadir foto",
+}: {
+  defaultAngle?: PhotoAngle;
+  triggerVariant?: "default" | "outline";
+  triggerLabel?: string;
+}) {
   const [state, formAction, pending] = useActionState(uploadProgressPhotoAction, initialState);
   const [angle, setAngle] = useState<PhotoAngle>(defaultAngle);
   const [preview, setPreview] = useState<string | null>(null);
@@ -39,9 +47,9 @@ export function UploadProgressPhotoDialog({ defaultAngle = "front" }: { defaultA
         }
       }}
     >
-      <DialogTrigger render={<Button />}>
+      <DialogTrigger render={<Button variant={triggerVariant} />}>
         <Plus className="h-4 w-4" />
-        Añadir foto
+        {triggerLabel}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
