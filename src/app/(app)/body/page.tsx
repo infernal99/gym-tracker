@@ -1,6 +1,8 @@
-import { TrendingDown, TrendingUp, Scale } from "lucide-react";
+import Link from "next/link";
+import { TrendingDown, TrendingUp, Scale, Camera, ChevronRight } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { listWeightEntries, listMeasurements } from "@/lib/services/body";
+import { listProgressPhotos } from "@/lib/services/progress-photos";
 import { WeightChart } from "@/components/body/weight-chart";
 import { MeasurementChart } from "@/components/body/measurement-chart";
 import { PAIRED_MEASUREMENTS, SINGLE_MEASUREMENTS } from "@/lib/body-measurements";
@@ -13,9 +15,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function BodyPage() {
   const profile = await requireProfile();
-  const [entries, measurements] = await Promise.all([
+  const [entries, measurements, photos] = await Promise.all([
     listWeightEntries(profile.id),
     listMeasurements(profile.id),
+    listProgressPhotos(profile.id),
   ]);
 
   const latest = entries[entries.length - 1];
@@ -170,6 +173,34 @@ export default async function BodyPage() {
           )}
         </CardContent>
       </Card>
+
+      <Link href="/body/photos" className="fade-up [animation-delay:220ms] block">
+        <Card className="card-interactive">
+          <CardContent className="flex items-center gap-3 py-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Camera className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold">Fotos de progreso</p>
+              <p className="text-sm text-muted-foreground">
+                {photos.length === 0 ? "Añade tu primera foto" : `${photos.length} foto${photos.length === 1 ? "" : "s"} guardada${photos.length === 1 ? "" : "s"}`}
+              </p>
+            </div>
+            <div className="flex -space-x-2">
+              {photos.slice(0, 3).map((p) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={p.id}
+                  src={p.url}
+                  alt=""
+                  className="h-9 w-9 rounded-full border-2 border-card object-cover"
+                />
+              ))}
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </CardContent>
+        </Card>
+      </Link>
     </div>
   );
 }
