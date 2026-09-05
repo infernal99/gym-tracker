@@ -8,18 +8,21 @@ import { AISuggestions } from "@/components/ai/ai-suggestions";
 import { AIStatusBadge } from "@/components/ai/ai-status-badge";
 import { ConversationHistory } from "@/components/ai/conversation-history";
 import { ProposalCard } from "@/components/ai/proposal-card";
+import { ExerciseProgressChartCard } from "@/components/ai/exercise-progress-chart-card";
 import {
   getConversationMessagesAction,
   deleteConversationAction,
 } from "@/lib/actions/ai-chat";
 import type { AIConversationSummary, AIStoredMessage } from "@/lib/services/ai-chat";
 import type { AIProposal } from "@/lib/ai/proposals";
+import type { AIChart } from "@/lib/ai/charts";
 
 type ChatMessageState = {
   id: string;
   role: "user" | "assistant";
   content: string;
   proposal?: AIProposal;
+  chart?: AIChart;
 };
 
 const STATUS_POLL_MS = 20_000;
@@ -134,6 +137,7 @@ export function AIChatShell({
             | { type: "status"; text: string }
             | { type: "token"; text: string }
             | { type: "proposal"; proposal: AIProposal }
+            | { type: "chart"; chart: AIChart }
             | { type: "error"; text: string }
             | { type: "done" };
 
@@ -152,6 +156,8 @@ export function AIChatShell({
             setMessages((prev) => appendToLastAssistant(prev, event.text));
           } else if (event.type === "proposal") {
             setMessages((prev) => attachProposalToLastAssistant(prev, event.proposal));
+          } else if (event.type === "chart") {
+            setMessages((prev) => attachChartToLastAssistant(prev, event.chart));
           } else if (event.type === "error") {
             setStatusText(null);
             setMessages((prev) => setLastAssistant(prev, event.text));
@@ -209,6 +215,7 @@ export function AIChatShell({
                 pending={isLastAssistant && streaming && !statusText && !m.content}
               />
               {m.proposal && <ProposalCard proposal={m.proposal} />}
+              {m.chart && <ExerciseProgressChartCard chart={m.chart} />}
             </div>
           );
         })}
@@ -246,6 +253,18 @@ function attachProposalToLastAssistant(
   const lastIndex = next.length - 1;
   if (lastIndex >= 0 && next[lastIndex].role === "assistant") {
     next[lastIndex] = { ...next[lastIndex], proposal };
+  }
+  return next;
+}
+
+function attachChartToLastAssistant(
+  messages: ChatMessageState[],
+  chart: AIChart,
+): ChatMessageState[] {
+  const next = [...messages];
+  const lastIndex = next.length - 1;
+  if (lastIndex >= 0 && next[lastIndex].role === "assistant") {
+    next[lastIndex] = { ...next[lastIndex], chart };
   }
   return next;
 }

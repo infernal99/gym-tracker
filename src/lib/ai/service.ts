@@ -5,6 +5,7 @@ import { ALL_TOOLS } from "@/lib/ai/tools";
 import type { AIMessage } from "@/lib/ai/types";
 import type { AIProvider } from "@/lib/ai/provider";
 import type { AIProposal } from "@/lib/ai/proposals";
+import type { AIChart } from "@/lib/ai/charts";
 
 // Swapping providers later means changing this one line (or reading an env
 // var to pick a class) — nothing downstream references Ollama directly.
@@ -46,11 +47,14 @@ export type AIStreamEvent =
   | { type: "status"; text: string }
   | { type: "token"; text: string }
   | { type: "proposal"; proposal: AIProposal }
+  | { type: "chart"; chart: AIChart }
   | { type: "error"; text: string };
 
 export async function checkAIAvailable(): Promise<boolean> {
   return provider.isAvailable();
 }
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // One assistant turn: runs the read-tool loop, then yields the final answer
 // in small chunks so the UI can render it progressively. Returns the full
@@ -100,6 +104,12 @@ export async function* runAIChat(
           const { __proposal, ...modelVisible } = resultPayload as Record<string, unknown>;
           yield { type: "proposal", proposal: __proposal as AIProposal };
           proposalEmitted = true;
+          resultPayload = modelVisible;
+        }
+
+        if (resultPayload && typeof resultPayload === "object" && "__chart" in resultPayload) {
+          const { __chart, ...modelVisible } = resultPayload as Record<string, unknown>;
+          yield { type: "chart", chart: __chart as AIChart };
           resultPayload = modelVisible;
         }
 
@@ -157,11 +167,17 @@ export async function* runAIChat(
       "Puedo prepararte eso, pero necesito reformular la búsqueda. ¿Puedes pedírmelo de nuevo, quizá con algo más de detalle?";
   }
 
-  // Chunk word-by-word for a streaming feel without a second full
-  // generation pass (the content above is already fully generated).
+  // The text above is already fully generated (re-generating it through a
+  // second streamed call would risk a different answer than the one the
+  // safety nets above just validated, on top of doubling local-model
+  // latency). Instead of dumping it on the client all at once, pace it out
+  // word by word so it still reads as the model typing live — punctuation
+  // gets a slightly longer beat, like a natural pause between sentences.
   const words = finalContent.split(/(\s+)/);
   for (const word of words) {
     yield { type: "token", text: word };
+    if (!word.trim()) continue;
+    await sleep(/[.,!?:;]$/.test(word) ? 90 : 25);
   }
 
   return finalContent;

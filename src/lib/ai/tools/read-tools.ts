@@ -12,7 +12,7 @@ import { listWeightEntries } from "@/lib/services/body";
 import { listExercises, listMuscleGroups } from "@/lib/services/exercises";
 import { getWeeklySummary } from "@/lib/services/weekly-summary";
 import { getWeeklyVolumeStatus } from "@/lib/services/stats";
-import type { AITool } from "@/lib/ai/tools/types";
+import type { AITool, ToolResult } from "@/lib/ai/tools/types";
 
 type ReadTool = AITool;
 
@@ -157,15 +157,17 @@ const getExerciseProgressTool: ReadTool = {
     }
     const first = progress.points[0];
     const last = progress.points[progress.points.length - 1];
-    return {
+    const e1rmChangePct =
+      first.e1rm > 0 ? Math.round(((last.e1rm - first.e1rm) / first.e1rm) * 1000) / 10 : null;
+
+    const result: ToolResult = {
       found: true,
       hasData: true,
       exerciseName: exercise.name,
       sessionsLogged: progress.points.length,
       firstLogged: { date: first.date, weightKg: first.weightKg, reps: first.reps, e1rm: first.e1rm },
       lastLogged: { date: last.date, weightKg: last.weightKg, reps: last.reps, e1rm: last.e1rm },
-      e1rmChangePct:
-        first.e1rm > 0 ? Math.round(((last.e1rm - first.e1rm) / first.e1rm) * 1000) / 10 : null,
+      e1rmChangePct,
       personalRecords: progress.personalRecords.map((pr) => ({
         type: pr.record_type,
         value: pr.value,
@@ -180,6 +182,20 @@ const getExerciseProgressTool: ReadTool = {
         e1rm: p.e1rm,
       })),
     };
+
+    // A single point has no trend to draw — only chart when there's
+    // actually something to see move.
+    if (progress.points.length >= 2) {
+      result.__chart = {
+        kind: "exercise_progress",
+        exerciseName: exercise.name,
+        exerciseSlug: exercise.slug,
+        points: progress.points.slice(-12).map((p) => ({ date: p.date, e1rm: p.e1rm })),
+        changePct: e1rmChangePct,
+      };
+    }
+
+    return result;
   },
 };
 

@@ -73,7 +73,9 @@ function Done({ message, href }: { message: string; href?: string }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <p className="flex items-center gap-1.5 text-sm font-medium text-success">
-        <Check className="h-4 w-4" />
+        <span className="animate-in zoom-in-50 fade-in flex h-4 w-4 items-center justify-center duration-300">
+          <Check className="h-4 w-4" />
+        </span>
         {message}
       </p>
       {href && (
