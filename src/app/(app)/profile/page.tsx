@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, ChevronRight, Dumbbell, Flame, Scale, Settings, Trophy, Weight } from "lucide-react";
+import { BarChart3, Bot, ChevronRight, Dumbbell, Flame, Scale, Settings, Trophy, Weight } from "lucide-react";
 import { requireProfile, getProfileStats } from "@/lib/services/profile";
 import { listWorkoutActivity } from "@/lib/services/training";
 import { listWeightEntries } from "@/lib/services/body";
@@ -78,6 +78,22 @@ export default async function ProfilePage() {
       </div>
 
       <div className="grid gap-3 fade-up [animation-delay:100ms]">
+        <Link
+          href="/ai"
+          className="card-interactive flex items-center justify-between rounded-xl border bg-card p-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Bot className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="stat-label">Gym Tracker AI</p>
+              <p className="font-semibold">Tu entrenador digital</p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Link>
+
         <Link
           href="/body"
           className="card-interactive flex items-center justify-between rounded-xl border bg-card p-4"

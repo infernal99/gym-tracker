@@ -13,6 +13,7 @@ import {
   Swords,
   BarChart3,
   UsersRound,
+  Bot,
 } from "lucide-react";
 
 export type NavLink = {
@@ -25,6 +26,7 @@ export type NavLink = {
 // overflow menu, both resolved per-user from this master list.
 export const navLinks: NavLink[] = [
   { href: "/dashboard", label: "Hoy", icon: LayoutDashboard },
+  { href: "/ai", label: "Gym Tracker AI", icon: Bot },
   { href: "/my-routine", label: "Mi rutina", icon: Star },
   { href: "/routines", label: "Rutinas", icon: ListChecks },
   { href: "/train/history", label: "Historial", icon: History },
