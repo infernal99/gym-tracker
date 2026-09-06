@@ -23,9 +23,11 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "Gym Tracker",
   },
+  // ?v= busts any browser/CDN cache still holding the old icon bytes at
+  // this same path — bump it whenever the icon artwork changes.
   icons: {
-    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    icon: [{ url: "/icons/icon-192.png?v=3", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/icons/apple-touch-icon.png?v=3", sizes: "180x180", type: "image/png" }],
   },
 };
 
