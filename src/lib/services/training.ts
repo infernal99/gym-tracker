@@ -55,15 +55,34 @@ export async function getNextDayInSequence(userId: string, templateId: string) {
   if (!days || days.length === 0) return { day: null, nextTrainingDay: null };
 
   const todayWeekday = (new Date().getDay() + 6) % 7; // Monday = 0
-  const { data: slot } = await supabase
+  const { data: slots } = await supabase
     .from("workout_template_weekday_slots")
-    .select("day_id")
-    .eq("template_id", templateId)
-    .eq("weekday", todayWeekday)
-    .maybeSingle();
+    .select("weekday, day_id")
+    .eq("template_id", templateId);
 
-  const pinnedToday = slot ? days.find((d) => d.id === slot.day_id) : undefined;
-  if (pinnedToday) return resolveRestDay(days, pinnedToday);
+  const slotByWeekday = new Map((slots ?? []).map((s) => [s.weekday, s.day_id]));
+  const dayById = new Map(days.map((d) => [d.id, d]));
+  const pinnedToday = dayById.get(slotByWeekday.get(todayWeekday) ?? "");
+
+  if (pinnedToday) {
+    if (!pinnedToday.is_rest_day) return { day: pinnedToday, nextTrainingDay: pinnedToday };
+
+    // Today's a pinned rest day — the next training day is whatever the
+    // calendar has pinned to the NEXT weekday that isn't also rest, not the
+    // template's own day_order (that list has no notion of "which weekday
+    // comes after Sunday"; walking it instead picked whatever happened to
+    // sit next in the day-creation order, e.g. jumping to a day meant for
+    // Wednesday). Only weekdays actually pinned are considered here; an
+    // unpinned gap is skipped rather than treated as a dead end.
+    for (let offset = 1; offset <= 6; offset++) {
+      const candidate = dayById.get(slotByWeekday.get((todayWeekday + offset) % 7) ?? "");
+      if (candidate && !candidate.is_rest_day) {
+        return { day: pinnedToday, nextTrainingDay: candidate };
+      }
+    }
+    // No non-rest day anywhere in the weekly calendar — fall through to the
+    // day_order sequence below as a last resort rather than showing nothing.
+  }
 
   const { data: profile } = await supabase
     .from("profiles")
