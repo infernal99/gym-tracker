@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, X } from "lucide-react";
 import { addTemplateExerciseAction } from "@/lib/actions/routines";
 import type { listExercises } from "@/lib/services/exercises";
 import { matchesExerciseQuery } from "@/lib/exercise-search";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ExerciseFieldsGrid } from "@/components/routines/exercise-fields-grid";
 
 type Exercise = Awaited<ReturnType<typeof listExercises>>[number];
 
@@ -78,16 +79,24 @@ export function ExercisePicker({
       {selected && (
         <form
           action={addTemplateExerciseAction.bind(null, dayId, templateId)}
-          className="flex items-end gap-2"
+          className="space-y-2"
           onSubmit={() => setSelected(null)}
         >
           <input type="hidden" name="exerciseId" value={selected.id} />
-          <p className="flex-1 text-sm font-medium">{selected.name}</p>
-          <div className="w-20 space-y-1">
-            <label className="text-xs text-muted-foreground">Series</label>
-            <Input name="targetSets" type="number" min={1} defaultValue={3} required />
+          <div className="flex items-center justify-between rounded-lg border bg-surface px-3 py-2">
+            <p className="text-sm font-medium">{selected.name}</p>
+            <button
+              type="button"
+              onClick={() => setSelected(null)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <Button type="submit" size="sm">
+          <div className="grid grid-cols-2 gap-2">
+            <ExerciseFieldsGrid />
+          </div>
+          <Button type="submit" size="sm" className="w-full">
             <Plus className="h-3.5 w-3.5" />
             Añadir
           </Button>
