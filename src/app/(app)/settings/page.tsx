@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logoutAction } from "@/lib/actions/auth";
 import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";
 import { CustomizeBottomNav } from "@/components/settings/customize-bottom-nav";
+import { TrainingSettings } from "@/components/settings/training-settings";
 import { InstallAppCard } from "@/components/pwa/install-app-card";
 import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
@@ -131,6 +132,15 @@ export default async function SettingsPage() {
             label="Contactar con soporte"
             external
           />
+        </CardContent>
+      </Card>
+
+      <Card className="fade-up [animation-delay:180ms]">
+        <CardHeader>
+          <CardTitle className="text-base">Entrenamiento</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TrainingSettings />
         </CardContent>
       </Card>
 

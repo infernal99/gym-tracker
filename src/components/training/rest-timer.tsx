@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play, SkipForward, RotateCcw, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { RestTimerAlert } from "@/components/training/rest-timer-alert";
+import { useRestTimerVibration } from "@/lib/hooks/use-rest-timer-vibration";
 
 function formatTime(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
@@ -25,25 +27,29 @@ export function RestTimer({ seconds, label = "Descanso" }: { seconds: number; la
   }, [running, remaining]);
 
   const done = remaining <= 0;
+  const { enabled: vibrationEnabled } = useRestTimerVibration();
 
   // Fires once per rest period, whether it runs out naturally or gets
   // skipped — a phone in a pocket or with the screen off is exactly the
   // case this is for, so you don't have to keep the app in view just to
   // catch the moment. Real limits, not fixable from here: iOS Safari never
-  // implemented the Vibration API at all (no buzz on iPhone, PWA or not),
-  // and on Android the countdown itself is throttled once the tab is
+  // implemented the Vibration API at all (no buzz on iPhone, PWA or not —
+  // hence the big visual alert below, which is the only cue those users
+  // get), and on Android the countdown itself is throttled once the tab is
   // backgrounded or the screen locks, so timing drifts the longer it's out
   // of view — most reliable with the screen on, even if not looking at it.
   const vibratedRef = useRef(false);
+  const [alertTrigger, setAlertTrigger] = useState(0);
   useEffect(() => {
     if (done && !vibratedRef.current) {
       vibratedRef.current = true;
-      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      setAlertTrigger((n) => n + 1);
+      if (vibrationEnabled && typeof navigator !== "undefined" && "vibrate" in navigator) {
         navigator.vibrate([200, 100, 200]);
       }
     }
     if (!done) vibratedRef.current = false;
-  }, [done]);
+  }, [done, vibrationEnabled]);
 
   const progress = duration > 0 ? remaining / duration : 0;
   const dashOffset = RING_CIRCUMFERENCE * (1 - progress);
@@ -52,6 +58,7 @@ export function RestTimer({ seconds, label = "Descanso" }: { seconds: number; la
     <div
       className={`rounded-2xl border px-4 py-3 transition-colors duration-normal ${done ? "border-success/30 bg-success/5" : "bg-surface"}`}
     >
+      <RestTimerAlert trigger={alertTrigger} />
       <div className="flex items-center justify-between">
         <div>
           <p className="stat-label">{label}</p>
