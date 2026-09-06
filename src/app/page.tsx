@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/services/profile";
 import { Button } from "@/components/ui/button";
+import { AppLogo } from "@/components/app-logo";
 
 export default async function HomePage() {
   const profile = await getCurrentProfile();
@@ -10,9 +11,7 @@ export default async function HomePage() {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 px-4 text-center">
       <div className="flex items-center gap-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-          G
-        </div>
+        <AppLogo size={40} />
         <span className="text-xl font-semibold tracking-tight">Gym Tracker</span>
       </div>
       <h1 className="max-w-md text-3xl font-bold tracking-tight sm:text-4xl">
