@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pause, Play, SkipForward, RotateCcw, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -25,6 +25,26 @@ export function RestTimer({ seconds, label = "Descanso" }: { seconds: number; la
   }, [running, remaining]);
 
   const done = remaining <= 0;
+
+  // Fires once per rest period, whether it runs out naturally or gets
+  // skipped — a phone in a pocket or with the screen off is exactly the
+  // case this is for, so you don't have to keep the app in view just to
+  // catch the moment. Real limits, not fixable from here: iOS Safari never
+  // implemented the Vibration API at all (no buzz on iPhone, PWA or not),
+  // and on Android the countdown itself is throttled once the tab is
+  // backgrounded or the screen locks, so timing drifts the longer it's out
+  // of view — most reliable with the screen on, even if not looking at it.
+  const vibratedRef = useRef(false);
+  useEffect(() => {
+    if (done && !vibratedRef.current) {
+      vibratedRef.current = true;
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate([200, 100, 200]);
+      }
+    }
+    if (!done) vibratedRef.current = false;
+  }, [done]);
+
   const progress = duration > 0 ? remaining / duration : 0;
   const dashOffset = RING_CIRCUMFERENCE * (1 - progress);
 
