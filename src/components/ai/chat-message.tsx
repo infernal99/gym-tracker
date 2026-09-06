@@ -63,7 +63,7 @@ export function ChatMessage({
 
   return (
     <div className={cn("flex items-end gap-2", isUser && "flex-row-reverse")}>
-      {!isUser && <AIMascotAvatar size={28} />}
+      {!isUser && <AIMascotAvatar size={28} animated={pending && !content} />}
       <div
         className={cn(
           "flex max-w-[80%] flex-col gap-1 rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",

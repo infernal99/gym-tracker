@@ -223,7 +223,7 @@ export function AIChatShell({
               alt=""
               width={160}
               height={296}
-              className="mx-auto h-40 w-auto"
+              className="mascot-float mx-auto h-40 w-auto"
               priority
             />
             <p className="text-sm text-muted-foreground">
