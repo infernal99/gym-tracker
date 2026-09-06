@@ -1,6 +1,6 @@
 import { Fragment } from "react";
-import { Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AIMascotAvatar } from "@/components/ai/ai-mascot-avatar";
 
 // The model writes light markdown (**bold**, *italic*, "1." lists, "- "
 // bullets). Rendering it raw looks broken, and pulling in a full markdown
@@ -63,11 +63,7 @@ export function ChatMessage({
 
   return (
     <div className={cn("flex items-end gap-2", isUser && "flex-row-reverse")}>
-      {!isUser && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <Bot className="h-4 w-4" />
-        </div>
-      )}
+      {!isUser && <AIMascotAvatar size={28} />}
       <div
         className={cn(
           "flex max-w-[80%] flex-col gap-1 rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",

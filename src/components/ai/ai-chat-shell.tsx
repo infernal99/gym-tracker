@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bot } from "lucide-react";
+import Image from "next/image";
 import { ChatMessage } from "@/components/ai/chat-message";
+import { AIMascotAvatar } from "@/components/ai/ai-mascot-avatar";
 import { ChatInput } from "@/components/ai/chat-input";
 import { AISuggestions } from "@/components/ai/ai-suggestions";
 import { AIStatusBadge } from "@/components/ai/ai-status-badge";
@@ -199,9 +200,7 @@ export function AIChatShell({
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 items-center justify-between border-b py-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Bot className="h-4 w-4" />
-          </div>
+          <AIMascotAvatar size={36} />
           <div>
             <p className="text-sm font-semibold leading-none">Gym Tracker AI</p>
             <AIStatusBadge available={aiAvailable} usage={usage} />
@@ -218,8 +217,16 @@ export function AIChatShell({
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto py-4">
         {messages.length === 0 && (
-          <div className="space-y-4 py-6">
-            <p className="text-center text-sm text-muted-foreground">
+          <div className="space-y-4 py-4 text-center">
+            <Image
+              src="/mascot/gym-buddy-full.png"
+              alt=""
+              width={160}
+              height={296}
+              className="mx-auto h-40 w-auto"
+              priority
+            />
+            <p className="text-sm text-muted-foreground">
               Pregúntame lo que quieras sobre tu entrenamiento, tu progreso o tus rutinas.
             </p>
             {!limitReached && <AISuggestions onPick={sendMessage} />}
