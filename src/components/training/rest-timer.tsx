@@ -15,6 +15,9 @@ function formatTime(totalSeconds: number) {
 const RING_RADIUS = 26;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
+// 6 buzzes of 300ms + 5 pauses of 150ms ≈ 2.55s total.
+const VIBRATION_PATTERN = [300, 150, 300, 150, 300, 150, 300, 150, 300, 150, 300];
+
 export function RestTimer({ seconds, label = "Descanso" }: { seconds: number; label?: string }) {
   const [duration, setDuration] = useState(seconds);
   const [remaining, setRemaining] = useState(seconds);
@@ -45,7 +48,7 @@ export function RestTimer({ seconds, label = "Descanso" }: { seconds: number; la
       vibratedRef.current = true;
       setAlertTrigger((n) => n + 1);
       if (vibrationEnabled && typeof navigator !== "undefined" && "vibrate" in navigator) {
-        navigator.vibrate([200, 100, 200]);
+        navigator.vibrate(VIBRATION_PATTERN);
       }
     }
     if (!done) vibratedRef.current = false;
