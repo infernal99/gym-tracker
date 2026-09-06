@@ -115,7 +115,7 @@ export async function getSessionWithDetails(sessionId: string) {
         *, exercises(
           id, name, slug, description, difficulty, movement_type,
           instructions, tips, common_mistakes, image_url, alternate_names,
-          muscle_groups(name, slug), equipment(name)
+          muscle_groups(name, slug), equipment(name, slug)
         ), sets(*)
       )`,
     )

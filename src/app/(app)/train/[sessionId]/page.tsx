@@ -7,6 +7,7 @@ import { countCompletedSets } from "@/lib/set-utils";
 import { logSetAction, deleteSetAction, finishWorkoutAction } from "@/lib/actions/training";
 import { ElapsedClock } from "@/components/training/elapsed-clock";
 import { RestTimer } from "@/components/training/rest-timer";
+import { PlateCalculatorButton } from "@/components/training/plate-calculator";
 import { CancelWorkoutButton } from "@/components/training/cancel-workout-button";
 import { ExerciseInfoDialog } from "@/components/exercises/exercise-info-dialog";
 import { LastTimeReference } from "@/components/training/last-time-reference";
@@ -290,7 +291,13 @@ export default async function TrainSessionPage({
             >
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1">
-                  <label className="stat-label">Peso (kg)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="stat-label">Peso (kg)</label>
+                    {(current.exercises?.equipment?.slug === "barbell" ||
+                      current.exercises?.equipment?.slug === "smith_machine") && (
+                      <PlateCalculatorButton defaultTargetKg={prefill?.weight_kg ?? 0} />
+                    )}
+                  </div>
                   <Input
                     name="weightKg"
                     type="number"

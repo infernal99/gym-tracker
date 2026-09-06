@@ -89,6 +89,7 @@ export async function listChallenges(userId: string): Promise<Challenge[]> {
     .from("challenges")
     .select("*, exercises(name), challenge_participants!inner(current_value, initial_value)")
     .eq("creator_id", userId)
+    .eq("is_duel", false)
     .eq("challenge_participants.user_id", userId)
     .order("created_at", { ascending: false });
 

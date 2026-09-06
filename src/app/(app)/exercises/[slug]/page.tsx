@@ -13,7 +13,9 @@ import { muscleBadgeClass } from "@/lib/muscle-colors";
 import { difficultyLabels, movementTypeLabels } from "@/lib/exercise-labels";
 import { saveExerciseNoteAction } from "@/lib/actions/exercises";
 import { analyzePlateau } from "@/lib/calculations/strength";
+import { calculateExerciseRank } from "@/lib/calculations/exercise-rank";
 import { ExerciseChart } from "@/components/exercises/exercise-chart";
+import { ExerciseRankCard } from "@/components/exercises/exercise-rank-card";
 import { OneRepMaxCard } from "@/components/exercises/one-rep-max-card";
 import { PlateauCard } from "@/components/exercises/plateau-card";
 import { SideBalanceCard } from "@/components/exercises/side-balance-card";
@@ -70,6 +72,8 @@ export default async function ExerciseDetailPage({
     .reduce<(typeof points)[number] | null>((best, p) => (!best || p.e1rm > best.e1rm ? p : best), null);
   const allTimeBestE1rm = points.length > 0 ? Math.max(...points.map((p) => p.e1rm)) : 0;
   const plateau = analyzePlateau(points);
+  const totalSets = sessionPoints.reduce((sum, sp) => sum + sp.sets.length, 0);
+  const rank = calculateExerciseRank(totalSets, personalRecords.length);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -116,6 +120,8 @@ export default async function ExerciseDetailPage({
         </Card>
       ) : (
         <div className="space-y-4 fade-up [animation-delay:60ms]">
+          <ExerciseRankCard rank={rank} totalSets={totalSets} prCount={personalRecords.length} />
+
           <p className="stat-label">Mi progreso</p>
           <div className="grid grid-cols-2 gap-2.5">
             <StatTile
