@@ -38,8 +38,10 @@ function ExerciseRow({
   onMove,
   onDragStart,
   onDragOver,
+  onDragEnd,
   onDrop,
   dragging,
+  isDropTarget,
 }: {
   exercise: DayExercise;
   templateId: string;
@@ -48,8 +50,10 @@ function ExerciseRow({
   onMove: (direction: -1 | 1) => void;
   onDragStart: () => void;
   onDragOver: (e: React.DragEvent) => void;
+  onDragEnd: () => void;
   onDrop: () => void;
   dragging: boolean;
+  isDropTarget: boolean;
 }) {
   const [editing, setEditing] = useState(false);
 
@@ -100,9 +104,12 @@ function ExerciseRow({
       draggable
       onDragStart={onDragStart}
       onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
       onDrop={onDrop}
-      className={`flex items-center gap-2 rounded-xl border bg-surface px-2 py-2 transition-opacity duration-fast ${
-        dragging ? "opacity-40" : ""
+      className={`drop-zone flex items-center gap-2 rounded-xl border bg-surface px-2 py-2 ${
+        dragging ? "drag-source" : ""
+      } ${
+        isDropTarget ? "border-primary bg-primary/15 shadow-lg shadow-primary/20" : ""
       }`}
     >
       <span className="cursor-grab touch-none text-muted-foreground active:cursor-grabbing">
@@ -301,6 +308,14 @@ export function TemplateDayExercises({
     [...dayExercises].sort((a, b) => a.order_index - b.order_index),
   );
   const [dragId, setDragId] = useState<string | null>(null);
+  // The row the dragged exercise would swap into — highlighted so you can
+  // see where it lands before letting go.
+  const [overId, setOverId] = useState<string | null>(null);
+
+  function endDrag() {
+    setDragId(null);
+    setOverId(null);
+  }
 
   useEffect(() => {
     setItems([...dayExercises].sort((a, b) => a.order_index - b.order_index));
@@ -324,19 +339,19 @@ export function TemplateDayExercises({
 
   function handleDrop(targetId: string) {
     if (!dragId || dragId === targetId) {
-      setDragId(null);
+      endDrag();
       return;
     }
     const from = items.findIndex((i) => i.id === dragId);
     const to = items.findIndex((i) => i.id === targetId);
     if (from === -1 || to === -1) {
-      setDragId(null);
+      endDrag();
       return;
     }
     const next = [...items];
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
-    setDragId(null);
+    endDrag();
     persistOrder(next);
   }
 
@@ -351,9 +366,14 @@ export function TemplateDayExercises({
           isLast={index === items.length - 1}
           onMove={(direction) => moveByStep(index, direction)}
           onDragStart={() => setDragId(ex.id)}
-          onDragOver={(e) => e.preventDefault()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (dragId && dragId !== ex.id) setOverId(ex.id);
+          }}
+          onDragEnd={endDrag}
           onDrop={() => handleDrop(ex.id)}
           dragging={dragId === ex.id}
+          isDropTarget={overId === ex.id}
         />
       ))}
 

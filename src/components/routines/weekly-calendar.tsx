@@ -20,10 +20,22 @@ export function WeeklyCalendar({
   slots: WeekdaySlot[];
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Dragging (desktop) and tapping (touch, where HTML5 drag doesn't fire)
+  // are the same intent — "I'm placing this day" — so both arm every slot.
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [overWeekday, setOverWeekday] = useState<number | null>(null);
   const [, startTransition] = useTransition();
+
+  const armed = selectedId !== null || draggingId !== null;
+
+  const endDrag = () => {
+    setDraggingId(null);
+    setOverWeekday(null);
+  };
 
   const assign = (weekday: number, dayId: string) => {
     setSelectedId(null);
+    endDrag();
     startTransition(() => {
       assignWeekdayAction(weekday, templateId, dayId);
     });
@@ -46,20 +58,31 @@ export function WeeklyCalendar({
             <div
               key={weekday}
               onDragOver={(e) => e.preventDefault()}
+              onDragEnter={() => setOverWeekday(weekday)}
+              onDragLeave={(e) => {
+                // Moving onto a child fires dragleave on the parent too —
+                // only clear when the pointer has actually left the cell.
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                  setOverWeekday((w) => (w === weekday ? null : w));
+                }
+              }}
               onDrop={(e) => {
                 e.preventDefault();
                 const dayId = e.dataTransfer.getData("text/plain");
                 if (dayId) assign(weekday, dayId);
+                else endDrag();
               }}
               onClick={() => {
                 if (selectedId) assign(weekday, selectedId);
               }}
-              className={`flex min-h-20 flex-col items-center gap-1 rounded-xl border p-1.5 text-center transition-colors duration-fast ${
-                slot
-                  ? "border-primary/30 bg-primary/5"
-                  : selectedId
-                    ? "cursor-pointer border-dashed border-primary/50 bg-surface hover:bg-accent/40"
-                    : "border-dashed bg-surface"
+              className={`drop-zone flex min-h-20 flex-col items-center gap-1 rounded-xl border p-1.5 text-center ${
+                overWeekday === weekday
+                  ? "drop-zone-active border-primary bg-primary/20 shadow-lg shadow-primary/20"
+                  : armed
+                    ? "cursor-pointer border-dashed border-primary/50 bg-primary/5 hover:bg-accent/40"
+                    : slot
+                      ? "border-primary/30 bg-primary/5"
+                      : "border-dashed bg-surface"
               }`}
             >
               <span className="text-xs font-semibold text-muted-foreground">{label}</span>
@@ -102,9 +125,13 @@ export function WeeklyCalendar({
               draggable
               onDragStart={(e) => {
                 e.dataTransfer.setData("text/plain", day.id);
+                setDraggingId(day.id);
               }}
+              onDragEnd={endDrag}
               onClick={() => setSelectedId((id) => (id === day.id ? null : day.id))}
-              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors duration-fast ${
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-[color,background-color,border-color,opacity,transform] duration-fast ease-out ${
+                draggingId === day.id ? "drag-source" : ""
+              } ${
                 selectedId === day.id
                   ? "border-primary bg-primary text-primary-foreground"
                   : "bg-card hover:bg-accent"
@@ -118,11 +145,15 @@ export function WeeklyCalendar({
             draggable
             onDragStart={(e) => {
               e.dataTransfer.setData("text/plain", REST_DAY_SENTINEL);
+              setDraggingId(REST_DAY_SENTINEL);
             }}
+            onDragEnd={endDrag}
             onClick={() =>
               setSelectedId((id) => (id === REST_DAY_SENTINEL ? null : REST_DAY_SENTINEL))
             }
-            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors duration-fast ${
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-[color,background-color,border-color,opacity,transform] duration-fast ease-out ${
+              draggingId === REST_DAY_SENTINEL ? "drag-source" : ""
+            } ${
               selectedId === REST_DAY_SENTINEL
                 ? "border-primary bg-primary text-primary-foreground"
                 : "bg-card hover:bg-accent"
