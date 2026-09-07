@@ -52,14 +52,17 @@ export default async function DashboardPage() {
       <InstallBanner />
       <SharedRoutineCard shares={pendingShares} />
       <MotivationBanner summary={weeklySummary} />
-      <div className="fade-up">
+      <div>
         <p className="text-muted-foreground">
           {greeting}, {firstName} 👋
         </p>
         <h1 className="mt-0.5 text-2xl font-semibold capitalize tracking-tight">{today}</h1>
       </div>
 
-      <Card className="fade-up glow-primary overflow-hidden [animation-delay:60ms]">
+      {/* The one entrance on this screen. Everything else is just there —
+          scattering the same fade over every section made the whole page
+          feel like it was still arriving each time you opened it. */}
+      <Card className="fade-up glow-primary overflow-hidden">
         <CardContent className="pt-6">
           {stats.activeSession ? (
             <div className="flex flex-col gap-4">
@@ -135,7 +138,7 @@ export default async function DashboardPage() {
       </Card>
 
       {otherDays.length > 0 && (
-        <div className="fade-up [animation-delay:100ms]">
+        <div>
           <p className="stat-label mb-2">Otros días de tu rutina</p>
           <div className="grid grid-cols-2 gap-2">
             {otherDays.map((day) => (
@@ -145,16 +148,12 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div className="fade-up [animation-delay:140ms]">
-        <WeeklySummaryCard summary={weeklySummary} />
-      </div>
+      <WeeklySummaryCard summary={weeklySummary} />
 
-      <div className="fade-up [animation-delay:160ms]">
-        <InsightsCard insights={insights} />
-      </div>
+      <InsightsCard insights={insights} />
 
       {stats.lastSession && (
-        <div className="fade-up flex items-center justify-between rounded-xl border bg-card px-4 py-3 text-sm [animation-delay:180ms]">
+        <div className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 text-sm">
           <div className="min-w-0">
             <p className="truncate font-medium">{stats.lastSession.name}</p>
             <p className="text-muted-foreground">

@@ -42,7 +42,18 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
   const activeIndex = links.findIndex(
     (link) => pathname === link.href || pathname.startsWith(`${link.href}/`),
   );
-  const index = activeIndex === -1 ? 0 : activeIndex;
+  // Plenty of pages (Mi rutina, Historial, Amigos…) live outside these five
+  // tabs. Falling back to tab 0 there would claim you're on Hoy when you
+  // aren't, so the ball is hidden instead — nothing is selected, because
+  // nothing is. It keeps the last real tab's position while hidden so it
+  // fades out in place rather than sliding away first.
+  const isOnTab = activeIndex !== -1;
+  const [lastTabIndex, setLastTabIndex] = useState(isOnTab ? activeIndex : 0);
+  const index = isOnTab ? activeIndex : lastTabIndex;
+
+  useEffect(() => {
+    if (isOnTab) setLastTabIndex(activeIndex);
+  }, [isOnTab, activeIndex]);
 
   // Briefly stretches the ball along its direction of travel so the slide
   // reads as a liquid blob squishing into place, not a token gliding on
@@ -89,8 +100,13 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
             width={FILLET_X * 2}
             height={CRADLE_R + 2}
             viewBox={`${-FILLET_X} 0 ${FILLET_X * 2} ${CRADLE_R + 2}`}
-            className="ease-liquid absolute transition-[left] duration-[420ms]"
-            style={{ left: `${leftPercent}%`, top: 0, transform: "translateX(-50%)" }}
+            className="ease-liquid absolute transition-[left,opacity] duration-[420ms]"
+            style={{
+              left: `${leftPercent}%`,
+              top: 0,
+              transform: "translateX(-50%)",
+              opacity: isOnTab ? 1 : 0,
+            }}
           >
             <path d={NOTCH_PATH} fill="var(--background)" />
             {/* Carries the bar's own border around the cut, so its outline
@@ -103,13 +119,17 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
         <div
           aria-hidden
           className={cn(
-            "ease-liquid pointer-events-none absolute h-12 rounded-full transition-[left,width] duration-[420ms]",
+            "ease-liquid pointer-events-none absolute h-12 rounded-full transition-[left,width,opacity,scale] duration-[420ms]",
             // Kept under the cradle's own width so the stretch never
             // spills past the cut and back onto the bar's surface.
             morphing ? "w-14" : "w-12",
           )}
           style={{
             ...ballPosition,
+            opacity: isOnTab ? 1 : 0,
+            // Shrinks as it goes rather than vanishing flat — but never to
+            // 0, which reads as a glitch rather than a retreat.
+            scale: isOnTab ? "1" : "0.7",
             background:
               "radial-gradient(circle at 32% 26%, color-mix(in oklch, white 35%, var(--primary)) 0%, var(--primary) 62%)",
             boxShadow:
@@ -119,7 +139,7 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
 
         <div className="relative z-10 flex items-center py-2">
           {links.map((link, i) => {
-            const active = i === index;
+            const active = isOnTab && i === index;
             const Icon = link.icon;
             return (
               <Link

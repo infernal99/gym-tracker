@@ -11,7 +11,7 @@ export function MotivationBanner({ summary }: { summary: WeeklySummary }) {
 
   if (currentStreak >= 2) {
     return (
-      <div className="fade-up flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
+      <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Flame className="h-4 w-4" />
         </div>
@@ -29,7 +29,7 @@ export function MotivationBanner({ summary }: { summary: WeeklySummary }) {
 
   if (daysSinceLastWorkout >= 4) {
     return (
-      <div className="fade-up flex items-center gap-3 rounded-xl border bg-card p-3">
+      <div className="flex items-center gap-3 rounded-xl border bg-card p-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
           <CalendarOff className="h-4 w-4" />
         </div>

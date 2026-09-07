@@ -25,7 +25,7 @@ export function DailyChallengeCard({
   const { lastBest, personalBest, suggestion } = challenge;
 
   return (
-    <div className="fade-up rounded-2xl border border-primary/25 bg-primary/5 p-4">
+    <div className="rounded-2xl border border-primary/25 bg-primary/5 p-4">
       <p className="stat-label flex items-center gap-1.5 text-primary">
         <Icon className="h-3.5 w-3.5" />
         Tu reto de hoy
