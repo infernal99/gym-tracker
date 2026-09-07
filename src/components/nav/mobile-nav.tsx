@@ -75,24 +75,29 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
           className="absolute inset-0 rounded-full border bg-surface/95 shadow-lg shadow-black/30 backdrop-blur"
         />
 
-        {/* Painted in the page's own background color — since nothing but
-            that flat background ever sits directly behind the nav, this
-            reads exactly like a real notch cut into the bar. */}
-        <svg
-          aria-hidden
-          // +2 of height so the outline stroke at the cradle's deepest
-          // point isn't clipped by the viewBox edge.
-          width={FILLET_X * 2}
-          height={CRADLE_R + 2}
-          viewBox={`${-FILLET_X} 0 ${FILLET_X * 2} ${CRADLE_R + 2}`}
-          className="ease-liquid pointer-events-none absolute transition-[left] duration-[420ms]"
-          style={{ left: `${leftPercent}%`, top: 0, transform: "translateX(-50%)" }}
-        >
-          <path d={NOTCH_PATH} fill="var(--background)" />
-          {/* Carries the bar's own border around the cut, so its outline
-              reads as one continuous edge flowing around the ball. */}
-          <path d={NOTCH_OUTLINE} fill="none" stroke="var(--border)" strokeWidth={1} />
-        </svg>
+        {/* Clipped to the bar's own silhouette: on the first and last tab
+            the cradle reaches past the bar's rounded end, and without this
+            it would paint that corner away and leave the outline hanging
+            in mid-air outside the bar. */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
+          {/* Painted in the page's own background color — since nothing but
+              that flat background ever sits directly behind the nav, this
+              reads exactly like a real notch cut into the bar. */}
+          <svg
+            // +2 of height so the outline stroke at the cradle's deepest
+            // point isn't clipped by the viewBox edge.
+            width={FILLET_X * 2}
+            height={CRADLE_R + 2}
+            viewBox={`${-FILLET_X} 0 ${FILLET_X * 2} ${CRADLE_R + 2}`}
+            className="ease-liquid absolute transition-[left] duration-[420ms]"
+            style={{ left: `${leftPercent}%`, top: 0, transform: "translateX(-50%)" }}
+          >
+            <path d={NOTCH_PATH} fill="var(--background)" />
+            {/* Carries the bar's own border around the cut, so its outline
+                reads as one continuous edge flowing around the ball. */}
+            <path d={NOTCH_OUTLINE} fill="none" stroke="var(--border)" strokeWidth={1} />
+          </svg>
+        </div>
 
         {/* The ball itself, nested in the socket above. */}
         <div
