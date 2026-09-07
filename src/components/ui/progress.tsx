@@ -45,7 +45,12 @@ function ProgressIndicator({
   return (
     <ProgressPrimitive.Indicator
       data-slot="progress-indicator"
-      className={cn("h-full bg-primary transition-all", className)}
+      className={cn(
+        // Base UI drives the fill through width, so that's the property to
+        // name — `all` would drag colour and layout along with it.
+        "h-full bg-primary transition-[width] duration-normal ease-out",
+        className,
+      )}
       {...props}
     />
   )

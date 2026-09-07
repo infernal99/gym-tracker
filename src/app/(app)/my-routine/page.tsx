@@ -110,7 +110,7 @@ export default async function MyRoutinePage() {
                 isSuggested ? "ring-primary/40" : "ring-foreground/10"
               }`}
             >
-              <details className="group">
+              <details className="accordion group">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-(--card-spacing) transition-colors duration-fast hover:bg-accent/40 [&::-webkit-details-marker]:hidden">
                   <div className="min-w-0">
                     <span className="font-heading text-base font-semibold">{day.name}</span>

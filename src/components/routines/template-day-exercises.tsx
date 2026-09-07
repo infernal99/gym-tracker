@@ -377,7 +377,7 @@ export function TemplateDayExercises({
         />
       ))}
 
-      <details className="rounded-xl border px-3 py-2">
+      <details className="accordion rounded-xl border px-3 py-2">
         <summary className="cursor-pointer text-sm text-muted-foreground">
           + Añadir ejercicio
         </summary>

@@ -205,6 +205,38 @@
   }
 }
 
+/* <details> content pops in with nothing bridging it. Height is the one
+   place the transform-only rule doesn't apply — an accordion has no
+   transform equivalent. Behind @supports so browsers without
+   ::details-content just snap open exactly as they do today. */
+@supports selector(::details-content) {
+  :root {
+    interpolate-size: allow-keywords;
+  }
+
+  .accordion::details-content {
+    block-size: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition:
+      block-size 220ms cubic-bezier(0.23, 1, 0.32, 1),
+      opacity 160ms ease-out,
+      content-visibility 220ms allow-discrete;
+  }
+
+  .accordion[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .accordion::details-content,
+    .accordion[open]::details-content {
+      transition: none;
+    }
+  }
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;
