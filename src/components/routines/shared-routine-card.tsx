@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Inbox } from "lucide-react";
 import {
   acceptTemplateShareAction,
@@ -8,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-// Surfaces routines friends have sent on the home screen — sharing writes no
-// notification of its own, so without this the only trace is a section on
-// the Rutinas tab that you'd have to think to go look at.
+// Shown on both the home screen and the Rutinas tab, deliberately the same
+// in both places: sharing writes no notification of its own, so the home
+// screen is where you actually find out, but it should still be waiting on
+// the Rutinas tab if that's where you go looking for it.
 export function SharedRoutineCard({ shares }: { shares: PendingTemplateShare[] }) {
   if (shares.length === 0) return null;
 
@@ -29,7 +31,14 @@ export function SharedRoutineCard({ shares }: { shares: PendingTemplateShare[] }
                 <AvatarFallback>{share.sharedBy.displayName[0]}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{share.templateName}</p>
+                {/* Links to the preview so you can check what's in it
+                    before deciding. */}
+                <Link
+                  href={`/routines/shared/${share.shareToken}`}
+                  className="block truncate font-semibold underline-offset-2 hover:underline"
+                >
+                  {share.templateName}
+                </Link>
                 <p className="text-sm text-muted-foreground">
                   De {share.sharedBy.displayName}
                 </p>

@@ -1,18 +1,17 @@
 import Link from "next/link";
-import { ListChecks, Plus, Copy, Archive, ArchiveRestore, Trash2, Inbox, X } from "lucide-react";
+import { ListChecks, Plus, Copy, Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { listMyTemplates, listPendingShares } from "@/lib/services/routines";
 import {
   deleteTemplateAction,
   toggleArchiveTemplateAction,
   duplicateTemplateAction,
-  dismissTemplateShareAction,
 } from "@/lib/actions/routines";
+import { SharedRoutineCard } from "@/components/routines/shared-routine-card";
 import { Button } from "@/components/ui/button";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default async function RoutinesPage() {
   const profile = await requireProfile();
@@ -31,34 +30,7 @@ export default async function RoutinesPage() {
         </Button>
       </div>
 
-      {pendingShares.length > 0 && (
-        <div className="space-y-2 fade-up [animation-delay:40ms]">
-          <p className="stat-label flex items-center gap-1.5">
-            <Inbox className="h-3.5 w-3.5" />
-            Compartidas contigo
-          </p>
-          {pendingShares.map((s) => (
-            <div key={s.id} className="flex items-center gap-3 rounded-xl border bg-card p-3">
-              <Avatar className="h-9 w-9">
-                {s.sharedBy.avatarUrl && <AvatarImage src={s.sharedBy.avatarUrl} />}
-                <AvatarFallback>{s.sharedBy.displayName[0]}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{s.templateName}</p>
-                <p className="text-sm text-muted-foreground">De {s.sharedBy.displayName}</p>
-              </div>
-              <form action={dismissTemplateShareAction.bind(null, s.id)}>
-                <Button type="submit" variant="ghost" size="icon-sm" title="Descartar">
-                  <X className="h-3.5 w-3.5 text-muted-foreground" />
-                </Button>
-              </form>
-              <Button size="sm" render={<Link href={`/routines/shared/${s.shareToken}`} />}>
-                Ver
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
+      <SharedRoutineCard shares={pendingShares} />
 
       {templates.length === 0 ? (
         <Card className="fade-up [animation-delay:60ms]">

@@ -10,7 +10,7 @@ import { listPendingShares } from "@/lib/services/routines";
 import { startWorkoutAction } from "@/lib/actions/training";
 import { AlternateDayCard } from "@/components/training/alternate-day-card";
 import { MotivationBanner } from "@/components/dashboard/motivation-banner";
-import { SharedRoutineCard } from "@/components/dashboard/shared-routine-card";
+import { SharedRoutineCard } from "@/components/routines/shared-routine-card";
 import { WeeklySummaryCard } from "@/components/dashboard/weekly-summary-card";
 import { InsightsCard } from "@/components/dashboard/insights-card";
 import { DailyChallengeCard } from "@/components/dashboard/daily-challenge-card";
