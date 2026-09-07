@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# agent skills — restored from skills-lock.json with `npx skills install`.
+# The content is vendored from other repos, and .claude/skills holds
+# machine-specific absolute-path symlinks into it, so neither belongs here.
+/.agents/
+/.claude/skills/
