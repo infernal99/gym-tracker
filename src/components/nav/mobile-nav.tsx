@@ -7,13 +7,11 @@ import { cn } from "@/lib/utils";
 import { resolveBottomNavLinks } from "@/components/nav/links";
 
 const MORPH_MS = 420;
-const LIQUID_EASE = "cubic-bezier(0.34, 1.56, 0.64, 1)";
 
 // Ball center, measured from the bar's own top edge — also where the
 // active icon gets lifted to (see its translate below), and where the
-// notch cut into the bar background is centered.
+// socket behind the ball is centered.
 const BALL_TOP = 4;
-const NOTCH_SIZE = 64;
 
 export function MobileNav({ hrefs }: { hrefs: string[] }) {
   const pathname = usePathname();
@@ -40,33 +38,34 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
   }, [index]);
 
   const leftPercent = (index + 0.5) * (100 / links.length);
-  const maskTransition = `mask-position ${MORPH_MS}ms ${LIQUID_EASE}, -webkit-mask-position ${MORPH_MS}ms ${LIQUID_EASE}`;
-  const notchMaskImage =
-    "radial-gradient(circle, rgba(0,0,0,0) 0px 24px, rgba(0,0,0,1) 28px 100%)";
+  const ballPosition = {
+    left: `${leftPercent}%`,
+    top: `${BALL_TOP}px`,
+    transform: "translate(-50%, -50%)",
+  };
 
   return (
     <nav className="sticky bottom-0 z-50 shrink-0 px-3 pb-3 pt-1">
       <div className="relative">
-        {/* The bar's own background+border, with a real hole punched out
-            where the ball sits — the bar's material visibly parts around
-            the ball instead of the ball just being drawn on top of it. */}
+        {/* The bar's own background+border. */}
         <div
           aria-hidden
           className="absolute inset-0 rounded-full border bg-surface/95 shadow-lg shadow-black/30 backdrop-blur"
-          style={{
-            maskImage: notchMaskImage,
-            WebkitMaskImage: notchMaskImage,
-            maskSize: `${NOTCH_SIZE}px ${NOTCH_SIZE}px`,
-            WebkitMaskSize: `${NOTCH_SIZE}px ${NOTCH_SIZE}px`,
-            maskRepeat: "no-repeat",
-            WebkitMaskRepeat: "no-repeat",
-            maskPosition: `calc(${leftPercent}% - ${NOTCH_SIZE / 2}px) ${BALL_TOP - NOTCH_SIZE / 2}px`,
-            WebkitMaskPosition: `calc(${leftPercent}% - ${NOTCH_SIZE / 2}px) ${BALL_TOP - NOTCH_SIZE / 2}px`,
-            transition: maskTransition,
-          }}
         />
 
-        {/* The ball itself, nested in the notch above. */}
+        {/* A solid disc in the page's own background color, bigger than the
+            ball and always concentric with it — since nothing but that flat
+            background ever sits directly behind the nav, painting over the
+            bar with it here reads exactly like a real notch: the bar's
+            material visibly makes way for the ball instead of the ball
+            just being drawn on top of it. */}
+        <div
+          aria-hidden
+          className="ease-liquid pointer-events-none absolute h-16 w-16 rounded-full bg-background transition-[left] duration-[420ms]"
+          style={ballPosition}
+        />
+
+        {/* The ball itself, nested in the socket above. */}
         <div
           aria-hidden
           className={cn(
@@ -74,9 +73,7 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
             morphing ? "w-16" : "w-12",
           )}
           style={{
-            left: `${leftPercent}%`,
-            top: `${BALL_TOP}px`,
-            transform: "translate(-50%, -50%)",
+            ...ballPosition,
             background:
               "radial-gradient(circle at 32% 26%, color-mix(in oklch, white 35%, var(--primary)) 0%, var(--primary) 62%)",
             boxShadow:
