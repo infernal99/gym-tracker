@@ -48,12 +48,16 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
           )}
           style={{
             left: `${(index + 0.5) * (100 / links.length)}%`,
-            top: "10px",
+            top: "4px",
             transform: "translate(-50%, -50%)",
             background:
               "radial-gradient(circle at 32% 26%, color-mix(in oklch, white 35%, var(--primary)) 0%, var(--primary) 62%)",
+            // A halo ring in the page's own background color first — it
+            // punches a visible gap around the blob even where it overlaps
+            // the bar, so it reads as a separate disc resting on top
+            // instead of a shape drawn flush onto the bar's surface.
             boxShadow:
-              "0 14px 22px -8px rgba(0,0,0,0.55), 0 6px 14px -3px color-mix(in oklch, var(--primary) 65%, transparent)",
+              "0 0 0 4px var(--background), 0 14px 22px -6px rgba(0,0,0,0.55), 0 6px 14px -3px color-mix(in oklch, var(--primary) 65%, transparent)",
           }}
         />
         {links.map((link, i) => {
@@ -68,7 +72,9 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
               <Icon
                 className={cn(
                   "ease-liquid h-5 w-5 transition-[color,transform] duration-[420ms]",
-                  active ? "-translate-y-3 text-primary-foreground" : "text-muted-foreground",
+                  active
+                    ? "-translate-y-[18px] text-primary-foreground"
+                    : "text-muted-foreground",
                 )}
               />
               <span
