@@ -9,9 +9,26 @@ import { resolveBottomNavLinks } from "@/components/nav/links";
 const MORPH_MS = 420;
 
 // Ball center, measured from the bar's own top edge — also where the
-// active icon gets lifted to (see its translate below), and where the
-// socket behind the ball is centered.
+// active icon gets lifted to (see its translate below).
 const BALL_TOP = 4;
+
+// The notch is a small self-contained SVG shape (built once, in its own
+// local coordinate space centered on x=0) that gets repositioned by
+// translating the whole <svg>, the same way the ball itself is
+// positioned — no per-frame path recomputation needed. Its curve starts
+// and ends with a flat (zero-slope) tangent at y=0, so it blends into
+// the bar's own straight top edge instead of meeting it at a corner —
+// that flat-vs-circle corner was what read as the ball just "cutting"
+// into the bar rather than the bar flowing around it.
+const NOTCH_WIDTH = 76;
+const NOTCH_CURVE_DEPTH = 22;
+const NOTCH_TOTAL_DEPTH = 36;
+const NOTCH_PATH = `M ${-NOTCH_WIDTH / 2} 0
+  C ${-NOTCH_WIDTH / 2 + NOTCH_WIDTH * 0.2} 0 ${-NOTCH_WIDTH * 0.32} ${NOTCH_CURVE_DEPTH} 0 ${NOTCH_CURVE_DEPTH}
+  C ${NOTCH_WIDTH * 0.32} ${NOTCH_CURVE_DEPTH} ${NOTCH_WIDTH / 2 - NOTCH_WIDTH * 0.2} 0 ${NOTCH_WIDTH / 2} 0
+  L ${NOTCH_WIDTH / 2} ${NOTCH_TOTAL_DEPTH}
+  L ${-NOTCH_WIDTH / 2} ${NOTCH_TOTAL_DEPTH}
+  Z`;
 
 export function MobileNav({ hrefs }: { hrefs: string[] }) {
   const pathname = usePathname();
@@ -53,17 +70,19 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
           className="absolute inset-0 rounded-full border bg-surface/95 shadow-lg shadow-black/30 backdrop-blur"
         />
 
-        {/* A solid disc in the page's own background color, bigger than the
-            ball and always concentric with it — since nothing but that flat
-            background ever sits directly behind the nav, painting over the
-            bar with it here reads exactly like a real notch: the bar's
-            material visibly makes way for the ball instead of the ball
-            just being drawn on top of it. */}
-        <div
+        {/* Painted in the page's own background color — since nothing but
+            that flat background ever sits directly behind the nav, this
+            reads exactly like a real notch cut into the bar. */}
+        <svg
           aria-hidden
-          className="ease-liquid pointer-events-none absolute h-16 w-16 rounded-full bg-background transition-[left] duration-[420ms]"
-          style={ballPosition}
-        />
+          width={NOTCH_WIDTH}
+          height={NOTCH_TOTAL_DEPTH}
+          viewBox={`${-NOTCH_WIDTH / 2} 0 ${NOTCH_WIDTH} ${NOTCH_TOTAL_DEPTH}`}
+          className="ease-liquid pointer-events-none absolute transition-[left] duration-[420ms]"
+          style={{ left: `${leftPercent}%`, top: 0, transform: "translateX(-50%)" }}
+        >
+          <path d={NOTCH_PATH} fill="var(--background)" />
+        </svg>
 
         {/* The ball itself, nested in the socket above. */}
         <div
