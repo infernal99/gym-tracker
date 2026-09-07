@@ -6,9 +6,11 @@ import { getWeeklySummary } from "@/lib/services/weekly-summary";
 import { getInsights } from "@/lib/services/insights";
 import { getDailyChallenge } from "@/lib/services/daily-challenge";
 import { listTrainingDays } from "@/lib/services/training";
+import { listPendingShares } from "@/lib/services/routines";
 import { startWorkoutAction } from "@/lib/actions/training";
 import { AlternateDayCard } from "@/components/training/alternate-day-card";
 import { MotivationBanner } from "@/components/dashboard/motivation-banner";
+import { SharedRoutineCard } from "@/components/dashboard/shared-routine-card";
 import { WeeklySummaryCard } from "@/components/dashboard/weekly-summary-card";
 import { InsightsCard } from "@/components/dashboard/insights-card";
 import { DailyChallengeCard } from "@/components/dashboard/daily-challenge-card";
@@ -27,11 +29,12 @@ export default async function DashboardPage() {
   // The daily challenge needs to know which day is planned, so it waits on
   // stats; everything else still runs alongside it.
   const stats = await getDashboardStats(profile.id, profile.active_template_id);
-  const [trainingDays, weeklySummary, insights, dailyChallenge] = await Promise.all([
+  const [trainingDays, weeklySummary, insights, dailyChallenge, pendingShares] = await Promise.all([
     profile.active_template_id ? listTrainingDays(profile.active_template_id) : Promise.resolve([]),
     getWeeklySummary(profile.id),
     getInsights(profile.id),
     getDailyChallenge(profile.id, stats.pendingDay?.is_rest_day ? null : (stats.pendingDay?.id ?? null)),
+    listPendingShares(profile.id),
   ]);
 
   const otherDays = trainingDays.filter((d) => d.id !== stats.pendingDay?.id);
@@ -47,6 +50,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <InstallBanner />
+      <SharedRoutineCard shares={pendingShares} />
       <MotivationBanner summary={weeklySummary} />
       <div className="fade-up">
         <p className="text-muted-foreground">

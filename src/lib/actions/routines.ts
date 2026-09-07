@@ -304,6 +304,26 @@ export async function dismissTemplateShareAction(shareId: string): Promise<void>
   const supabase = await createClient();
   await supabase.from("template_shares").delete().eq("id", shareId);
   revalidatePath("/routines");
+  revalidatePath("/dashboard");
+}
+
+// Accepting from the dashboard card: same clone as opening the preview and
+// pressing "Añadir a mis rutinas", but it also clears the pending share so
+// the card doesn't keep offering a routine you already took. The copy is
+// the caller's own from here on — theirs to edit, archive or delete.
+export async function acceptTemplateShareAction(
+  shareId: string,
+  token: string,
+): Promise<void> {
+  await requireProfile();
+  const supabase = await createClient();
+  const { data: newId, error } = await supabase.rpc("fork_shared_template", { p_token: token });
+  if (error || !newId) return;
+
+  await supabase.from("template_shares").delete().eq("id", shareId);
+  revalidatePath("/routines");
+  revalidatePath("/dashboard");
+  redirect(`/routines/${newId}`);
 }
 
 // Clones a shared routine into the caller's own account via the token-gated
