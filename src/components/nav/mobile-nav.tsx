@@ -35,17 +35,25 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
   return (
     <nav className="sticky bottom-0 z-50 shrink-0 px-3 pb-3 pt-1">
       <div className="relative flex items-center overflow-visible rounded-full border bg-surface/95 py-2 shadow-lg shadow-black/30 backdrop-blur">
-        {/* Bubble pops up out of the bar's top edge, like a blob rising to
-            the surface, rather than sitting flush inside it. */}
+        {/* Bubble rests with its center on the bar's top edge — enough of
+            it pokes out to read as sitting on top of the bar (not flush
+            inside it), without floating high enough to cover the page
+            content above the nav. Its own center is what the active icon
+            below gets lifted to line up with (see the icon's translate). */}
         <div
           aria-hidden
           className={cn(
-            "ease-liquid pointer-events-none absolute top-0 h-14 rounded-full bg-primary shadow-[0_10px_20px_-4px] shadow-primary/60 transition-[left,width] duration-[420ms]",
-            morphing ? "w-20" : "w-14",
+            "ease-liquid pointer-events-none absolute h-12 rounded-full transition-[left,width] duration-[420ms]",
+            morphing ? "w-16" : "w-12",
           )}
           style={{
             left: `${(index + 0.5) * (100 / links.length)}%`,
-            transform: "translate(-50%, -62%)",
+            top: "10px",
+            transform: "translate(-50%, -50%)",
+            background:
+              "radial-gradient(circle at 32% 26%, color-mix(in oklch, white 35%, var(--primary)) 0%, var(--primary) 62%)",
+            boxShadow:
+              "0 14px 22px -8px rgba(0,0,0,0.55), 0 6px 14px -3px color-mix(in oklch, var(--primary) 65%, transparent)",
           }}
         />
         {links.map((link, i) => {
@@ -60,9 +68,7 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
               <Icon
                 className={cn(
                   "ease-liquid h-5 w-5 transition-[color,transform] duration-[420ms]",
-                  active
-                    ? "-translate-y-3.5 text-primary-foreground"
-                    : "text-muted-foreground",
+                  active ? "-translate-y-3 text-primary-foreground" : "text-muted-foreground",
                 )}
               />
               <span
