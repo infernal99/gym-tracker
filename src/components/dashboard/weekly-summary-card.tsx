@@ -27,7 +27,7 @@ function Row({
     <div className="flex items-center gap-3 py-2">
       <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
       <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{label}</span>
-      <span className="font-semibold tabular-nums">{value}</span>
+      <span className="font-mono font-semibold tabular-nums">{value}</span>
       <span className="w-14 shrink-0 text-right">
         {showDelta && <DeltaBadge current={current} previous={previous} unit={unit} />}
       </span>
@@ -46,7 +46,7 @@ export function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
     <Card>
       <CardContent className="space-y-4 pt-6">
         <div className="flex items-center justify-between gap-2">
-          <p className="stat-label">Resumen de la semana</p>
+          <h2 className="text-sm font-semibold text-muted-foreground">Resumen de la semana</h2>
           {summary.currentStreak > 0 ? (
             <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
               <Flame className="h-3.5 w-3.5" />

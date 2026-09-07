@@ -26,7 +26,7 @@ export function DailyChallengeCard({
 
   return (
     <div className="rounded-2xl border border-primary/25 bg-primary/5 p-4">
-      <p className="stat-label flex items-center gap-1.5 text-primary">
+      <p className="flex items-center gap-1.5 text-sm font-semibold text-primary">
         <Icon className="h-3.5 w-3.5" />
         Tu reto de hoy
       </p>
@@ -39,8 +39,8 @@ export function DailyChallengeCard({
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         <div className="rounded-xl border bg-card px-3 py-2">
-          <p className="stat-label">La última vez</p>
-          <p className="text-lg font-bold tabular-nums">
+          <p className="text-xs text-muted-foreground">La última vez</p>
+          <p className="font-mono text-lg font-bold tabular-nums">
             {lastBest.weightKg} kg × {lastBest.reps}
           </p>
           <p className="text-xs text-muted-foreground">
@@ -48,8 +48,8 @@ export function DailyChallengeCard({
           </p>
         </div>
         <div className="rounded-xl border bg-card px-3 py-2">
-          <p className="stat-label">Referencia</p>
-          <p className="text-lg font-bold tabular-nums text-primary">
+          <p className="text-xs text-muted-foreground">Referencia</p>
+          <p className="font-mono text-lg font-bold tabular-nums text-primary">
             {suggestion.weightKg} kg × {suggestion.reps}
           </p>
           <p className="text-xs text-muted-foreground">

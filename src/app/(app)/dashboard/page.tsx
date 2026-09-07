@@ -67,10 +67,10 @@ export default async function DashboardPage() {
           {stats.activeSession ? (
             <div className="flex flex-col gap-4">
               <div>
-                <p className="stat-label">Entrenamiento en curso</p>
-                <p className="mt-1 text-2xl font-semibold tracking-tight">
+                <h2 className="text-[2rem] font-bold leading-[1.1] tracking-[-0.02em]">
                   {stats.activeSession.name}
-                </p>
+                </h2>
+                <p className="mt-1 text-sm text-primary">Entrenamiento en curso</p>
               </div>
               <Button
                 render={<Link href={`/train/${stats.activeSession.id}`} />}
@@ -98,8 +98,7 @@ export default async function DashboardPage() {
                   <Moon className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="stat-label">Hoy</p>
-                  <p className="text-2xl font-semibold tracking-tight">Día de descanso</p>
+                  <h2 className="text-2xl font-bold tracking-[-0.02em]">Día de descanso</h2>
                 </div>
               </div>
               {stats.nextTrainingDayIfResting && (
@@ -111,15 +110,37 @@ export default async function DashboardPage() {
           ) : (
             <div className="space-y-5">
               <div>
-                <p className="stat-label text-primary">Hoy</p>
-                <p className="mt-1 truncate text-3xl font-bold tracking-tight sm:text-4xl">
+                {/* No "HOY" eyebrow — the date sits right above this, so the
+                    label was repeating what the reader already knows. The
+                    day's name is the headline instead. */}
+                <h2 className="truncate text-[2rem] font-bold leading-[1.1] tracking-[-0.02em]">
                   {stats.pendingDay.name}
-                </p>
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  {stats.activeTemplateName && `${stats.activeTemplateName} · `}
-                  {stats.pendingDayExerciseCount} ejercicios · {stats.pendingDaySetCount} series
-                </p>
+                </h2>
+                {stats.activeTemplateName && (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {stats.activeTemplateName}
+                  </p>
+                )}
               </div>
+
+              {/* The work ahead, read as figures rather than as a sentence
+                  strung together with middle dots. A training log is a
+                  ledger, so the numbers get the mono face the rest of the
+                  app already uses for weights and timers. */}
+              <dl className="flex gap-7">
+                <div>
+                  <dd className="font-mono text-2xl font-semibold leading-none tabular-nums">
+                    {stats.pendingDayExerciseCount}
+                  </dd>
+                  <dt className="mt-1.5 text-xs text-muted-foreground">ejercicios</dt>
+                </div>
+                <div>
+                  <dd className="font-mono text-2xl font-semibold leading-none tabular-nums">
+                    {stats.pendingDaySetCount}
+                  </dd>
+                  <dt className="mt-1.5 text-xs text-muted-foreground">series</dt>
+                </div>
+              </dl>
               {dailyChallenge && (
                 <DailyChallengeCard
                   challenge={dailyChallenge}
@@ -139,7 +160,11 @@ export default async function DashboardPage() {
 
       {otherDays.length > 0 && (
         <div>
-          <p className="stat-label mb-2">Otros días de tu rutina</p>
+          {/* Sentence case, not a tracked-out all-caps eyebrow. It reads as
+              a heading written for a person rather than as chrome. */}
+          <h2 className="mb-2.5 text-sm font-semibold text-muted-foreground">
+            Otros días de tu rutina
+          </h2>
           <div className="grid grid-cols-2 gap-2">
             {otherDays.map((day) => (
               <AlternateDayCard key={day.id} day={day} />
