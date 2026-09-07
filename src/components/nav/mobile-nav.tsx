@@ -8,27 +8,32 @@ import { resolveBottomNavLinks } from "@/components/nav/links";
 
 const MORPH_MS = 420;
 
-// Ball center, measured from the bar's own top edge — also where the
-// active icon gets lifted to (see its translate below).
-const BALL_TOP = 4;
+// The ball rides with its center on the bar's top edge: half of it above
+// the bar, half nested into the cradle cut below. That's also the point
+// the active icon gets lifted to (see its translate below).
+const BALL_TOP = 0;
+const BALL_RADIUS = 24;
 
-// The notch is a small self-contained SVG shape (built once, in its own
-// local coordinate space centered on x=0) that gets repositioned by
-// translating the whole <svg>, the same way the ball itself is
-// positioned — no per-frame path recomputation needed. Its curve starts
-// and ends with a flat (zero-slope) tangent at y=0, so it blends into
-// the bar's own straight top edge instead of meeting it at a corner —
-// that flat-vs-circle corner was what read as the ball just "cutting"
-// into the bar rather than the bar flowing around it.
-const NOTCH_WIDTH = 76;
-const NOTCH_CURVE_DEPTH = 22;
-const NOTCH_TOTAL_DEPTH = 36;
-const NOTCH_PATH = `M ${-NOTCH_WIDTH / 2} 0
-  C ${-NOTCH_WIDTH / 2 + NOTCH_WIDTH * 0.2} 0 ${-NOTCH_WIDTH * 0.32} ${NOTCH_CURVE_DEPTH} 0 ${NOTCH_CURVE_DEPTH}
-  C ${NOTCH_WIDTH * 0.32} ${NOTCH_CURVE_DEPTH} ${NOTCH_WIDTH / 2 - NOTCH_WIDTH * 0.2} 0 ${NOTCH_WIDTH / 2} 0
-  L ${NOTCH_WIDTH / 2} ${NOTCH_TOTAL_DEPTH}
-  L ${-NOTCH_WIDTH / 2} ${NOTCH_TOTAL_DEPTH}
-  Z`;
+// The cradle: a circle 6px wider than the ball all around, so the cut
+// hugs the ball's contour instead of scooping a wide bite out of the
+// bar. Where that circle would meet the bar's straight top edge it would
+// leave a hard corner (the circle runs vertical there) — which is what
+// read as the ball merely clipping the bar — so each side gets a fillet
+// arc, tangent to both the flat edge and the cradle, easing the edge
+// down into the cut. The tangent points below are just the standard
+// two-tangent-circles construction, kept as math so the shape stays
+// exact if the radii are retuned.
+const CRADLE_R = BALL_RADIUS + 6;
+const FILLET_R = 12;
+const FILLET_X = Math.sqrt(CRADLE_R * CRADLE_R + 2 * CRADLE_R * FILLET_R);
+const TANGENT_X = (CRADLE_R * FILLET_X) / (CRADLE_R + FILLET_R);
+const TANGENT_Y = (CRADLE_R * FILLET_R) / (CRADLE_R + FILLET_R);
+const NOTCH_OUTLINE = `M ${-FILLET_X} 0
+  A ${FILLET_R} ${FILLET_R} 0 0 1 ${-TANGENT_X} ${TANGENT_Y}
+  A ${CRADLE_R} ${CRADLE_R} 0 0 0 ${TANGENT_X} ${TANGENT_Y}
+  A ${FILLET_R} ${FILLET_R} 0 0 1 ${FILLET_X} 0`;
+// Closing the outline back along the top edge gives the filled cut.
+const NOTCH_PATH = `${NOTCH_OUTLINE} Z`;
 
 export function MobileNav({ hrefs }: { hrefs: string[] }) {
   const pathname = usePathname();
@@ -75,13 +80,18 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
             reads exactly like a real notch cut into the bar. */}
         <svg
           aria-hidden
-          width={NOTCH_WIDTH}
-          height={NOTCH_TOTAL_DEPTH}
-          viewBox={`${-NOTCH_WIDTH / 2} 0 ${NOTCH_WIDTH} ${NOTCH_TOTAL_DEPTH}`}
+          // +2 of height so the outline stroke at the cradle's deepest
+          // point isn't clipped by the viewBox edge.
+          width={FILLET_X * 2}
+          height={CRADLE_R + 2}
+          viewBox={`${-FILLET_X} 0 ${FILLET_X * 2} ${CRADLE_R + 2}`}
           className="ease-liquid pointer-events-none absolute transition-[left] duration-[420ms]"
           style={{ left: `${leftPercent}%`, top: 0, transform: "translateX(-50%)" }}
         >
           <path d={NOTCH_PATH} fill="var(--background)" />
+          {/* Carries the bar's own border around the cut, so its outline
+              reads as one continuous edge flowing around the ball. */}
+          <path d={NOTCH_OUTLINE} fill="none" stroke="var(--border)" strokeWidth={1} />
         </svg>
 
         {/* The ball itself, nested in the socket above. */}
@@ -89,7 +99,9 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
           aria-hidden
           className={cn(
             "ease-liquid pointer-events-none absolute h-12 rounded-full transition-[left,width] duration-[420ms]",
-            morphing ? "w-16" : "w-12",
+            // Kept under the cradle's own width so the stretch never
+            // spills past the cut and back onto the bar's surface.
+            morphing ? "w-14" : "w-12",
           )}
           style={{
             ...ballPosition,
@@ -114,7 +126,7 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
                   className={cn(
                     "ease-liquid h-5 w-5 transition-[color,transform] duration-[420ms]",
                     active
-                      ? "-translate-y-[18px] text-primary-foreground"
+                      ? "-translate-y-[22px] text-primary-foreground"
                       : "text-muted-foreground",
                   )}
                 />
