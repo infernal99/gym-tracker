@@ -284,20 +284,33 @@ export async function getOrCreateShareTokenAction(templateId: string): Promise<s
   return error ? null : token;
 }
 
-export async function shareTemplateWithFriendAction(templateId: string, friendId: string): Promise<void> {
+// Returns the failure instead of swallowing it: this silently did nothing
+// for a while (an RLS policy cycle rejected every insert) while the dialog
+// still reported "Rutina compartida", so the routine simply never arrived
+// and there was nothing to notice.
+export async function shareTemplateWithFriendAction(
+  templateId: string,
+  friendId: string,
+): Promise<{ error: string | null }> {
   const profile = await requireProfile();
   const token = await getOrCreateShareTokenAction(templateId);
-  if (!token) return;
+  if (!token) return { error: "No se pudo preparar la rutina para compartir" };
 
   const supabase = await createClient();
-  await supabase.from("template_shares").insert({
+  const { error } = await supabase.from("template_shares").insert({
     template_id: templateId,
     share_token: token,
     shared_by: profile.id,
     shared_with: friendId,
   });
 
+  if (error) {
+    console.error("shareTemplateWithFriendAction", error);
+    return { error: "No se pudo compartir la rutina" };
+  }
+
   revalidatePath(`/routines/${templateId}`);
+  return { error: null };
 }
 
 export async function dismissTemplateShareAction(shareId: string): Promise<void> {

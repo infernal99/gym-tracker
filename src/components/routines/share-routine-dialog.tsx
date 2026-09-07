@@ -51,7 +51,18 @@ export function ShareRoutineDialog({
 
   async function sendTo(friendId: string) {
     setSentTo((prev) => new Set(prev).add(friendId));
-    await shareTemplateWithFriendAction(templateId, friendId);
+    const { error } = await shareTemplateWithFriendAction(templateId, friendId);
+    if (error) {
+      // Put the friend back in the list — saying "compartida" when it wasn't
+      // is how a broken share goes unnoticed for days.
+      setSentTo((prev) => {
+        const next = new Set(prev);
+        next.delete(friendId);
+        return next;
+      });
+      toast.error(error);
+      return;
+    }
     toast.success("Rutina compartida");
   }
 
