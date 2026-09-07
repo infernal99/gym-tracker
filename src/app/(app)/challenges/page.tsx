@@ -30,7 +30,7 @@ export default async function ChallengesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between fade-up">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Retos</h1>
         <div className="flex gap-2">
           <CreateDuelDialog friends={friendOptions} exercises={exerciseOptions} />
@@ -39,7 +39,7 @@ export default async function ChallengesPage() {
       </div>
 
       {activeDuels.length > 0 && (
-        <div className="space-y-2 fade-up [animation-delay:40ms]">
+        <div className="space-y-2">
           <p className="stat-label">Duelos</p>
           {activeDuels.map((d) => (
             <DuelCard key={d.id} duel={d} />
@@ -48,7 +48,7 @@ export default async function ChallengesPage() {
       )}
 
       {challenges.length === 0 && duels.length === 0 ? (
-        <Card className="fade-up [animation-delay:60ms]">
+        <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <Swords className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">
@@ -59,7 +59,7 @@ export default async function ChallengesPage() {
       ) : (
         <div className="space-y-6">
           {active.length > 0 && (
-            <div className="space-y-2 fade-up [animation-delay:60ms]">
+            <div className="space-y-2">
               {duels.length > 0 && <p className="stat-label">Retos personales</p>}
               {active.map((c) => (
                 <ChallengeCard key={c.id} challenge={c} />
@@ -68,7 +68,7 @@ export default async function ChallengesPage() {
           )}
 
           {(completed.length > 0 || finishedDuels.length > 0) && (
-            <div className="space-y-2 fade-up [animation-delay:100ms]">
+            <div className="space-y-2">
               <p className="stat-label">Completados</p>
               {finishedDuels.map((d) => (
                 <DuelCard key={d.id} duel={d} />

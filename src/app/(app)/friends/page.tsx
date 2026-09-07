@@ -31,9 +31,9 @@ export default async function FriendsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight fade-up">Amigos</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Amigos</h1>
 
-      <div className="space-y-3 fade-up [animation-delay:40ms]">
+      <div className="space-y-3">
         <FriendSearch />
         <div className="flex items-center justify-center">
           <CopyInviteLinkButton username={profile.username} />
@@ -41,7 +41,7 @@ export default async function FriendsPage() {
       </div>
 
       {incoming.length > 0 && (
-        <div className="space-y-2 fade-up [animation-delay:80ms]">
+        <div className="space-y-2">
           <p className="stat-label">Solicitudes recibidas</p>
           {incoming.map((r) => (
             <div key={r.id} className="flex items-center gap-3 rounded-xl border bg-card p-3">
@@ -69,7 +69,7 @@ export default async function FriendsPage() {
       )}
 
       {outgoing.length > 0 && (
-        <div className="space-y-2 fade-up [animation-delay:100ms]">
+        <div className="space-y-2">
           <p className="stat-label">Solicitudes enviadas</p>
           {outgoing.map((r) => (
             <div key={r.id} className="flex items-center gap-3 rounded-xl border bg-card p-3">
@@ -92,12 +92,12 @@ export default async function FriendsPage() {
       )}
 
       {friends.length > 0 && (
-        <div className="fade-up [animation-delay:120ms]">
+        <div>
           <FriendsLeaderboard entries={everyone} />
         </div>
       )}
 
-      <div className="space-y-2 fade-up [animation-delay:140ms]">
+      <div className="space-y-2">
         <p className="stat-label">
           {friends.length} amigo{friends.length === 1 ? "" : "s"}
         </p>

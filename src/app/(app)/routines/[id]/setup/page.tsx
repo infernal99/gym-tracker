@@ -68,7 +68,7 @@ export default async function RoutineSetupPage({
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <BackButton fallbackHref={`/routines/${template.id}`} />
-      <div className="fade-up">
+      <div>
         <h1 className="text-2xl font-bold tracking-tight">{template.name}</h1>
         <p className="mt-1 text-muted-foreground">
           {currentDay

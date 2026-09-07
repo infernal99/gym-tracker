@@ -30,7 +30,7 @@ export default async function SharedRoutinePage({
   return (
     <div className="space-y-6">
       <BackButton fallbackHref="/routines" />
-      <Card className="fade-up">
+      <Card>
         <CardHeader>
           <CardTitle>{data.name}</CardTitle>
           <CardDescription>Compartida por {data.owner_display_name}</CardDescription>

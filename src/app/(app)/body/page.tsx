@@ -46,7 +46,7 @@ export default async function BodyPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between fade-up">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Peso corporal</h1>
           <p className="text-sm text-muted-foreground">Recomendado: a diario o 1 vez/semana.</p>
@@ -54,7 +54,7 @@ export default async function BodyPage() {
         <LogWeightDialog defaultWeightKg={currentWeight} />
       </div>
 
-      <Card className="fade-up glow-primary [animation-delay:60ms]">
+      <Card className="glow-primary">
         <CardContent className="flex flex-col items-center gap-1 py-8 text-center">
           <p className="stat-label">Peso actual</p>
           <p className="text-5xl font-bold tracking-tight tabular-nums">
@@ -74,7 +74,7 @@ export default async function BodyPage() {
         </CardContent>
       </Card>
 
-      <Card className="fade-up [animation-delay:100ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Evolución</CardTitle>
         </CardHeader>
@@ -83,7 +83,7 @@ export default async function BodyPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-2.5 fade-up [animation-delay:140ms]">
+      <div className="grid grid-cols-2 gap-2.5">
         <StatTile
           icon={Scale}
           label="Peso inicial"
@@ -106,7 +106,7 @@ export default async function BodyPage() {
         />
       </div>
 
-      <Card className="fade-up [animation-delay:180ms]">
+      <Card>
         <CardHeader className="flex-row items-center justify-between">
           <div>
             <CardTitle className="text-base">Medidas</CardTitle>
@@ -174,7 +174,7 @@ export default async function BodyPage() {
         </CardContent>
       </Card>
 
-      <Link href="/body/photos" className="fade-up [animation-delay:220ms] block">
+      <Link href="/body/photos" className="block">
         <Card className="card-interactive">
           <CardContent className="flex items-center gap-3 py-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">

@@ -37,7 +37,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div className="fade-up glow-primary space-y-4 rounded-2xl border bg-card p-5">
+      <div className="glow-primary space-y-4 rounded-2xl border bg-card p-5">
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16 ring-2 ring-primary/30">
             {profile.avatar_url && (
@@ -67,7 +67,7 @@ export default async function ProfilePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 fade-up [animation-delay:60ms]">
+      <div className="grid grid-cols-2 gap-2.5">
         <StatTile icon={Dumbbell} label="Entrenamientos" value={stats.totalWorkouts} />
         <StatTile
           icon={Weight}
@@ -78,7 +78,7 @@ export default async function ProfilePage() {
         <StatTile icon={Trophy} label="PRs" value={stats.totalPrs} />
       </div>
 
-      <div className="grid gap-3 fade-up [animation-delay:100ms]">
+      <div className="grid gap-3">
         <Link
           href="/ai"
           className="card-interactive flex items-center justify-between rounded-xl border bg-card p-4"
@@ -172,7 +172,7 @@ export default async function ProfilePage() {
 
       <CalorieCalculatorButton profile={profile} />
 
-      <Card className="fade-up [animation-delay:140ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Actividad</CardTitle>
         </CardHeader>
@@ -181,7 +181,7 @@ export default async function ProfilePage() {
         </CardContent>
       </Card>
 
-      <Card className="fade-up [animation-delay:180ms]">
+      <Card>
         <CardHeader>
           <CardTitle>Editar perfil</CardTitle>
         </CardHeader>

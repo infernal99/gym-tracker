@@ -50,7 +50,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
     <div className="mx-auto max-w-2xl space-y-6">
       <BackButton fallbackHref="/groups" />
 
-      <div className="flex items-start justify-between gap-3 fade-up">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Users className="h-7 w-7" />
@@ -66,12 +66,12 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
       </div>
 
       {group.description && (
-        <p className="text-sm text-muted-foreground fade-up [animation-delay:40ms]">
+        <p className="text-sm text-muted-foreground">
           {group.description}
         </p>
       )}
 
-      <div className="grid grid-cols-2 gap-2.5 fade-up [animation-delay:60ms]">
+      <div className="grid grid-cols-2 gap-2.5">
         <StatTile
           icon={Weight}
           label="Entrenamientos"
@@ -86,7 +86,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
         />
       </div>
 
-      <Card className="fade-up [animation-delay:100ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Clasificación</CardTitle>
         </CardHeader>
@@ -95,7 +95,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
         </CardContent>
       </Card>
 
-      <Card className="fade-up [animation-delay:110ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Actividad</CardTitle>
         </CardHeader>
@@ -104,7 +104,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
         </CardContent>
       </Card>
 
-      <div className="space-y-3 fade-up [animation-delay:120ms]">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="stat-label">Retos del grupo</h2>
           {isOwner && <CreateGroupChallengeDialog groupId={group.id} exercises={exerciseOptions} />}
@@ -124,11 +124,11 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
         )}
       </div>
 
-      <div className="fade-up [animation-delay:140ms]">
+      <div>
         <SharingSettingsForm groupId={group.id} sharing={me.sharing} />
       </div>
 
-      <Card className="fade-up [animation-delay:180ms] py-0">
+      <Card className="py-0">
         <CardHeader className="pt-5">
           <CardTitle className="text-base">Miembros</CardTitle>
         </CardHeader>

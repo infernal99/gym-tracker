@@ -11,13 +11,13 @@ export default async function GroupsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between fade-up">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Grupos</h1>
         <CreateGroupDialog />
       </div>
 
       {groups.length === 0 ? (
-        <Card className="fade-up [animation-delay:60ms]">
+        <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <Users className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">
@@ -26,7 +26,7 @@ export default async function GroupsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2 fade-up [animation-delay:60ms]">
+        <div className="space-y-2">
           {groups.map((group) => (
             <Link
               key={group.id}

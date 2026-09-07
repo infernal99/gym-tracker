@@ -27,7 +27,7 @@ export function InstallBanner() {
   }
 
   return (
-    <div className="fade-up flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
+    <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
         <Download className="h-4 w-4" />
       </div>

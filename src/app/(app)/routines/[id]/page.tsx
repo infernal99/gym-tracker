@@ -50,7 +50,7 @@ export default async function RoutineDetailPage({
   return (
     <div className="space-y-6">
       <BackButton fallbackHref="/routines" />
-      <div className="flex items-start justify-between gap-2 fade-up">
+      <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{template.name}</h1>
@@ -85,13 +85,13 @@ export default async function RoutineDetailPage({
       </div>
 
       {readOnly && (
-        <p className="text-sm text-muted-foreground fade-up [animation-delay:40ms]">
+        <p className="text-sm text-muted-foreground">
           Esta es una rutina de serie: se ve igual para todo el mundo. Pulsa &quot;Personalizar&quot;
           para tener tu propia copia editable.
         </p>
       )}
 
-      <div className="space-y-4 fade-up [animation-delay:60ms]">
+      <div className="space-y-4">
         {days.map((day) => (
           <Card key={day.id}>
             <CardHeader className="flex-row items-center justify-between space-y-0">

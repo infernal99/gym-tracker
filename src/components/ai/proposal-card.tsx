@@ -40,7 +40,7 @@ function CardShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="fade-up ml-9 space-y-3 rounded-2xl border border-primary/30 bg-card p-4">
+    <div className="ml-9 space-y-3 rounded-2xl border border-primary/30 bg-card p-4">
       <div className="flex items-center gap-2">
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
           {icon}

@@ -86,7 +86,7 @@ export default async function ExerciseDetailPage({
           className="aspect-video w-full rounded-xl border object-cover"
         />
       )}
-      <div className="flex items-start justify-between gap-3 fade-up">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{exercise.name}</h1>
           {exercise.alternate_names?.[0] && (
@@ -110,7 +110,7 @@ export default async function ExerciseDetailPage({
       </div>
 
       {points.length === 0 ? (
-        <Card className="fade-up [animation-delay:60ms]">
+        <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <Dumbbell className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">
@@ -119,7 +119,7 @@ export default async function ExerciseDetailPage({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4 fade-up [animation-delay:60ms]">
+        <div className="space-y-4">
           <ExerciseRankCard rank={rank} totalSets={totalSets} prCount={personalRecords.length} />
 
           <p className="stat-label">Mi progreso</p>
@@ -273,7 +273,7 @@ export default async function ExerciseDetailPage({
       {(exercise.instructions?.length ||
         exercise.tips?.length ||
         exercise.common_mistakes?.length) && (
-        <Card className="fade-up [animation-delay:100ms]">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Técnica</CardTitle>
           </CardHeader>

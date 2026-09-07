@@ -31,7 +31,7 @@ export default async function MyRoutinePage() {
 
   if (!template) {
     return (
-      <Card className="fade-up">
+      <Card>
         <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
           <Star className="h-10 w-10 text-muted-foreground" />
           <p className="text-muted-foreground">Todavía no tienes ninguna rutina activa.</p>
@@ -47,7 +47,7 @@ export default async function MyRoutinePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-2 fade-up">
+      <div className="flex items-start justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{template.name}</h1>
           {template.description && (
@@ -72,7 +72,7 @@ export default async function MyRoutinePage() {
         slots={weekdaySlots}
       />
 
-      <div className="grid gap-3 fade-up [animation-delay:100ms]">
+      <div className="grid gap-3">
         {days.map((day) => {
           const dayExercises = [...(day.workout_template_exercises ?? [])].sort(
             (a, b) => a.order_index - b.order_index,

@@ -11,14 +11,14 @@ export default async function NewRoutinePage() {
 
   return (
     <div className="space-y-8">
-      <div className="fade-up">
+      <div>
         <h1 className="text-2xl font-bold tracking-tight">Nueva rutina</h1>
         <p className="mt-1 text-muted-foreground">
           Parte de una plantilla ya hecha o crea la tuya desde cero.
         </p>
       </div>
 
-      <div className="space-y-3 fade-up [animation-delay:60ms]">
+      <div className="space-y-3">
         <h2 className="stat-label flex items-center gap-2">
           <ListChecks className="h-3.5 w-3.5" />
           Plantillas
@@ -49,7 +49,7 @@ export default async function NewRoutinePage() {
         </div>
       </div>
 
-      <div className="space-y-3 fade-up [animation-delay:100ms]">
+      <div className="space-y-3">
         <h2 className="stat-label flex items-center gap-2">
           <Sparkles className="h-3.5 w-3.5" />
           Crear la mía

@@ -17,7 +17,7 @@ export default async function AchievementsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between fade-up">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Logros</h1>
           <p className="text-muted-foreground">
@@ -26,7 +26,7 @@ export default async function AchievementsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 fade-up [animation-delay:60ms]">
+      <div className="grid grid-cols-1 gap-3">
         {achievements.map((a) => {
           const unlocked = !!a.unlockedAt;
           return (

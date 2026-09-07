@@ -48,7 +48,7 @@ export function WeeklyCalendar({
   };
 
   return (
-    <div className="space-y-3 fade-up [animation-delay:60ms]">
+    <div className="space-y-3">
       <p className="stat-label">Calendario semanal</p>
 
       <div className="grid grid-cols-7 gap-1.5">

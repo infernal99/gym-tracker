@@ -168,7 +168,7 @@ export default async function TrainSessionPage({
         })}
       </div>
 
-      <Card key={current.id} className="fade-up">
+      <Card key={current.id}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-bold tracking-tight">

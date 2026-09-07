@@ -27,7 +27,7 @@ export default async function TrainHistoryDetailPage({
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <BackButton fallbackHref="/train/history" />
-      <div className="fade-up">
+      <div>
         <h1 className="text-2xl font-bold tracking-tight">{session.name}</h1>
         <p className="text-muted-foreground">
           {session.completed_at &&
@@ -39,7 +39,7 @@ export default async function TrainHistoryDetailPage({
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-2.5 fade-up [animation-delay:60ms]">
+      <div className="grid grid-cols-3 gap-2.5">
         <StatTile
           icon={Clock}
           label="Duración"
@@ -51,7 +51,7 @@ export default async function TrainHistoryDetailPage({
         <StatTile icon={Weight} label="Volumen" value={`${session.total_volume_kg} kg`} />
       </div>
 
-      <div className="space-y-3 fade-up [animation-delay:100ms]">
+      <div className="space-y-3">
         {sessionExercises.map((ex) => {
           const sideOrder = { left: 0, both: 0, right: 1 } as const;
           const sets = [...ex.sets].sort(

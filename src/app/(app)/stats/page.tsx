@@ -37,9 +37,9 @@ export default async function StatsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <BackButton fallbackHref="/profile" />
-      <h1 className="text-2xl font-bold tracking-tight fade-up">Estadísticas</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Estadísticas</h1>
 
-      <Card className="fade-up [animation-delay:10ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Grupos musculares</CardTitle>
         </CardHeader>
@@ -48,7 +48,7 @@ export default async function StatsPage() {
         </CardContent>
       </Card>
 
-      <Card className="fade-up [animation-delay:20ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Semáforo de esta semana</CardTitle>
         </CardHeader>
@@ -57,7 +57,7 @@ export default async function StatsPage() {
         </CardContent>
       </Card>
 
-      <Card className="fade-up [animation-delay:40ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Volumen por grupo muscular</CardTitle>
         </CardHeader>
@@ -67,7 +67,7 @@ export default async function StatsPage() {
       </Card>
 
       {zoneTotals.length > 0 && (
-        <Card className="fade-up [animation-delay:80ms]">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Reparto de las últimas 12 semanas</CardTitle>
           </CardHeader>
@@ -102,7 +102,7 @@ export default async function StatsPage() {
         </Card>
       )}
 
-      <Card className="fade-up [animation-delay:100ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Esta semana vs la anterior</CardTitle>
           <p className="text-xs text-muted-foreground">
@@ -115,7 +115,7 @@ export default async function StatsPage() {
         </CardContent>
       </Card>
 
-      <Card className="fade-up [animation-delay:110ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Desde tu primer registro</CardTitle>
         </CardHeader>
@@ -124,7 +124,7 @@ export default async function StatsPage() {
         </CardContent>
       </Card>
 
-      <Card className="fade-up [animation-delay:120ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Exportar</CardTitle>
         </CardHeader>

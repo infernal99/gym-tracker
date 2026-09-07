@@ -22,7 +22,7 @@ export function ExerciseRankCard({
   const progressPct = (rank.xpIntoLevel / rank.xpPerLevel) * 100;
 
   return (
-    <div className="fade-up flex items-center gap-3 rounded-2xl border bg-card p-4">
+    <div className="flex items-center gap-3 rounded-2xl border bg-card p-4">
       <div
         className={cn(
           "flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl",

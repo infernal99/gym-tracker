@@ -71,12 +71,12 @@ export default async function SettingsPage() {
     <div className="max-w-2xl space-y-6">
       <BackButton fallbackHref="/profile" />
 
-      <div className="fade-up">
+      <div>
         <h1 className="text-2xl font-bold tracking-tight">Ajustes</h1>
         <p className="text-sm text-muted-foreground">@{profile.username}</p>
       </div>
 
-      <Card className="fade-up [animation-delay:40ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Cuenta</CardTitle>
         </CardHeader>
@@ -97,7 +97,7 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="fade-up [animation-delay:80ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Tus datos</CardTitle>
         </CardHeader>
@@ -111,7 +111,7 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="fade-up [animation-delay:120ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Legal y privacidad</CardTitle>
         </CardHeader>
@@ -121,7 +121,7 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="fade-up [animation-delay:160ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Soporte</CardTitle>
         </CardHeader>
@@ -135,7 +135,7 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="fade-up [animation-delay:180ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Entrenamiento</CardTitle>
         </CardHeader>
@@ -144,7 +144,7 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="fade-up [animation-delay:200ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Barra inferior</CardTitle>
         </CardHeader>
@@ -153,7 +153,7 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="fade-up [animation-delay:220ms]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Instalar</CardTitle>
         </CardHeader>
@@ -162,7 +162,7 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-destructive/30 fade-up [animation-delay:260ms]">
+      <Card className="border-destructive/30">
         <CardHeader>
           <CardTitle className="text-base text-destructive">Zona de peligro</CardTitle>
         </CardHeader>

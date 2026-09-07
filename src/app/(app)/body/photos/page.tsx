@@ -11,7 +11,7 @@ export default async function ProgressPhotosPage() {
   return (
     <div className="space-y-6">
       <BackButton fallbackHref="/body" />
-      <div className="space-y-3 fade-up">
+      <div className="space-y-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Fotos de progreso</h1>
           <p className="text-sm text-muted-foreground">Privadas — solo tú puedes verlas.</p>
@@ -19,7 +19,7 @@ export default async function ProgressPhotosPage() {
         <AddProgressPhotoButton />
       </div>
 
-      <div className="fade-up [animation-delay:60ms]">
+      <div>
         <ProgressPhotosGallery photos={photos} />
       </div>
     </div>

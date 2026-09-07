@@ -22,7 +22,7 @@ export default async function RoutinesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between fade-up">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Rutinas</h1>
         <Button render={<Link href="/routines/new" />}>
           <Plus className="h-4 w-4" />
@@ -33,7 +33,7 @@ export default async function RoutinesPage() {
       <SharedRoutineCard shares={pendingShares} />
 
       {templates.length === 0 ? (
-        <Card className="fade-up [animation-delay:60ms]">
+        <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <ListChecks className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">Tu progreso empieza aquí.</p>
@@ -44,7 +44,7 @@ export default async function RoutinesPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="fade-up [animation-delay:60ms] divide-y divide-border overflow-hidden py-0">
+        <Card className="divide-y divide-border overflow-hidden py-0">
           {templates.map((template) => (
             <div
               key={template.id}

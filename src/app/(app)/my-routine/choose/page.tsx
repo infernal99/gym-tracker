@@ -14,7 +14,7 @@ export default async function ChooseActiveRoutinePage() {
   return (
     <div className="space-y-6">
       <BackButton fallbackHref="/my-routine" />
-      <div className="fade-up">
+      <div>
         <h1 className="text-2xl font-bold tracking-tight">Elegir rutina</h1>
         <p className="mt-1 text-muted-foreground">
           Marca cuál de tus rutinas es la que estás siguiendo ahora mismo.
@@ -22,7 +22,7 @@ export default async function ChooseActiveRoutinePage() {
       </div>
 
       {templates.length === 0 ? (
-        <Card className="fade-up [animation-delay:60ms]">
+        <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <ListChecks className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">Todavía no has creado ninguna rutina.</p>
@@ -30,7 +30,7 @@ export default async function ChooseActiveRoutinePage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 fade-up [animation-delay:60ms]">
+        <div className="grid gap-3">
           {templates.map((template) => (
             <Card key={template.id} className="card-interactive">
               <CardHeader>

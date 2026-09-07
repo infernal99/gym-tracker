@@ -33,13 +33,13 @@ export default async function GoalsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between fade-up">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Objetivos</h1>
         <CreateGoalDialog exercises={exerciseOptions} />
       </div>
 
       {goals.length === 0 ? (
-        <Card className="fade-up [animation-delay:60ms]">
+        <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <Target className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">Todavía no tienes ningún objetivo.</p>
@@ -48,7 +48,7 @@ export default async function GoalsPage() {
       ) : (
         <div className="space-y-6">
           {activeGoals.length > 0 && (
-            <div className="space-y-2 fade-up [animation-delay:60ms]">
+            <div className="space-y-2">
               {activeGoals.map((goal) => (
                 <GoalCard key={goal.id} goal={goal} eta={etaByGoalId.get(goal.id) ?? null} />
               ))}
@@ -56,7 +56,7 @@ export default async function GoalsPage() {
           )}
 
           {completedGoals.length > 0 && (
-            <div className="space-y-2 fade-up [animation-delay:100ms]">
+            <div className="space-y-2">
               <p className="stat-label">Completados</p>
               {completedGoals.map((goal) => (
                 <GoalCard key={goal.id} goal={goal} />
