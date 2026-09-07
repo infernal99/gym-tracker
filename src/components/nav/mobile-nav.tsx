@@ -34,16 +34,18 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
 
   return (
     <nav className="sticky bottom-0 z-50 shrink-0 px-3 pb-3 pt-1">
-      <div className="relative flex items-center rounded-full border bg-surface/95 py-1.5 shadow-lg shadow-black/30 backdrop-blur">
+      <div className="relative flex items-center overflow-visible rounded-full border bg-surface/95 py-2 shadow-lg shadow-black/30 backdrop-blur">
+        {/* Bubble pops up out of the bar's top edge, like a blob rising to
+            the surface, rather than sitting flush inside it. */}
         <div
           aria-hidden
           className={cn(
-            "ease-liquid pointer-events-none absolute top-1/2 h-11 -translate-y-1/2 rounded-full bg-primary shadow-[0_6px_18px_-2px] shadow-primary/50 transition-[left,width] duration-[420ms]",
-            morphing ? "w-16" : "w-11",
+            "ease-liquid pointer-events-none absolute top-0 h-14 rounded-full bg-primary shadow-[0_10px_20px_-4px] shadow-primary/60 transition-[left,width] duration-[420ms]",
+            morphing ? "w-20" : "w-14",
           )}
           style={{
             left: `${(index + 0.5) * (100 / links.length)}%`,
-            transform: "translate(-50%, -50%)",
+            transform: "translate(-50%, -62%)",
           }}
         />
         {links.map((link, i) => {
@@ -53,12 +55,14 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
             <Link
               key={link.href}
               href={link.href}
-              className="relative z-10 flex flex-1 flex-col items-center gap-1 py-1.5 text-xs font-medium"
+              className="relative z-10 flex flex-1 flex-col items-center gap-1 py-1 text-xs font-medium"
             >
               <Icon
                 className={cn(
-                  "h-5 w-5 transition-colors duration-300",
-                  active ? "text-primary-foreground" : "text-muted-foreground",
+                  "ease-liquid h-5 w-5 transition-[color,transform] duration-[420ms]",
+                  active
+                    ? "-translate-y-3.5 text-primary-foreground"
+                    : "text-muted-foreground",
                 )}
               />
               <span
