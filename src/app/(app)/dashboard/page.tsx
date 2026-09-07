@@ -61,8 +61,12 @@ export default async function DashboardPage() {
 
       {/* The one entrance on this screen. Everything else is just there —
           scattering the same fade over every section made the whole page
-          feel like it was still arriving each time you opened it. */}
-      <Card className="fade-up glow-primary overflow-hidden">
+          feel like it was still arriving each time you opened it.
+          It also carries the only real frame on the page: a wider radius,
+          a brighter edge and depth beneath it, so the thing you came here
+          to do doesn't look like one more panel in a stack of identical
+          panels. */}
+      <Card className="fade-up glow-primary overflow-hidden rounded-3xl shadow-xl shadow-black/25 ring-primary/25">
         <CardContent className="pt-6">
           {stats.activeSession ? (
             <div className="flex flex-col gap-4">

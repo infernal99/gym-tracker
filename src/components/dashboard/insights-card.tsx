@@ -1,6 +1,5 @@
 import { AlertTriangle, Calendar, Flame, Sparkles, TrendingUp } from "lucide-react";
 import type { Insight, InsightIcon } from "@/lib/services/insights";
-import { Card, CardContent } from "@/components/ui/card";
 
 const ICONS: Record<InsightIcon, React.ComponentType<{ className?: string }>> = {
   flame: Flame,
@@ -18,8 +17,8 @@ export function InsightsCard({ insights }: { insights: Insight[] }) {
   if (insights.length === 0) return null;
 
   return (
-    <Card>
-      <CardContent className="divide-y divide-border/60 pt-6">
+    // Also frameless — see the note in weekly-summary-card.
+    <section className="divide-y divide-border/60">
         {insights.map((insight) => {
           const Icon = ICONS[insight.icon];
           return (
@@ -38,7 +37,6 @@ export function InsightsCard({ insights }: { insights: Insight[] }) {
             </div>
           );
         })}
-      </CardContent>
-    </Card>
+    </section>
   );
 }

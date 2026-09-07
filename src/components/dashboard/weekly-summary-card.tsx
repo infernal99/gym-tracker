@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Check, Clock, Dumbbell, Flame, Layers, Trophy } from "lucide-react";
 import type { WeeklySummary } from "@/lib/services/weekly-summary";
 import { DeltaBadge } from "@/components/ui/delta-badge";
-import { Card, CardContent } from "@/components/ui/card";
 
 const WEEKDAY_INITIALS = ["L", "M", "X", "J", "V", "S", "D"];
 
@@ -43,8 +42,10 @@ export function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
   const todayIndex = (new Date().getDay() + 6) % 7;
 
   return (
-    <Card>
-      <CardContent className="space-y-4 pt-6">
+    // No frame: this is a read-out, not an object you act on. Boxing it
+    // like the training card made the page a stack of identical panels
+    // with nothing standing out.
+    <section className="space-y-4">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-muted-foreground">Resumen de la semana</h2>
           {summary.currentStreak > 0 ? (
@@ -150,7 +151,6 @@ export function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
             </span>
           </Link>
         )}
-      </CardContent>
-    </Card>
+    </section>
   );
 }

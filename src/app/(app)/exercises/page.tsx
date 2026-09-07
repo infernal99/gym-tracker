@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Dumbbell, Star } from "lucide-react";
+import { ChevronRight, Dumbbell, Star } from "lucide-react";
 import {
   listExercises,
   listMuscleGroups,
@@ -26,6 +26,7 @@ export default async function ExercisesPage({
     difficulty?: string;
     type?: string;
     favorites?: string;
+    all?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -60,6 +61,27 @@ export default async function ExercisesPage({
     : exercises;
   const myExercises = visibleExercises.filter((ex) => usedExerciseIds.has(ex.id));
   const otherExercises = visibleExercises.filter((ex) => !usedExerciseIds.has(ex.id));
+
+  // The full library is ~600 exercises, and every row mounts a thumbnail, an
+  // info dialog and a favourite button — enough to make the page stutter on a
+  // phone. So the default view is just the exercises in your routine, with
+  // the rest a tap away.
+  //
+  // Searching or filtering always shows everything: a search that only looked
+  // at your own routine would quietly hide the exercise you were looking for.
+  const isNarrowingResults = Boolean(
+    params.search ||
+      activeMuscle ||
+      (params.equipment && params.equipment !== "all") ||
+      (params.difficulty && params.difficulty !== "all") ||
+      (params.type && params.type !== "all") ||
+      onlyFavorites,
+  );
+  const showAll = params.all === "1" || isNarrowingResults || myExercises.length === 0;
+
+  const seeAllParams = new URLSearchParams();
+  if (params.search) seeAllParams.set("search", params.search);
+  seeAllParams.set("all", "1");
 
   // Preserve every filter except "muscle" when building the pill links, and
   // "favorites" always stays off the muscle pills (it has its own toggle).
@@ -151,14 +173,26 @@ export default async function ExercisesPage({
             </div>
           )}
 
-          {otherExercises.length > 0 && (
-            <div className="space-y-1">
-              <h2 className="px-1 text-sm font-medium text-muted-foreground">
-                {myExercises.length > 0 ? "Otros ejercicios" : "Todos los ejercicios"}
-              </h2>
-              <ExerciseList exercises={otherExercises} favoriteIds={favoriteIds} />
-            </div>
-          )}
+          {otherExercises.length > 0 &&
+            (showAll ? (
+              <div className="space-y-1">
+                <h2 className="px-1 text-sm font-medium text-muted-foreground">
+                  {myExercises.length > 0 ? "Otros ejercicios" : "Todos los ejercicios"}
+                </h2>
+                <ExerciseList exercises={otherExercises} favoriteIds={favoriteIds} />
+              </div>
+            ) : (
+              <Link
+                href={`/exercises?${seeAllParams.toString()}`}
+                className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 transition-colors duration-fast ease-out hover:bg-accent/40"
+              >
+                <span className="text-sm font-medium">Ver todos los ejercicios</span>
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <span className="font-mono tabular-nums">{otherExercises.length}</span>
+                  <ChevronRight className="h-4 w-4" />
+                </span>
+              </Link>
+            ))}
         </div>
       )}
     </div>
