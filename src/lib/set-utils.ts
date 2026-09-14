@@ -5,3 +5,14 @@
 export function countCompletedSets(sets: { set_number: number }[]): number {
   return new Set(sets.map((s) => s.set_number)).size;
 }
+
+// Shared by the session's exercise strip and the swap-exercise picker, so
+// "done" means the same thing in both — otherwise the picker could offer an
+// exercise the strip already shows checked off, or the other way around.
+export function isExerciseDone(exercise: {
+  target_sets: number | null;
+  sets: { set_number: number }[];
+}): boolean {
+  const completed = countCompletedSets(exercise.sets);
+  return completed > 0 && completed >= (exercise.target_sets ?? 1);
+}

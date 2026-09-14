@@ -3,12 +3,13 @@ import Link from "next/link";
 import { ArrowRight, Check, Flame, Trash2 } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getSessionWithDetails, getLastPerformance, getPrSetIds } from "@/lib/services/training";
-import { countCompletedSets } from "@/lib/set-utils";
+import { countCompletedSets, isExerciseDone } from "@/lib/set-utils";
 import { logSetAction, deleteSetAction, finishWorkoutAction } from "@/lib/actions/training";
 import { ElapsedClock } from "@/components/training/elapsed-clock";
 import { RestTimer } from "@/components/training/rest-timer";
 import { PlateCalculatorButton } from "@/components/training/plate-calculator";
 import { CancelWorkoutButton } from "@/components/training/cancel-workout-button";
+import { SwapExerciseDialog } from "@/components/training/swap-exercise-dialog";
 import { ExerciseInfoDialog } from "@/components/exercises/exercise-info-dialog";
 import { LastTimeReference } from "@/components/training/last-time-reference";
 import { Button } from "@/components/ui/button";
@@ -126,6 +127,16 @@ export default async function TrainSessionPage({
   const showSideRest = isUnilateral && !!leftSet && !rightSet;
   const showSetRest = currentSets.length > 0 && !showSideRest;
 
+  // Today's other exercises, for "the squat rack is taken, do this instead"
+  // — the picker itself filters out the ones already done.
+  const swapOptions = sessionExercises
+    .filter((ex) => ex.id !== current.id)
+    .map((ex) => ({
+      id: ex.id,
+      name: ex.exercises?.name ?? "Ejercicio",
+      done: isExerciseDone(ex),
+    }));
+
   return (
     <div className="mx-auto max-w-xl space-y-4 pb-24">
       <div className="flex items-center justify-between">
@@ -146,8 +157,7 @@ export default async function TrainSessionPage({
 
       <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
         {sessionExercises.map((ex, i) => {
-          const exSeries = countCompletedSets(ex.sets);
-          const done = exSeries >= (ex.target_sets ?? 1) && exSeries > 0;
+          const done = isExerciseDone(ex);
           const isActive = ex.id === current.id;
           return (
             <Link key={ex.id} href={`/train/${sessionId}?exercise=${ex.id}`} className="shrink-0">
@@ -184,6 +194,9 @@ export default async function TrainSessionPage({
                 : ""}
             </p>
           )}
+          {/* Keyed to the current exercise so switching resets it closed —
+              otherwise it stays open (and stale) after picking from it. */}
+          <SwapExerciseDialog key={current.id} sessionId={sessionId} options={swapOptions} />
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="flex flex-wrap gap-2">
