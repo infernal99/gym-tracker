@@ -35,7 +35,7 @@
 -- rather than schema DDL — recorded here so the change has a paper trail
 -- and can be re-applied if the target project is ever reset from
 -- migrations. Re-running it is idempotent: the DELETE always clears these
--- three days first, so applying it twice yields the same 17 rows, not 34.
+-- three days first, so applying it twice yields the same 18 rows, not 36.
 
 delete from public.workout_template_exercises
 where template_day_id in (
@@ -62,9 +62,10 @@ values
   ('042c14fb-95ea-4dd3-a66b-8ed6d4edba54', '5ed77920-6428-412d-a20f-098b34976abf', 1, 2, 180, true,  60), -- Curl en Máquina de Predicador
   ('042c14fb-95ea-4dd3-a66b-8ed6d4edba54', '6825ab96-fbfd-46fd-91fe-d2894b2d7891', 2, 3, 180, true,  60), -- Elevaciones laterales en polea
   ('042c14fb-95ea-4dd3-a66b-8ed6d4edba54', '8c9846e1-64f3-4382-98db-736fee370064', 3, 3, 180, false, 60), -- Curl en polea
-  ('042c14fb-95ea-4dd3-a66b-8ed6d4edba54', 'ec5242e5-6af3-4a54-b129-faf06859ce16', 4, 2, 180, false, 60), -- Elevación Lateral con Mancuerna Sentado
-  ('042c14fb-95ea-4dd3-a66b-8ed6d4edba54', '5a7706d6-ac2c-48ae-b5c4-14edfe227456', 5, 2, 180, false, 60), -- Curl martillo
-  ('042c14fb-95ea-4dd3-a66b-8ed6d4edba54', '00f54f70-556f-4064-8042-1b968f2ab96f', 6, 3, 180, false, 60); -- Extensión de tríceps en polea por encima de la cabeza
+  ('042c14fb-95ea-4dd3-a66b-8ed6d4edba54', 'a9f5e3ce-b520-4335-b097-f0a4d031145b', 4, 3, 180, false, 60), -- Press de Hombros en Máquina
+  ('042c14fb-95ea-4dd3-a66b-8ed6d4edba54', 'ec5242e5-6af3-4a54-b129-faf06859ce16', 5, 2, 180, false, 60), -- Elevación Lateral con Mancuerna Sentado
+  ('042c14fb-95ea-4dd3-a66b-8ed6d4edba54', '5a7706d6-ac2c-48ae-b5c4-14edfe227456', 6, 2, 180, false, 60), -- Curl martillo
+  ('042c14fb-95ea-4dd3-a66b-8ed6d4edba54', '00f54f70-556f-4064-8042-1b968f2ab96f', 7, 3, 180, false, 60); -- Extensión de tríceps en polea por encima de la cabeza
 
 -- Piernas
 insert into public.workout_template_exercises
