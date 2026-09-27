@@ -281,7 +281,7 @@ export async function getWeeklyVolumeStatus(userId: string): Promise<ZoneWeeklyV
   const { data: sessions } = await supabase
     .from("workout_sessions")
     .select(
-      `completed_at, workout_session_exercises(exercises(muscle_groups(slug)), sets(set_number))`,
+      `completed_at, workout_session_exercises(exercises(muscle_groups(slug)), sets(set_number, side))`,
     )
     .eq("user_id", userId)
     .not("completed_at", "is", null)

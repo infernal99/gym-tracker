@@ -23,10 +23,15 @@ export default async function TrainSessionPage({
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ exercise?: string; set?: string; side?: string }>;
+  searchParams: Promise<{ exercise?: string; set?: string; side?: string; edit?: string }>;
 }) {
   const { sessionId } = await params;
-  const { exercise: exerciseParam, set: setParam, side: sideParam } = await searchParams;
+  const {
+    exercise: exerciseParam,
+    set: setParam,
+    side: sideParam,
+    edit: editParam,
+  } = await searchParams;
   const profile = await requireProfile();
   const session = await getSessionWithDetails(sessionId);
 
@@ -82,20 +87,53 @@ export default async function TrainSessionPage({
   );
   const totalSetsDone = sessionExercises.reduce((sum, e) => sum + countCompletedSets(e.sets), 0);
 
+  // Logging a set only revalidates this page, so whatever set/side was in
+  // the URL is still there afterwards. Taken literally, that parked you on
+  // the thing you'd just finished ("Guardar cambios" on it) instead of moving
+  // on. So a set or side from the URL is only honoured while it's still
+  // pending — or when you tapped something already done on purpose, which
+  // the pills mark with `edit=1`.
+  const editing = editParam === "1";
   const firstIncomplete = slots.find((n) => !slotIsDone(n));
-  const activeSet = Number(setParam) || firstIncomplete || slotCount;
+  const requestedSet = Number(setParam) || null;
+  const activeSet =
+    requestedSet && (editing || !slotIsDone(requestedSet))
+      ? requestedSet
+      : (firstIncomplete ?? slotCount);
 
   const leftSet = currentSets.find((s) => s.set_number === activeSet && s.side === "left");
   const rightSet = currentSets.find((s) => s.set_number === activeSet && s.side === "right");
-  const activeSide: "both" | "left" | "right" = !isUnilateral
-    ? "both"
-    : sideParam === "left" || sideParam === "right"
+  const sideDone = (side: "left" | "right") => (side === "left" ? !!leftSet : !!rightSet);
+  const otherSide = (side: "left" | "right") => (side === "left" ? "right" : "left");
+
+  // Which side you started a given set with, so a fresh set opens on the
+  // side you've been leading with rather than always on the left.
+  function firstSideLogged(setNumber: number): "left" | "right" | null {
+    const first = currentSets
+      .filter((s) => s.set_number === setNumber && s.side !== "both")
+      .sort((a, b) => (a.completed_at ?? "").localeCompare(b.completed_at ?? ""))[0];
+    return first ? (first.side as "left" | "right") : null;
+  }
+
+  // A side in the URL only speaks for the set it was picked on; once the
+  // set has moved on it's stale.
+  const requestedSide =
+    (sideParam === "left" || sideParam === "right") && requestedSet === activeSet
       ? sideParam
-      : !leftSet
-        ? "left"
-        : !rightSet
-          ? "right"
-          : "left";
+      : null;
+
+  function pickActiveSide(): "both" | "left" | "right" {
+    if (!isUnilateral) return "both";
+    if (requestedSide && (editing || !sideDone(requestedSide))) return requestedSide;
+    // One side in, whichever it was: the other one is next. This used to
+    // assume left always came first, so starting on the right fell through
+    // to "set complete" after a single side.
+    if (leftSet && !rightSet) return "right";
+    if (rightSet && !leftSet) return "left";
+    if (!leftSet && !rightSet) return firstSideLogged(activeSet - 1) ?? "left";
+    return firstSideLogged(activeSet) ?? "left";
+  }
+  const activeSide = pickActiveSide();
 
   const existing = isUnilateral
     ? activeSide === "left"
@@ -115,17 +153,31 @@ export default async function TrainSessionPage({
       ? existing.weight_kg - lastSet.weight_kg
       : null;
 
+  // Tapping something already done means "let me look at / fix that", so
+  // those links carry edit=1 to stop the page moving you straight past it.
   function setHref(n: number) {
-    return `/train/${sessionId}?exercise=${current.id}&set=${n}`;
+    return `/train/${sessionId}?exercise=${current.id}&set=${n}${slotIsDone(n) ? "&edit=1" : ""}`;
   }
   function sideHref(side: "left" | "right") {
-    return `/train/${sessionId}?exercise=${current.id}&set=${activeSet}&side=${side}`;
+    return `/train/${sessionId}?exercise=${current.id}&set=${activeSet}&side=${side}${sideDone(side) ? "&edit=1" : ""}`;
   }
 
-  // Between-sides rest (unilateral, just finished one side and waiting on
-  // the other) takes priority over the normal between-sets rest.
-  const showSideRest = isUnilateral && !!leftSet && !rightSet;
+  // Between-sides rest (unilateral, one side of this set in and the other
+  // still to go — in either order) takes priority over the between-sets rest.
+  const showSideRest = isUnilateral && !!leftSet !== !!rightSet;
   const showSetRest = currentSets.length > 0 && !showSideRest;
+  // Either rest starts when the latest set was logged, not when the timer
+  // happened to mount.
+  const lastLoggedAt = currentSets.reduce<string | null>(
+    (latest, s) => (s.completed_at && (!latest || s.completed_at > latest) ? s.completed_at : latest),
+    null,
+  );
+
+  const submitLabel = existing
+    ? "Guardar cambios"
+    : activeSide !== "both" && !sideDone(otherSide(activeSide))
+      ? `Completar lado ${activeSide === "left" ? "izquierdo" : "derecho"}`
+      : "Completar serie";
 
   // Today's other exercises, for "the squat rack is taken, do this instead"
   // — the picker itself filters out the ones already done.
@@ -345,7 +397,7 @@ export default async function TrainSessionPage({
               </div>
               <Button type="submit" size="lg" className="w-full duration-fast active:scale-[0.98]">
                 <Check className="h-4 w-4" />
-                {existing ? "Guardar cambios" : "Completar serie"}
+                {submitLabel}
               </Button>
             </form>
           </div>
@@ -355,10 +407,15 @@ export default async function TrainSessionPage({
               key={`side-${currentSets.length}`}
               seconds={current.rest_between_sides_seconds ?? 60}
               label="Descanso entre lados"
+              startedAt={lastLoggedAt}
             />
           )}
           {showSetRest && (
-            <RestTimer key={`set-${currentSets.length}`} seconds={current.rest_seconds ?? 180} />
+            <RestTimer
+              key={`set-${currentSets.length}`}
+              seconds={current.rest_seconds ?? 180}
+              startedAt={lastLoggedAt}
+            />
           )}
         </CardContent>
       </Card>
