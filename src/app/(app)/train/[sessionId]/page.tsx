@@ -6,7 +6,8 @@ import { getSessionWithDetails, getLastPerformance, getPrSetIds } from "@/lib/se
 import { countCompletedSets, isExerciseDone } from "@/lib/set-utils";
 import { logSetAction, deleteSetAction, finishWorkoutAction } from "@/lib/actions/training";
 import { ElapsedClock } from "@/components/training/elapsed-clock";
-import { RestTimer } from "@/components/training/rest-timer";
+import { RestTimerCard } from "@/components/training/rest-timer";
+import { RestSync } from "@/components/training/rest-timer-provider";
 import { PlateCalculatorButton } from "@/components/training/plate-calculator";
 import { CancelWorkoutButton } from "@/components/training/cancel-workout-button";
 import { SwapExerciseDialog } from "@/components/training/swap-exercise-dialog";
@@ -162,16 +163,30 @@ export default async function TrainSessionPage({
     return `/train/${sessionId}?exercise=${current.id}&set=${activeSet}&side=${side}${sideDone(side) ? "&edit=1" : ""}`;
   }
 
-  // Between-sides rest (unilateral, one side of this set in and the other
-  // still to go — in either order) takes priority over the between-sets rest.
-  const showSideRest = isUnilateral && !!leftSet !== !!rightSet;
-  const showSetRest = currentSets.length > 0 && !showSideRest;
-  // Either rest starts when the latest set was logged, not when the timer
-  // happened to mount.
-  const lastLoggedAt = currentSets.reduce<string | null>(
-    (latest, s) => (s.completed_at && (!latest || s.completed_at > latest) ? s.completed_at : latest),
-    null,
-  );
+  // The rest follows the last set logged anywhere in the session, not just in
+  // the exercise on screen — hopping over to check another exercise mustn't
+  // lose it. After the first side of a unilateral set it's the shorter
+  // between-sides rest; otherwise the full one.
+  const latestLogged = sessionExercises
+    .flatMap((ex) => ex.sets.map((s) => ({ ex, s })))
+    .filter(({ s }) => s.completed_at)
+    .sort((a, b) => b.s.completed_at!.localeCompare(a.s.completed_at!))[0];
+  const latestRest = latestLogged
+    ? (() => {
+        const { ex, s } = latestLogged;
+        const otherSide = s.side === "left" ? "right" : "left";
+        const sideRest =
+          ex.is_unilateral &&
+          s.side !== "both" &&
+          !ex.sets.some((o) => o.set_number === s.set_number && o.side === otherSide);
+        return {
+          startedAt: s.completed_at!,
+          seconds: sideRest ? (ex.rest_between_sides_seconds ?? 60) : (ex.rest_seconds ?? 180),
+          label: sideRest ? "Descanso entre lados" : "Descanso",
+          exerciseName: ex.exercises?.name ?? null,
+        };
+      })()
+    : null;
 
   const submitLabel = existing
     ? "Guardar cambios"
@@ -402,21 +417,11 @@ export default async function TrainSessionPage({
             </form>
           </div>
 
-          {showSideRest && (
-            <RestTimer
-              key={`side-${currentSets.length}`}
-              seconds={current.rest_between_sides_seconds ?? 60}
-              label="Descanso entre lados"
-              startedAt={lastLoggedAt}
-            />
-          )}
-          {showSetRest && (
-            <RestTimer
-              key={`set-${currentSets.length}`}
-              seconds={current.rest_seconds ?? 180}
-              startedAt={lastLoggedAt}
-            />
-          )}
+          <RestSync sessionId={sessionId} latest={latestRest} />
+          <RestTimerCard
+            sessionId={sessionId}
+            currentExerciseName={current.exercises?.name ?? null}
+          />
         </CardContent>
       </Card>
 
