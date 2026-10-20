@@ -15,6 +15,9 @@ const PUBLIC_PATHS = [
   // Must stay reachable without a session — app store review and anyone
   // linked to them from a store listing won't necessarily be logged in.
   "/legal",
+  // Hit by Vercel's daily cron, which has no session. Behind the login
+  // redirect it would never reach the database, which is the whole point.
+  "/api/keep-alive",
 ];
 
 function isPublicPath(pathname: string) {
