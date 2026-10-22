@@ -8,7 +8,6 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatTile } from "@/components/ui/stat-tile";
-import { ClearRestTimer } from "@/components/training/rest-timer-provider";
 
 function formatDuration(totalSeconds: number) {
   const h = Math.floor(totalSeconds / 3600);
@@ -67,8 +66,6 @@ export default async function TrainSummaryPage({
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      {/* The workout is over, so its rest timer shouldn't keep following you. */}
-      <ClearRestTimer sessionId={sessionId} />
       <div className="fade-up glow-primary flex flex-col items-center gap-2 rounded-2xl border bg-card px-6 py-8 text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10 text-success">
           <Trophy className="h-7 w-7" />

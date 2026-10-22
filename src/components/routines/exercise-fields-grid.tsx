@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -13,13 +13,10 @@ export function ExerciseFieldsGrid({
     targetRepsMax: number | null;
     targetWeightKg: number | null;
     targetRir: number | null;
-    restSeconds: number | null;
     isUnilateral: boolean;
-    restBetweenSidesSeconds: number | null;
   }>;
 }) {
   const checkboxId = useId();
-  const [isUnilateral, setIsUnilateral] = useState(defaults?.isUnilateral ?? false);
 
   return (
     <>
@@ -71,39 +68,18 @@ export function ExerciseFieldsGrid({
           defaultValue={defaults?.targetRir ?? undefined}
         />
       </div>
-      <div>
-        <Label className="text-xs">Descanso (s)</Label>
-        <Input
-          name="restSeconds"
-          type="number"
-          min={0}
-          defaultValue={defaults?.restSeconds ?? 180}
-        />
-      </div>
       <div className="col-span-2 flex items-center gap-2 rounded-lg border bg-background px-3 py-2">
         <input
           id={checkboxId}
           name="isUnilateral"
           type="checkbox"
           defaultChecked={defaults?.isUnilateral ?? false}
-          onChange={(e) => setIsUnilateral(e.target.checked)}
           className="h-4 w-4 rounded border-border accent-primary"
         />
         <Label htmlFor={checkboxId} className="cursor-pointer text-xs font-normal">
           Unilateral (un lado a la vez)
         </Label>
       </div>
-      {isUnilateral && (
-        <div className="col-span-2">
-          <Label className="text-xs">Descanso entre lados (s)</Label>
-          <Input
-            name="restBetweenSidesSeconds"
-            type="number"
-            min={0}
-            defaultValue={defaults?.restBetweenSidesSeconds ?? 60}
-          />
-        </div>
-      )}
     </>
   );
 }

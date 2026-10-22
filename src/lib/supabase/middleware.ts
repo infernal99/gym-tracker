@@ -49,9 +49,13 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims rather than getUser: the project signs sessions with an
+  // asymmetric key, so the token can be verified here against the cached
+  // public key instead of a round trip to Supabase Auth on every request —
+  // that round trip was a chunk of the delay on each tab switch. It still
+  // refreshes an expired session (and rewrites the cookies) first.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims.sub ?? null;
 
   const { pathname } = request.nextUrl;
 

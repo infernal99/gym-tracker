@@ -39,9 +39,7 @@ function validateExercise(exercise: ProposalExercise) {
     targetRepsMax: exercise.targetRepsMax ?? "",
     targetWeightKg: "",
     targetRir: "",
-    restSeconds: 180,
     isUnilateral: false,
-    restBetweenSidesSeconds: 60,
     notes: "",
   });
 }
@@ -123,9 +121,7 @@ export async function createRoutineFromProposalAction(
           target_reps_max: parsed.data.targetRepsMax || null,
           target_weight_kg: null,
           target_rir: null,
-          rest_seconds: parsed.data.restSeconds,
           is_unilateral: false,
-          rest_between_sides_seconds: parsed.data.restBetweenSidesSeconds,
           notes: null,
         },
       ];
@@ -254,9 +250,7 @@ export async function applyRoutineChangeAction(
         target_reps_max: parsed.data.targetRepsMax || null,
         target_weight_kg: null,
         target_rir: null,
-        rest_seconds: parsed.data.restSeconds,
         is_unilateral: false,
-        rest_between_sides_seconds: parsed.data.restBetweenSidesSeconds,
         notes: null,
       };
       nextOrder += 1;

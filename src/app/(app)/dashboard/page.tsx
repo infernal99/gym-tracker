@@ -26,16 +26,21 @@ function greetingForHour(hour: number) {
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  // The daily challenge needs to know which day is planned, so it waits on
-  // stats; everything else still runs alongside it.
-  const stats = await getDashboardStats(profile.id, profile.active_template_id);
-  const [trainingDays, weeklySummary, insights, dailyChallenge, pendingShares] = await Promise.all([
-    profile.active_template_id ? listTrainingDays(profile.active_template_id) : Promise.resolve([]),
-    getWeeklySummary(profile.id),
-    getInsights(profile.id),
-    getDailyChallenge(profile.id, stats.pendingDay?.is_rest_day ? null : (stats.pendingDay?.id ?? null)),
-    listPendingShares(profile.id),
-  ]);
+  // Only the daily challenge needs to know which day is planned, so only it
+  // waits on stats — everything else starts right away instead of queueing
+  // behind it.
+  const statsPromise = getDashboardStats(profile.id, profile.active_template_id);
+  const [stats, trainingDays, weeklySummary, insights, dailyChallenge, pendingShares] =
+    await Promise.all([
+      statsPromise,
+      profile.active_template_id ? listTrainingDays(profile.active_template_id) : Promise.resolve([]),
+      getWeeklySummary(profile.id),
+      getInsights(profile.id),
+      statsPromise.then((s) =>
+        getDailyChallenge(profile.id, s.pendingDay?.is_rest_day ? null : (s.pendingDay?.id ?? null)),
+      ),
+      listPendingShares(profile.id),
+    ]);
 
   const otherDays = trainingDays.filter((d) => d.id !== stats.pendingDay?.id);
   const firstName = profile.display_name.split(" ")[0];

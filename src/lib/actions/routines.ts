@@ -527,9 +527,7 @@ export async function addTemplateExerciseAction(
     targetRepsMax: formData.get("targetRepsMax") || "",
     targetWeightKg: formData.get("targetWeightKg") || "",
     targetRir: formData.get("targetRir") || "",
-    restSeconds: formData.get("restSeconds") || 180,
     isUnilateral: formData.get("isUnilateral") === "on",
-    restBetweenSidesSeconds: formData.get("restBetweenSidesSeconds") || 60,
     notes: formData.get("notes") || "",
   });
   if (!parsed.success) return;
@@ -553,9 +551,7 @@ export async function addTemplateExerciseAction(
     target_reps_max: parsed.data.targetRepsMax || null,
     target_weight_kg: parsed.data.targetWeightKg || null,
     target_rir: parsed.data.targetRir || null,
-    rest_seconds: parsed.data.restSeconds,
     is_unilateral: parsed.data.isUnilateral,
-    rest_between_sides_seconds: parsed.data.restBetweenSidesSeconds,
     notes: parsed.data.notes || null,
   });
 
@@ -597,9 +593,7 @@ export async function updateTemplateExerciseAction(
       targetRepsMax: formData.get("targetRepsMax") || "",
       targetWeightKg: formData.get("targetWeightKg") || "",
       targetRir: formData.get("targetRir") || "",
-      restSeconds: formData.get("restSeconds") || 180,
       isUnilateral: formData.get("isUnilateral") === "on",
-      restBetweenSidesSeconds: formData.get("restBetweenSidesSeconds") || 60,
       notes: formData.get("notes") || "",
     });
   if (!parsed.success) return;
@@ -613,9 +607,7 @@ export async function updateTemplateExerciseAction(
       target_reps_max: parsed.data.targetRepsMax || null,
       target_weight_kg: parsed.data.targetWeightKg || null,
       target_rir: parsed.data.targetRir || null,
-      rest_seconds: parsed.data.restSeconds,
       is_unilateral: parsed.data.isUnilateral,
-      rest_between_sides_seconds: parsed.data.restBetweenSidesSeconds,
       notes: parsed.data.notes || null,
     })
     .eq("id", rowId);

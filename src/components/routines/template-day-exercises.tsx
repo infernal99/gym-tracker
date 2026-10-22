@@ -22,9 +22,7 @@ type DayExercise = {
   target_reps_max: number | null;
   target_weight_kg: number | null;
   target_rir: number | null;
-  rest_seconds: number | null;
   is_unilateral: boolean;
-  rest_between_sides_seconds: number | null;
   exercises: { name: string } | null;
 };
 
@@ -75,9 +73,7 @@ function ExerciseRow({
               targetRepsMax: exercise.target_reps_max,
               targetWeightKg: exercise.target_weight_kg,
               targetRir: exercise.target_rir,
-              restSeconds: exercise.rest_seconds,
               isUnilateral: exercise.is_unilateral,
-              restBetweenSidesSeconds: exercise.rest_between_sides_seconds,
             }}
           />
         </div>
@@ -124,8 +120,7 @@ function ExerciseRow({
             : ""}
           {exercise.target_weight_kg ? ` · ${exercise.target_weight_kg} kg` : ""}
           {exercise.target_rir !== null ? ` · RIR ${exercise.target_rir}` : ""}
-          {` · ${exercise.rest_seconds}s descanso`}
-          {exercise.is_unilateral ? ` · unilateral (+${exercise.rest_between_sides_seconds}s/lado)` : ""}
+          {exercise.is_unilateral ? " · unilateral" : ""}
         </p>
       </div>
       <div className="flex shrink-0 flex-col">

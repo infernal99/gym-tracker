@@ -239,12 +239,6 @@ export type SideBalance = {
   strongerSide: "left" | "right" | null;
 };
 
-export type RestComparison = {
-  targetSeconds: number;
-  actualSeconds: number;
-  diffSeconds: number;
-};
-
 type ExerciseSetRow = {
   set_number: number;
   side: "both" | "left" | "right";
@@ -255,7 +249,7 @@ type ExerciseSetRow = {
 
 type ExerciseSessionRow = {
   completed_at: string;
-  workout_session_exercises: { rest_seconds: number | null; sets: ExerciseSetRow[] }[];
+  workout_session_exercises: { sets: ExerciseSetRow[] }[];
 };
 
 type ValidSet = ExerciseSetRow & { weight_kg: number; reps: number };
@@ -354,39 +348,6 @@ function computeSideBalance(sessions: ExerciseSessionRow[]): SideBalance | null 
   };
 }
 
-// Actual rest vs. target, over the last 5 sessions. There's no rest-timer
-// log, so the gap between consecutive sets' completed_at stands in for it —
-// that also includes however long the next set took, so it reads slightly
-// high, but it's the only signal in the data.
-function computeRestComparison(sessions: ExerciseSessionRow[]): RestComparison | null {
-  const gaps: number[] = [];
-  let targetSeconds: number | null = null;
-
-  for (const session of sessions.slice(-5)) {
-    const sessionExercise = session.workout_session_exercises[0];
-    if (!sessionExercise) continue;
-    if (sessionExercise.rest_seconds != null) targetSeconds = sessionExercise.rest_seconds;
-
-    const times = oneRowPerSetNumber(sessionExercise.sets.filter((s) => s.completed_at)).map((s) =>
-      new Date(s.completed_at as string).getTime(),
-    );
-    for (let i = 1; i < times.length; i++) {
-      const gapSeconds = (times[i] - times[i - 1]) / 1000;
-      // Over 15 minutes is an interruption (a call, another exercise in
-      // between), not rest.
-      if (gapSeconds > 0 && gapSeconds < 900) gaps.push(gapSeconds);
-    }
-  }
-
-  if (gaps.length < 3 || !targetSeconds) return null;
-  const avgGap = gaps.reduce((sum, g) => sum + g, 0) / gaps.length;
-  return {
-    targetSeconds,
-    actualSeconds: Math.round(avgGap),
-    diffSeconds: Math.round(avgGap - targetSeconds),
-  };
-}
-
 // Week-over-week reads on the same data at two levels: the session's single
 // best set (weekOverWeek) and every set number's own % change averaged
 // together (the "combined" figures). The two differ because set 1 and set 3
@@ -473,7 +434,7 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
   const [{ data: sessions }, { data: personalRecords }] = await Promise.all([
     supabase
       .from("workout_sessions")
-      .select("id, completed_at, workout_session_exercises!inner(id, exercise_id, rest_seconds, sets(*))")
+      .select("id, completed_at, workout_session_exercises!inner(id, exercise_id, sets(*))")
       .eq("user_id", userId)
       .eq("workout_session_exercises.exercise_id", exerciseId)
       .not("completed_at", "is", null)
@@ -495,7 +456,6 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
     personalRecords: personalRecords ?? [],
     ...computeWeeklyChanges(points, sessionPoints),
     sideBalance: computeSideBalance(rows),
-    restComparison: computeRestComparison(rows),
   };
 }
 
