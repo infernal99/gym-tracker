@@ -7,7 +7,6 @@ export interface WeekTotals {
   workouts: number;
   volumeKg: number;
   sets: number;
-  minutes: number;
   prs: number;
 }
 
@@ -30,7 +29,7 @@ export interface WeeklySummary {
   hasComparisonBaseline: boolean;
 }
 
-const emptyTotals =(): WeekTotals => ({ workouts: 0, volumeKg: 0, sets: 0, minutes: 0, prs: 0 });
+const emptyTotals =(): WeekTotals => ({ workouts: 0, volumeKg: 0, sets: 0, prs: 0 });
 
 // Everything the dashboard's weekly recap needs, in two round trips: the
 // sessions (with their sets, so series are counted per set_number rather
@@ -47,7 +46,7 @@ export async function getWeeklySummary(userId: string): Promise<WeeklySummary> {
     supabase
       .from("workout_sessions")
       .select(
-        `id, completed_at, duration_seconds, total_volume_kg,
+        `id, completed_at, total_volume_kg,
          workout_session_exercises(exercises(name, slug), sets(set_number, weight_kg, reps, side))`,
       )
       .eq("user_id", userId)
@@ -80,7 +79,6 @@ export async function getWeeklySummary(userId: string): Promise<WeeklySummary> {
 
     bucket.workouts += 1;
     bucket.volumeKg += Number(session.total_volume_kg ?? 0);
-    bucket.minutes += Math.round((session.duration_seconds ?? 0) / 60);
 
     for (const sessionExercise of session.workout_session_exercises ?? []) {
       const sets = sessionExercise.sets ?? [];

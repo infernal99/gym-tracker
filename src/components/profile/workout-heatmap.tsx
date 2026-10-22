@@ -13,7 +13,6 @@ export type HeatmapSession = {
   id: string;
   name: string;
   completed_at: string;
-  duration_seconds: number | null;
   total_volume_kg: number;
 };
 
@@ -208,7 +207,6 @@ export function WorkoutHeatmap({ sessions }: { sessions: HeatmapSession[] }) {
                 >
                   <p className="font-medium">{s.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {s.duration_seconds ? `${Math.round(s.duration_seconds / 60)}min · ` : ""}
                     {s.total_volume_kg} kg de volumen
                   </p>
                 </Link>

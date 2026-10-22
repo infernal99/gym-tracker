@@ -2,47 +2,83 @@
 
 import { z } from "zod";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/services/profile";
-import { getActiveSession } from "@/lib/services/training";
 import { recordChallengeWinsForUser } from "@/lib/services/group-challenges";
+import { logDayRange, logTimestamp, todayKey } from "@/lib/date-utils";
 import type { Database } from "@/types/database.types";
 
-// dayId is required so the caller (the "Hoy" screen) always decides which
-// day to train — the suggested one, or one of the others picked manually.
-// countsTowardSequence controls whether this session becomes the reference
-// point for future "next day" suggestions once completed.
-export async function startWorkoutAction(dayId: string, countsTowardSequence: boolean) {
+// Opens the log for one routine day on one date — creating it the first time
+// — and takes you to it. There's no "live" session any more: a log is just
+// the sets you did on a given day, written down whenever suits you and
+// editable forever after. Opening the same day twice on the same date lands
+// on the existing log rather than starting a second one.
+//
+// dayId comes from the caller (the "Hoy" screen's suggestion, or one of the
+// other days picked by hand) or, from the "registrar otro día" form, from
+// the form itself along with the date. Bound form actions get the FormData
+// as their last argument, which is how that date arrives.
+// countsTowardSequence controls whether this log becomes the reference
+// point for future "next day" suggestions.
+export async function openLogAction(
+  dayId: string | null,
+  countsTowardSequence: boolean,
+  formData?: FormData,
+) {
   const profile = await requireProfile();
   const supabase = await createClient();
 
-  const active = await getActiveSession(profile.id);
-  if (active) redirect(`/train/${active.id}`);
-
   if (!profile.active_template_id) redirect("/my-routine/choose");
+
+  const resolvedDayId = dayId ?? String(formData?.get("dayId") ?? "");
+  const today = todayKey();
+  const requestedDate = String(formData?.get("date") ?? "");
+  // Anything that isn't a plain date, or is in the future, means today —
+  // you write down what you did, not what you're going to do.
+  const date =
+    /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) && requestedDate <= today ? requestedDate : today;
 
   const { data: day } = await supabase
     .from("workout_template_days")
     .select("*")
-    .eq("id", dayId)
-    .single();
+    .eq("id", resolvedDayId)
+    .maybeSingle();
   if (!day || day.is_rest_day) redirect("/my-routine");
 
-  const { data: templateExercises } = await supabase
-    .from("workout_template_exercises")
-    .select("*")
-    .eq("template_day_id", day.id)
-    .order("order_index");
+  const [dayStart, dayEnd] = logDayRange(date);
+  const [{ data: existing }, { data: templateExercises }] = await Promise.all([
+    supabase
+      .from("workout_sessions")
+      .select("id")
+      .eq("user_id", profile.id)
+      .eq("template_day_id", day.id)
+      .gte("started_at", dayStart)
+      .lt("started_at", dayEnd)
+      .order("started_at")
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("workout_template_exercises")
+      .select("*")
+      .eq("template_day_id", day.id)
+      .order("order_index"),
+  ]);
+  if (existing) redirect(`/train/${existing.id}`);
 
+  // completed_at stays empty until the first set goes in: a log with
+  // nothing in it isn't a workout, and everything that counts workouts
+  // (streak, totals, achievements) goes by completed_at.
   const { data: session } = await supabase
     .from("workout_sessions")
     .insert({
       user_id: profile.id,
-      template_id: profile.active_template_id,
+      template_id: day.template_id,
       template_day_id: day.id,
       name: day.name,
+      started_at: logTimestamp(date),
       counts_toward_sequence: countsTowardSequence,
     })
     .select("id")
@@ -61,9 +97,7 @@ export async function startWorkoutAction(dayId: string, countsTowardSequence: bo
         target_reps_max: ex.target_reps_max,
         target_weight_kg: ex.target_weight_kg,
         target_rir: ex.target_rir,
-        rest_seconds: ex.rest_seconds,
         is_unilateral: ex.is_unilateral,
-        rest_between_sides_seconds: ex.rest_between_sides_seconds,
       })),
     );
   }
@@ -185,24 +219,37 @@ export async function logSetAction(
   const profile = await requireProfile();
   const supabase = await createClient();
 
-  const { data: set } = await supabase
-    .from("sets")
-    .upsert(
-      {
-        session_exercise_id: sessionExerciseId,
-        set_number: setNumber,
-        side,
-        weight_kg: parsed.data.weightKg === "" ? null : parsed.data.weightKg,
-        reps: parsed.data.reps === "" ? null : parsed.data.reps,
-        rir: parsed.data.rir === "" ? null : parsed.data.rir,
-        completed_at: new Date().toISOString(),
-      },
-      { onConflict: "session_exercise_id,set_number,side" },
-    )
-    .select("id")
-    .single();
+  const [{ data: set }, { data: session }] = await Promise.all([
+    supabase
+      .from("sets")
+      .upsert(
+        {
+          session_exercise_id: sessionExerciseId,
+          set_number: setNumber,
+          side,
+          weight_kg: parsed.data.weightKg === "" ? null : parsed.data.weightKg,
+          reps: parsed.data.reps === "" ? null : parsed.data.reps,
+          rir: parsed.data.rir === "" ? null : parsed.data.rir,
+          completed_at: new Date().toISOString(),
+        },
+        { onConflict: "session_exercise_id,set_number,side" },
+      )
+      .select("id")
+      .single(),
+    supabase
+      .from("workout_sessions")
+      .select("name, started_at, completed_at, counts_toward_sequence")
+      .eq("id", sessionId)
+      .eq("user_id", profile.id)
+      .single(),
+  ]);
+  if (!set || !session) return;
 
-  if (set && parsed.data.weightKg && parsed.data.reps) {
+  // Sets can be corrected at any time now, so a record this set held may no
+  // longer be true — a typo'd 1000 kg fixed to 100 kg shouldn't stay your
+  // best. Its records are dropped and earned again (or not) just below.
+  await supabase.from("personal_records").delete().eq("session_set_id", set.id);
+  if (parsed.data.weightKg && parsed.data.reps) {
     await checkAndRecordPRs(
       supabase,
       profile.id,
@@ -213,65 +260,111 @@ export async function logSetAction(
     );
   }
 
+  // The first set is what turns a log into a workout: it takes the log's
+  // date, shows up in the history and the feed, and moves the routine on.
+  if (!session.completed_at) {
+    await Promise.all([
+      supabase
+        .from("workout_sessions")
+        .update({ completed_at: session.started_at })
+        .eq("id", sessionId),
+      // A logged day that counts toward the sequence supersedes any manual
+      // realignment — clear it so future suggestions follow this one.
+      session.counts_toward_sequence
+        ? supabase.from("profiles").update({ sequence_anchor_day_id: null }).eq("id", profile.id)
+        : null,
+      supabase.from("activity_feed").insert({
+        user_id: profile.id,
+        type: "workout_completed",
+        related_type: "workout_session",
+        related_id: sessionId,
+        metadata: { sessionName: session.name, volumeKg: 0 },
+      }),
+    ]);
+  }
+
+  // Achievements, milestones, group challenges and the feed entry's volume
+  // all follow from the new set, but none of them changes what's on this
+  // screen — so they run once the response is on its way instead of
+  // holding up the next set.
+  after(() => refreshWorkoutSideEffects(supabase, profile.id, sessionId));
+
   revalidatePath(`/train/${sessionId}`);
+  revalidatePath("/dashboard");
+}
+
+async function refreshWorkoutSideEffects(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  sessionId: string,
+) {
+  const { data: session } = await supabase
+    .from("workout_sessions")
+    .select("name, total_volume_kg")
+    .eq("id", sessionId)
+    .single();
+  if (session) {
+    await supabase
+      .from("activity_feed")
+      .update({ metadata: { sessionName: session.name, volumeKg: session.total_volume_kg } })
+      .eq("type", "workout_completed")
+      .eq("related_id", sessionId);
+  }
+  await supabase.rpc("evaluate_achievements", { p_user_id: userId });
+  await supabase.rpc("check_exercise_milestones", { p_user_id: userId });
+  await recordChallengeWinsForUser(supabase, userId);
 }
 
 export async function deleteSetAction(sessionId: string, setId: string) {
+  const profile = await requireProfile();
   const supabase = await createClient();
+  await supabase.from("personal_records").delete().eq("session_set_id", setId);
   await supabase.from("sets").delete().eq("id", setId);
-  revalidatePath(`/train/${sessionId}`);
-}
 
-export async function finishWorkoutAction(sessionId: string) {
-  const supabase = await createClient();
-  const { data: session } = await supabase
-    .from("workout_sessions")
-    .select("name, started_at, user_id, counts_toward_sequence, total_volume_kg")
-    .eq("id", sessionId)
-    .single();
-
-  if (!session) redirect("/dashboard");
-
-  const durationSeconds = Math.max(
-    0,
-    Math.round((Date.now() - new Date(session.started_at).getTime()) / 1000),
-  );
-
-  await supabase
-    .from("workout_sessions")
-    .update({ completed_at: new Date().toISOString(), duration_seconds: durationSeconds })
-    .eq("id", sessionId);
-
-  // A real completion that counts toward the sequence supersedes any manual
-  // realignment — clear it so future suggestions follow this completion.
-  if (session.counts_toward_sequence) {
-    await supabase
-      .from("profiles")
-      .update({ sequence_anchor_day_id: null })
-      .eq("id", session.user_id);
+  // Take out the last set and the day stops counting as a workout.
+  const { count } = await supabase
+    .from("sets")
+    .select("id, workout_session_exercises!inner(session_id)", { count: "exact", head: true })
+    .eq("workout_session_exercises.session_id", sessionId);
+  if (count === 0) {
+    await Promise.all([
+      supabase
+        .from("workout_sessions")
+        .update({ completed_at: null })
+        .eq("id", sessionId)
+        .eq("user_id", profile.id),
+      supabase
+        .from("activity_feed")
+        .delete()
+        .eq("type", "workout_completed")
+        .eq("related_id", sessionId),
+    ]);
+  } else {
+    after(() => refreshWorkoutSideEffects(supabase, profile.id, sessionId));
   }
 
-  await supabase.from("activity_feed").insert({
-    user_id: session.user_id,
-    type: "workout_completed",
-    related_type: "workout_session",
-    related_id: sessionId,
-    metadata: { sessionName: session.name, volumeKg: session.total_volume_kg, durationSeconds },
-  });
-
-  await supabase.rpc("evaluate_achievements", { p_user_id: session.user_id });
-  await supabase.rpc("check_exercise_milestones", { p_user_id: session.user_id });
-  await recordChallengeWinsForUser(supabase, session.user_id);
-
+  revalidatePath(`/train/${sessionId}`);
   revalidatePath("/dashboard");
-  revalidatePath("/train/history");
-  revalidatePath("/achievements");
-  redirect(`/train/${sessionId}/summary`);
 }
 
-export async function cancelWorkoutAction(sessionId: string) {
+export async function deleteLogAction(sessionId: string) {
+  const profile = await requireProfile();
   const supabase = await createClient();
-  await supabase.from("workout_sessions").delete().eq("id", sessionId);
+  const { data: sets } = await supabase
+    .from("sets")
+    .select("id, workout_session_exercises!inner(session_id)")
+    .eq("workout_session_exercises.session_id", sessionId);
+  const setIds = (sets ?? []).map((s) => s.id);
+  if (setIds.length > 0) {
+    await supabase.from("personal_records").delete().in("session_set_id", setIds);
+  }
+  await supabase
+    .from("activity_feed")
+    .delete()
+    .eq("type", "workout_completed")
+    .eq("related_id", sessionId);
+  await supabase.from("workout_sessions").delete().eq("id", sessionId).eq("user_id", profile.id);
   revalidatePath("/dashboard");
-  redirect("/dashboard");
+  revalidatePath("/train/history");
+  redirect("/train/history");
 }

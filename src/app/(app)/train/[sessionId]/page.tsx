@@ -1,13 +1,13 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Check, Flame, Trash2 } from "lucide-react";
+import { BackButton } from "@/components/ui/back-button";
 import { requireProfile } from "@/lib/services/profile";
 import { getSessionWithDetails, getLastPerformance, getPrSetIds } from "@/lib/services/training";
 import { countCompletedSets, isExerciseDone } from "@/lib/set-utils";
-import { logSetAction, deleteSetAction, finishWorkoutAction } from "@/lib/actions/training";
-import { ElapsedClock } from "@/components/training/elapsed-clock";
+import { logSetAction, deleteSetAction } from "@/lib/actions/training";
 import { PlateCalculatorButton } from "@/components/training/plate-calculator";
-import { CancelWorkoutButton } from "@/components/training/cancel-workout-button";
+import { DeleteLogButton } from "@/components/training/delete-log-button";
 import { SwapExerciseDialog } from "@/components/training/swap-exercise-dialog";
 import { ExerciseInfoDialog } from "@/components/exercises/exercise-info-dialog";
 import { LastTimeReference } from "@/components/training/last-time-reference";
@@ -36,7 +36,13 @@ export default async function TrainSessionPage({
 
   if (!session) notFound();
   if (session.user_id !== profile.id) redirect("/dashboard");
-  if (session.completed_at) redirect(`/train/${sessionId}/summary`);
+  // The log can be reopened and changed whenever — there's no "finished"
+  // state to bounce off any more.
+  const dateLabel = new Date(session.started_at).toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 
   const sessionExercises = [...(session.workout_session_exercises ?? [])].sort(
     (a, b) => a.order_index - b.order_index,
@@ -48,7 +54,7 @@ export default async function TrainSessionPage({
         <p className="text-muted-foreground">
           Este entrenamiento no tiene ejercicios. Añade ejercicios a este día desde la rutina.
         </p>
-        <CancelWorkoutButton sessionId={sessionId} />
+        <DeleteLogButton sessionId={sessionId} />
       </div>
     );
   }
@@ -57,10 +63,9 @@ export default async function TrainSessionPage({
     sessionExercises.find((e) => e.id === exerciseParam) ?? sessionExercises[0];
   const currentIndex = sessionExercises.findIndex((e) => e.id === current.id);
   const nextExercise = sessionExercises[currentIndex + 1];
-  const isLastExercise = !nextExercise;
 
   const [lastPerformance, prSetIds] = await Promise.all([
-    getLastPerformance(profile.id, current.exercise_id, sessionId),
+    getLastPerformance(profile.id, current.exercise_id, sessionId, session.started_at),
     getPrSetIds(sessionExercises.flatMap((e) => e.sets.map((s) => s.id))),
   ]);
 
@@ -164,8 +169,8 @@ export default async function TrainSessionPage({
   const submitLabel = existing
     ? "Guardar cambios"
     : activeSide !== "both" && !sideDone(otherSide(activeSide))
-      ? `Completar lado ${activeSide === "left" ? "izquierdo" : "derecho"}`
-      : "Completar serie";
+      ? `Guardar lado ${activeSide === "left" ? "izquierdo" : "derecho"}`
+      : "Guardar serie";
 
   // Today's other exercises, for "the squat rack is taken, do this instead"
   // — the picker itself filters out the ones already done.
@@ -179,20 +184,19 @@ export default async function TrainSessionPage({
 
   return (
     <div className="mx-auto max-w-xl space-y-4 pb-24">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">{session.name}</h1>
+      <BackButton fallbackHref="/dashboard" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-bold tracking-tight">{session.name}</h1>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="font-mono tabular-nums text-foreground/80">
-              <ElapsedClock startedAt={session.started_at} />
-            </span>
+            <span>{dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)}</span>
             <span aria-hidden>·</span>
-            <span>
+            <span className="tabular-nums">
               {totalSetsDone} / {totalSetsTarget} series
             </span>
           </div>
         </div>
-        <CancelWorkoutButton sessionId={sessionId} />
+        <DeleteLogButton sessionId={sessionId} />
       </div>
 
       <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
@@ -392,30 +396,33 @@ export default async function TrainSessionPage({
         </CardContent>
       </Card>
 
-      {nextExercise ? (
+      {nextExercise && (
         <Button
           render={<Link href={`/train/${sessionId}?exercise=${nextExercise.id}`} />}
+          nativeButton={false}
           className="w-full"
         >
           <ArrowRight className="h-4 w-4" />
           Siguiente ejercicio ({nextExercise.exercises?.name})
         </Button>
-      ) : (
-        <form action={finishWorkoutAction.bind(null, sessionId)}>
-          <Button type="submit" className="w-full">
-            <Check className="h-4 w-4" />
-            Finalizar entrenamiento
-          </Button>
-        </form>
       )}
 
-      {!isLastExercise && (
-        <form action={finishWorkoutAction.bind(null, sessionId)}>
-          <Button type="submit" variant="outline" className="w-full">
-            Finalizar entrenamiento ahora
-          </Button>
-        </form>
-      )}
+      {/* Nothing to finish: every set is saved the moment it's logged.
+          This just leaves — to the log's page if there's anything in it. */}
+      <Button
+        render={
+          <Link href={totalSetsDone > 0 ? `/train/history/${sessionId}` : "/dashboard"} />
+        }
+        variant={nextExercise ? "outline" : "default"}
+        nativeButton={false}
+        className="w-full"
+      >
+        <Check className="h-4 w-4" />
+        Listo
+      </Button>
+      <p className="text-center text-xs text-muted-foreground">
+        Cada serie se guarda al momento. Puedes volver a editar este día cuando quieras.
+      </p>
     </div>
   );
 }

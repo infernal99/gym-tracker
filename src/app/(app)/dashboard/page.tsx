@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Moon, Play } from "lucide-react";
+import { CalendarPlus, Moon, NotebookPen } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { getDashboardStats } from "@/lib/services/dashboard";
 import { getWeeklySummary } from "@/lib/services/weekly-summary";
@@ -7,7 +7,7 @@ import { getInsights } from "@/lib/services/insights";
 import { getDailyChallenge } from "@/lib/services/daily-challenge";
 import { listTrainingDays } from "@/lib/services/training";
 import { listPendingShares } from "@/lib/services/routines";
-import { startWorkoutAction } from "@/lib/actions/training";
+import { openLogAction } from "@/lib/actions/training";
 import { AlternateDayCard } from "@/components/training/alternate-day-card";
 import { MotivationBanner } from "@/components/dashboard/motivation-banner";
 import { SharedRoutineCard } from "@/components/routines/shared-routine-card";
@@ -43,7 +43,9 @@ export default async function DashboardPage() {
       listPendingShares(profile.id),
     ]);
 
-  const otherDays = trainingDays.filter((d) => d.id !== stats.pendingDay?.id);
+  // Whatever the headline is showing — today's log, or else the suggested day.
+  const headlineDayId = stats.todayLog ? stats.todayLog.dayId : stats.pendingDay?.id;
+  const otherDays = trainingDays.filter((d) => d.id !== headlineDayId);
   const firstName = profile.display_name.split(" ")[0];
   const now = new Date();
   const greeting = greetingForHour(now.getHours());
@@ -74,21 +76,28 @@ export default async function DashboardPage() {
           panels. */}
       <Card className="fade-up glow-primary overflow-hidden rounded-3xl shadow-xl shadow-black/25 ring-primary/25">
         <CardContent className="pt-6">
-          {stats.activeSession ? (
+          {stats.todayLog ? (
+            // Something is already written down for today, so that stays the
+            // headline — the sequence would otherwise have moved on to the
+            // next day the moment the first set went in.
             <div className="flex flex-col gap-4">
               <div>
                 <h2 className="text-[2rem] font-bold leading-[1.1] tracking-[-0.02em]">
-                  {stats.activeSession.name}
+                  {stats.todayLog.name}
                 </h2>
-                <p className="mt-1 text-sm text-primary">Entrenamiento en curso</p>
+                <p className="mt-1 text-sm text-primary">
+                  {stats.todayLog.setCount === 0
+                    ? "Registro de hoy · aún sin series"
+                    : `Registro de hoy · ${stats.todayLog.setCount} ${stats.todayLog.setCount === 1 ? "serie" : "series"}`}
+                </p>
               </div>
               <Button
-                render={<Link href={`/train/${stats.activeSession.id}`} />}
+                render={<Link href={`/train/${stats.todayLog.id}`} />}
                 size="lg"
-                className="w-full sm:w-auto"
+                className="w-full"
               >
-                <Play className="h-4 w-4" />
-                Continuar
+                <NotebookPen className="h-4 w-4" />
+                Seguir registrando
               </Button>
             </div>
           ) : !profile.active_template_id ? (
@@ -157,16 +166,26 @@ export default async function DashboardPage() {
                   exerciseHref={`/exercises/${dailyChallenge.exercise.slug}`}
                 />
               )}
-              <form action={startWorkoutAction.bind(null, stats.pendingDay.id, true)}>
+              <form action={openLogAction.bind(null, stats.pendingDay.id, true)}>
                 <Button type="submit" size="lg" className="w-full">
-                  <Play className="h-4 w-4" />
-                  Empezar entrenamiento
+                  <NotebookPen className="h-4 w-4" />
+                  Registrar entreno
                 </Button>
               </form>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {profile.active_template_id && (
+        <Link
+          href="/train/new"
+          className="-mt-5 flex items-center justify-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <CalendarPlus className="h-4 w-4" />
+          Registrar un día anterior
+        </Link>
+      )}
 
       {otherDays.length > 0 && (
         <div>
@@ -188,19 +207,19 @@ export default async function DashboardPage() {
       <InsightsCard insights={insights} />
 
       {stats.lastSession && (
-        <div className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 text-sm">
+        <Link
+          href={`/train/history/${stats.lastSession.id}`}
+          className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 text-sm transition-colors hover:bg-accent/40"
+        >
           <div className="min-w-0">
             <p className="truncate font-medium">{stats.lastSession.name}</p>
             <p className="text-muted-foreground">
-              {new Date(stats.lastSession.completed_at!).toLocaleDateString("es-ES")}
-              {stats.lastSession.duration_seconds
-                ? ` · ${Math.round(stats.lastSession.duration_seconds / 60)} min`
-                : ""}{" "}
-              · {stats.lastSession.total_volume_kg} kg
+              {new Date(stats.lastSession.completed_at!).toLocaleDateString("es-ES")} ·{" "}
+              {stats.lastSession.total_volume_kg} kg
             </p>
           </div>
           <span className="stat-label shrink-0">Último</span>
-        </div>
+        </Link>
       )}
     </div>
   );

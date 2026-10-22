@@ -89,3 +89,33 @@ export function longestStreak(completedAtDates: string[]): number {
   }
   return best;
 }
+
+/**
+ * The app's users train in Spain, and the server runs in UTC — so "today"
+ * is worked out in Madrid time, not in whatever timezone the server has.
+ * Otherwise a set logged at half past midnight would land on yesterday.
+ */
+export const APP_TIME_ZONE = "Europe/Madrid";
+
+/** Today's YYYY-MM-DD in the app's timezone. */
+export function todayKey(): string {
+  return new Date().toLocaleDateString("sv-SE", { timeZone: APP_TIME_ZONE });
+}
+
+/**
+ * The timestamp a day's log is stored under. Noon UTC is the same calendar
+ * day from UTC-11 to UTC+11, so the log reads back as the day it was meant
+ * for whichever timezone does the reading — and every log for a given day
+ * sits at one exact instant, which makes "find the log for this day" a
+ * simple range lookup on the UTC day.
+ */
+export function logTimestamp(key: string): string {
+  return `${key}T12:00:00.000Z`;
+}
+
+/** [start, end) of the UTC day a log for `key` is stored in. */
+export function logDayRange(key: string): [string, string] {
+  const next = new Date(`${key}T00:00:00.000Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  return [`${key}T00:00:00.000Z`, next.toISOString()];
+}

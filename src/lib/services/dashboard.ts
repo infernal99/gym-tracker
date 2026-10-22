@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { getActiveSession, getNextDayInSequence } from "@/lib/services/training";
+import { getNextDayInSequence, getTodayLog } from "@/lib/services/training";
 import { currentStreak, startOfWeek } from "@/lib/date-utils";
 
 function startOfMonth(date: Date) {
@@ -29,7 +29,7 @@ export async function getDashboardStats(userId: string, activeTemplateId: string
     { data: recentSessions },
     { data: lastSession },
     { count: prsThisWeek },
-    activeSession,
+    todayLog,
     sequence,
     activeTemplateRow,
   ] = await Promise.all([
@@ -49,7 +49,7 @@ export async function getDashboardStats(userId: string, activeTemplateId: string
     // long break still sees their last session rather than nothing.
     supabase
       .from("workout_sessions")
-      .select("id, name, completed_at, duration_seconds, total_volume_kg")
+      .select("id, name, completed_at, total_volume_kg")
       .eq("user_id", userId)
       .not("completed_at", "is", null)
       .order("completed_at", { ascending: false })
@@ -60,7 +60,7 @@ export async function getDashboardStats(userId: string, activeTemplateId: string
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
       .gte("achieved_at", weekStart.toISOString()),
-    getActiveSession(userId),
+    getTodayLog(userId),
     activeTemplateId
       ? getNextDayInSequence(userId, activeTemplateId)
       : Promise.resolve({ day: null, nextTrainingDay: null }),
@@ -109,7 +109,7 @@ export async function getDashboardStats(userId: string, activeTemplateId: string
     prsThisWeek: prsThisWeek ?? 0,
     volumeThisWeek,
     volumeChangePct,
-    activeSession,
+    todayLog,
     activeTemplateName: activeTemplateRow.data?.name ?? null,
     pendingDay: sequence.day,
     pendingDayExerciseCount: pendingDayExerciseIds.length,

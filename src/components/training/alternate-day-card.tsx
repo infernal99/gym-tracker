@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, Dumbbell } from "lucide-react";
-import { startWorkoutAction } from "@/lib/actions/training";
+import { openLogAction } from "@/lib/actions/training";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,26 +22,26 @@ export function AlternateDayCard({ day }: { day: { id: string; name: string } })
       >
         <Dumbbell className="h-4 w-4 text-muted-foreground" />
         <p className="truncate text-sm font-medium">{day.name}</p>
-        <p className="text-xs text-muted-foreground">Entrenar en su lugar</p>
+        <p className="text-xs text-muted-foreground">Registrar en su lugar</p>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Entrenar &quot;{day.name}&quot;</DialogTitle>
+          <DialogTitle>Registrar &quot;{day.name}&quot;</DialogTitle>
           <DialogDescription>
             No es el entrenamiento sugerido para hoy. ¿Quieres que tu próxima sugerencia siga la
-            secuencia a partir de este día, o prefieres entrenarlo solo hoy sin cambiar el orden?
+            secuencia a partir de este día, o prefieres registrarlo solo hoy sin cambiar el orden?
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2">
-          <form action={startWorkoutAction.bind(null, day.id, true)}>
+          <form action={openLogAction.bind(null, day.id, true)}>
             <Button type="submit" className="w-full">
               <ArrowRight className="h-4 w-4" />
               Continuar la secuencia desde aquí
             </Button>
           </form>
-          <form action={startWorkoutAction.bind(null, day.id, false)}>
+          <form action={openLogAction.bind(null, day.id, false)}>
             <Button type="submit" variant="outline" className="w-full">
-              Solo entrenar hoy
+              Solo por hoy
             </Button>
           </form>
         </div>

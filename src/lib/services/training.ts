@@ -1,18 +1,30 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { dayKey, startOfWeek } from "@/lib/date-utils";
+import { dayKey, logDayRange, startOfWeek, todayKey } from "@/lib/date-utils";
+import { countCompletedSets } from "@/lib/set-utils";
 
-export async function getActiveSession(userId: string) {
+// Whatever has been logged today, if anything — the home screen leads with
+// it so that, once the first set is in, it keeps showing today's day rather
+// than moving straight on to the next one in the sequence.
+export async function getTodayLog(userId: string) {
   const supabase = await createClient();
+  const [dayStart, dayEnd] = logDayRange(todayKey());
   const { data } = await supabase
     .from("workout_sessions")
-    .select("id, name, started_at")
+    .select("id, name, template_day_id, workout_session_exercises(sets(set_number, side))")
     .eq("user_id", userId)
-    .is("completed_at", null)
+    .gte("started_at", dayStart)
+    .lt("started_at", dayEnd)
     .order("started_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  return data;
+  if (!data) return null;
+  return {
+    id: data.id,
+    name: data.name,
+    dayId: data.template_day_id,
+    setCount: data.workout_session_exercises.reduce((n, e) => n + countCompletedSets(e.sets), 0),
+  };
 }
 
 function resolveRestDay<T extends { id: string; is_rest_day: boolean }>(
@@ -150,6 +162,9 @@ export async function getLastPerformance(
   userId: string,
   exerciseId: string,
   excludeSessionId?: string,
+  // Only sessions before this instant — a log for a past date should be
+  // compared with what came before it, not with last night.
+  before?: string,
 ) {
   const supabase = await createClient();
   let query = supabase
@@ -164,6 +179,7 @@ export async function getLastPerformance(
     .limit(1);
 
   if (excludeSessionId) query = query.neq("id", excludeSessionId);
+  if (before) query = query.lt("completed_at", before);
 
   const { data } = await query.maybeSingle();
   if (!data) return null;
@@ -176,29 +192,6 @@ export async function getLastPerformance(
       (a, b) => a.set_number - b.set_number || sideOrder[a.side] - sideOrder[b.side],
     ),
   };
-}
-
-// Previous completed session for the same routine day, to compare this
-// session's totals against once it's finished.
-export async function getPreviousSessionForDay(
-  userId: string,
-  templateDayId: string,
-  beforeStartedAt: string,
-  excludeSessionId: string,
-) {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("workout_sessions")
-    .select("id, total_volume_kg, started_at, workout_session_exercises(sets(reps))")
-    .eq("user_id", userId)
-    .eq("template_day_id", templateDayId)
-    .not("completed_at", "is", null)
-    .neq("id", excludeSessionId)
-    .lt("started_at", beforeStartedAt)
-    .order("started_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return data;
 }
 
 export async function getPrSetIds(setIds: string[]) {
@@ -527,7 +520,7 @@ export async function listWorkoutActivity(userId: string, days = 371) {
   since.setDate(since.getDate() - days);
   const { data } = await supabase
     .from("workout_sessions")
-    .select("id, name, completed_at, duration_seconds, total_volume_kg")
+    .select("id, name, completed_at, total_volume_kg")
     .eq("user_id", userId)
     .not("completed_at", "is", null)
     .gte("completed_at", since.toISOString())

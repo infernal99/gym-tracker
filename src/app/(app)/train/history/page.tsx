@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ChevronRight, History } from "lucide-react";
+import { CalendarPlus, ChevronRight, History } from "lucide-react";
 import { requireProfile } from "@/lib/services/profile";
 import { listCompletedSessions } from "@/lib/services/training";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function TrainHistoryPage() {
@@ -10,13 +11,21 @@ export default async function TrainHistoryPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold tracking-tight">Historial</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-tight">Historial</h1>
+        {profile.active_template_id && (
+          <Button render={<Link href="/train/new" />} variant="outline" size="sm">
+            <CalendarPlus className="h-4 w-4" />
+            Registrar día
+          </Button>
+        )}
+      </div>
 
       {sessions.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <History className="h-10 w-10 text-muted-foreground" />
-            <p className="text-muted-foreground">Aún no has completado ningún entrenamiento.</p>
+            <p className="text-muted-foreground">Aún no has registrado ningún entrenamiento.</p>
           </CardContent>
         </Card>
       ) : (
@@ -37,9 +46,6 @@ export default async function TrainHistoryPage() {
                 </p>
                 <p className="mt-0.5 truncate font-semibold">{session.name}</p>
                 <p className="mt-0.5 text-sm tabular-nums text-muted-foreground">
-                  {session.duration_seconds
-                    ? `${Math.round(session.duration_seconds / 60)}min · `
-                    : ""}
                   {session.workout_session_exercises?.length ?? 0} ejercicios ·{" "}
                   {session.total_volume_kg} kg
                 </p>

@@ -104,10 +104,9 @@ export async function listGroupChallenges(groupId: string): Promise<GroupChallen
   );
 }
 
-// Checked once, at the end of finishWorkoutAction — every metric a group
-// challenge can track (exercise/volume/workouts/streak) only changes when a
-// session completes, so that single call site covers all of them, rather
-// than needing a second check inside set-logging.
+// Checked after every logged or deleted set (see logSetAction) — every
+// metric a group challenge can track (exercise/volume/workouts/streak)
+// moves with the sets, so that one call site covers all of them.
 //
 // "Won" means first: challenge_results only gets a row for whoever reaches
 // the target before anyone else does. The (challenge_id, user_id) unique

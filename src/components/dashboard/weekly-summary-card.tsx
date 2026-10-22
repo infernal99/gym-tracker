@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Clock, Dumbbell, Flame, Layers, Trophy } from "lucide-react";
+import { Check, Dumbbell, Flame, Layers, Trophy } from "lucide-react";
 import type { WeeklySummary } from "@/lib/services/weekly-summary";
 import { DeltaBadge } from "@/components/ui/delta-badge";
 
@@ -111,15 +111,6 @@ export function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
             value={String(thisWeek.sets)}
             current={thisWeek.sets}
             previous={lastWeek.sets}
-            showDelta={hasComparisonBaseline}
-          />
-          <Row
-            icon={Clock}
-            label="Tiempo"
-            value={`${thisWeek.minutes} min`}
-            current={thisWeek.minutes}
-            previous={lastWeek.minutes}
-            unit=" min"
             showDelta={hasComparisonBaseline}
           />
           <Row
