@@ -8,7 +8,10 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-display-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Figures use the same face as the text, with tabular digits (see
+     .font-mono below) — the way SF Pro handles numbers — rather than a
+     separate monospace that read as a terminal. */
+  --font-mono: var(--font-display-sans);
   --font-heading: var(--font-display-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -64,54 +67,65 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
-/* Gym Tracker: dark, premium, sport/data-driven — dark mode is the only
-   theme (no light variant / toggle), per the app's visual reference. */
+/* Gym Tracker: monochrome, in the manner of Apple's own dark UI — true
+   black, the iOS system greys for anything raised off it, and white as the
+   one action colour. Colour is kept for meaning only: green for progress
+   and records, red for destructive, the muscle palette for anatomy.
+   Dark mode is the only theme. */
 :root {
   color-scheme: dark;
-  --background: #0b0f14;
-  --foreground: #f3f6fa;
-  /* Depth ladder: background < surface < card < card-hover < popover/modal. */
-  --surface: #10151d;
-  --card: #141a23;
-  --card-hover: #182030;
-  --card-foreground: #f3f6fa;
-  --popover: #141a23;
-  --popover-foreground: #f3f6fa;
-  --primary: #3b82f6;
-  --primary-foreground: #ffffff;
-  --secondary: #1c2430;
-  --secondary-foreground: #f3f6fa;
-  --muted: #1c2430;
-  --muted-foreground: #8b98a9;
-  --accent: #1c2430;
-  --accent-foreground: #f3f6fa;
-  --destructive: #ef4444;
-  --success: #22c55e;
-  --success-foreground: #06210f;
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: #3b82f6;
-  --chart-1: #3b82f6;
-  --chart-2: #22c55e;
-  --chart-3: #f59e0b;
-  --chart-4: #a855f7;
-  --chart-5: #ef4444;
-  --radius: 0.75rem;
-  --sidebar: #0f141b;
-  --sidebar-foreground: #f3f6fa;
-  --sidebar-primary: #3b82f6;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1c2430;
-  --sidebar-accent-foreground: #f3f6fa;
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: #3b82f6;
+  --background: #000000;
+  --foreground: #f5f5f7;
+  /* Depth ladder: background < surface < card < card-hover < popover.
+     Each step is one of the iOS grouped-background greys. */
+  --surface: #0e0e10;
+  --card: #1c1c1e;
+  --card-hover: #232326;
+  --card-foreground: #f5f5f7;
+  --popover: #232326;
+  --popover-foreground: #f5f5f7;
+  --primary: #f5f5f7;
+  --primary-foreground: #0a0a0a;
+  --secondary: #2c2c2e;
+  --secondary-foreground: #f5f5f7;
+  --muted: #2c2c2e;
+  --muted-foreground: #8e8e93;
+  --accent: #2c2c2e;
+  --accent-foreground: #f5f5f7;
+  --destructive: #ff453a;
+  --success: #30d158;
+  --success-foreground: #00210b;
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(1 0 0 / 45%);
+  --chart-1: #f5f5f7;
+  --chart-2: #30d158;
+  --chart-3: #8e8e93;
+  --chart-4: #636366;
+  --chart-5: #ff453a;
+  --radius: 0.875rem;
+  --sidebar: #0e0e10;
+  --sidebar-foreground: #f5f5f7;
+  --sidebar-primary: #f5f5f7;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #2c2c2e;
+  --sidebar-accent-foreground: #f5f5f7;
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(1 0 0 / 45%);
   /* Mapa muscular: color fijo por zona, usado como identificador (no decoración). */
-  --muscle-chest: #ef4444;
-  --muscle-back: #3b82f6;
-  --muscle-legs: #22c55e;
-  --muscle-shoulders: #f97316;
-  --muscle-arms: #a855f7;
-  --muscle-core: #eab308;
+  --muscle-chest: #ff453a;
+  --muscle-back: #0a84ff;
+  --muscle-legs: #30d158;
+  --muscle-shoulders: #ff9f0a;
+  --muscle-arms: #bf5af2;
+  --muscle-core: #ffd60a;
+
+  /* Relief. Every raised surface catches light on its top edge and drops
+     a soft shadow under it — one shared recipe so buttons, cards and the
+     tab bar all read as made of the same material. */
+  --highlight-top: inset 0 1px 0 0 oklch(1 0 0 / 9%);
+  --shadow-raised: 0 1px 2px oklch(0 0 0 / 50%), 0 4px 12px -2px oklch(0 0 0 / 45%);
+  --shadow-pressed: 0 0 0 oklch(0 0 0 / 0%), inset 0 1px 3px oklch(0 0 0 / 45%);
 }
 
 @layer base {
@@ -119,7 +133,23 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
+    letter-spacing: -0.011em;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.022em;
+  }
+  /* Lucide's default 2px stroke reads heavy next to Inter. 1.75 is closer
+     to SF Symbols' regular weight. */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  svg.lucide {
+    stroke-width: 1.75;
   }
   html {
     @apply font-sans;
@@ -148,7 +178,7 @@
   .glow-primary {
     background-image: radial-gradient(
       120% 140% at 100% 0%,
-      color-mix(in oklch, var(--primary) 22%, transparent) 0%,
+      color-mix(in oklch, var(--primary) 7%, transparent) 0%,
       transparent 60%
     );
   }
@@ -162,7 +192,56 @@
   }
 
   .card-interactive {
-    @apply transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-foreground/15 hover:shadow-lg hover:shadow-black/20 active:translate-y-0 active:scale-[0.99];
+    @apply transition-[transform,box-shadow,border-color,background-color] duration-200 ease-out hover:bg-card-hover active:scale-[0.98];
+    box-shadow: var(--highlight-top), var(--shadow-raised);
+  }
+
+  /* The shared raised look, for anything hand-built that should match the
+     buttons and cards. */
+  .surface-raised {
+    background-image: linear-gradient(180deg, oklch(1 0 0 / 4%), oklch(1 0 0 / 0%) 60%);
+    box-shadow: var(--highlight-top), var(--shadow-raised);
+  }
+
+  /* Buttons with relief. Primary is a white key lit from above: a light
+     top edge, a faint dark lip at the bottom and a shadow under it. The
+     raised grey is the same recipe one shade down. Pressing flattens the
+     shadow into the surface, so it feels pushed in rather than recoloured. */
+  .btn-primary {
+    background-image: linear-gradient(180deg, #ffffff 0%, #e3e3e8 100%);
+    box-shadow:
+      inset 0 1px 0 #ffffff,
+      inset 0 -1px 0 oklch(0 0 0 / 12%),
+      0 1px 2px oklch(0 0 0 / 55%),
+      0 8px 18px -8px oklch(0 0 0 / 80%);
+  }
+  .btn-primary:hover {
+    background-image: linear-gradient(180deg, #ffffff 0%, #ececf0 100%);
+  }
+  .btn-primary:active {
+    background-image: linear-gradient(180deg, #dcdce1 0%, #e6e6ea 100%);
+    box-shadow: inset 0 1px 3px oklch(0 0 0 / 25%);
+  }
+
+  .btn-raised {
+    background-image: linear-gradient(180deg, #3a3a3c 0%, #29292b 100%);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 10%),
+      0 1px 2px oklch(0 0 0 / 60%),
+      0 6px 14px -6px oklch(0 0 0 / 70%);
+  }
+  .btn-raised:hover {
+    background-image: linear-gradient(180deg, #414143 0%, #2f2f31 100%);
+  }
+  .btn-raised:active {
+    background-image: linear-gradient(180deg, #242426 0%, #2c2c2e 100%);
+    box-shadow: inset 0 1px 3px oklch(0 0 0 / 55%);
+  }
+
+  /* Each screen eases in when you land on it — short and small, so it
+     reads as the page settling rather than as an effect. */
+  .page-enter {
+    animation: page-enter 320ms cubic-bezier(0.23, 1, 0.32, 1) both;
   }
 
   .fade-up {
@@ -237,6 +316,17 @@
   }
 }
 
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;
@@ -301,6 +391,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .page-enter,
   .fade-up,
   .pr-pop,
   .goal-celebrate,

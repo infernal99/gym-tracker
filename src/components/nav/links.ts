@@ -1,43 +1,47 @@
-import type { LucideIcon } from "lucide-react";
+import type { Icon } from "@phosphor-icons/react";
+// The SSR build: no React context needed, so the same icons render from
+// server and client components alike. Phosphor rather than Lucide here
+// because it ships a filled weight of every glyph — the selected tab gets
+// the solid version, the way iOS tab bars do.
 import {
-  LayoutDashboard,
-  Dumbbell,
+  Barbell,
+  ChartBar,
+  ClockCounterClockwise,
+  House,
   ListChecks,
+  Scales,
+  Sparkle,
   Star,
-  History,
-  User,
-  Scale,
+  Sword,
   Target,
   Trophy,
+  User,
   Users,
-  Swords,
-  BarChart3,
-  UsersRound,
-  Bot,
-} from "lucide-react";
+  UsersThree,
+} from "@phosphor-icons/react/ssr";
 
 export type NavLink = {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: Icon;
 };
 
 // Full nav — source list for the bottom tab bar and the header's "Más"
 // overflow menu, both resolved per-user from this master list.
 export const navLinks: NavLink[] = [
-  { href: "/dashboard", label: "Hoy", icon: LayoutDashboard },
-  { href: "/ai", label: "Gym Tracker AI", icon: Bot },
+  { href: "/dashboard", label: "Hoy", icon: House },
+  { href: "/ai", label: "Gym Tracker AI", icon: Sparkle },
   { href: "/my-routine", label: "Mi rutina", icon: Star },
   { href: "/routines", label: "Rutinas", icon: ListChecks },
-  { href: "/train/history", label: "Historial", icon: History },
-  { href: "/stats", label: "Estadísticas", icon: BarChart3 },
-  { href: "/exercises", label: "Ejercicios", icon: Dumbbell },
+  { href: "/train/history", label: "Historial", icon: ClockCounterClockwise },
+  { href: "/stats", label: "Estadísticas", icon: ChartBar },
+  { href: "/exercises", label: "Ejercicios", icon: Barbell },
   { href: "/goals", label: "Objetivos", icon: Target },
-  { href: "/body", label: "Peso", icon: Scale },
+  { href: "/body", label: "Peso", icon: Scales },
   { href: "/achievements", label: "Logros", icon: Trophy },
   { href: "/friends", label: "Amigos", icon: Users },
-  { href: "/challenges", label: "Retos", icon: Swords },
-  { href: "/groups", label: "Grupos", icon: UsersRound },
+  { href: "/challenges", label: "Retos", icon: Sword },
+  { href: "/groups", label: "Grupos", icon: UsersThree },
   { href: "/profile", label: "Perfil", icon: User },
 ];
 

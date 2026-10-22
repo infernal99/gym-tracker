@@ -64,7 +64,9 @@ export default async function DashboardPage() {
         <p className="text-muted-foreground">
           {greeting}, {firstName} 👋
         </p>
-        <h1 className="mt-0.5 text-2xl font-semibold capitalize tracking-tight">{today}</h1>
+        <h1 className="mt-0.5 text-[28px] font-bold leading-tight tracking-[-0.025em]">
+          {today.charAt(0).toUpperCase() + today.slice(1)}
+        </h1>
       </div>
 
       {/* The one entrance on this screen. Everything else is just there —

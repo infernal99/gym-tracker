@@ -83,7 +83,7 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
         {/* The bar's own background+border. */}
         <div
           aria-hidden
-          className="absolute inset-0 rounded-full border bg-surface/95 shadow-lg shadow-black/30 backdrop-blur"
+          className="absolute inset-0 rounded-full border border-white/[0.07] bg-[#1c1c1e]/85 shadow-[inset_0_1px_0_oklch(1_0_0/8%),0_10px_30px_-8px_oklch(0_0_0/80%)] backdrop-blur-xl backdrop-saturate-150"
         />
 
         {/* Clipped to the bar's own silhouette: on the first and last tab
@@ -130,10 +130,12 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
             // Shrinks as it goes rather than vanishing flat — but never to
             // 0, which reads as a glitch rather than a retreat.
             scale: isOnTab ? "1" : "0.7",
-            background:
-              "radial-gradient(circle at 32% 26%, color-mix(in oklch, white 35%, var(--primary)) 0%, var(--primary) 62%)",
+            // A pearl rather than a coloured blob: white lit from the top
+            // left, falling off to a light grey, with a crisp highlight
+            // edge on top and a soft contact shadow underneath.
+            background: "radial-gradient(circle at 34% 24%, #ffffff 0%, #f2f2f5 38%, #c9c9cf 100%)",
             boxShadow:
-              "0 14px 22px -6px rgba(0,0,0,0.55), 0 6px 14px -3px color-mix(in oklch, var(--primary) 65%, transparent)",
+              "inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -2px 4px rgba(0,0,0,0.12), 0 12px 22px -8px rgba(0,0,0,0.85), 0 3px 6px -2px rgba(0,0,0,0.6)",
           }}
         />
 
@@ -145,11 +147,14 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex flex-1 flex-col items-center gap-1 py-1 text-xs font-medium"
+                className="flex flex-1 flex-col items-center gap-1 py-1 text-[11px] font-medium tracking-[-0.01em]"
               >
                 <Icon
+                  // Solid glyph on the selected tab, outline on the rest —
+                  // the iOS tab-bar convention.
+                  weight={active ? "fill" : "regular"}
                   className={cn(
-                    "ease-liquid h-5 w-5 transition-[color,transform] duration-[420ms]",
+                    "ease-liquid h-[22px] w-[22px] transition-[color,transform] duration-[420ms]",
                     active
                       ? "-translate-y-[22px] text-primary-foreground"
                       : "text-muted-foreground",
@@ -158,7 +163,7 @@ export function MobileNav({ hrefs }: { hrefs: string[] }) {
                 <span
                   className={cn(
                     "transition-colors duration-300",
-                    active ? "text-primary" : "text-muted-foreground",
+                    active ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
                   {link.label}

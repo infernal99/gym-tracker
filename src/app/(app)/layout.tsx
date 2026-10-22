@@ -18,10 +18,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-svh md:flex md:min-h-svh md:items-center md:justify-center md:bg-surface md:p-6">
       <div className="flex min-h-svh w-full flex-col bg-background md:h-[880px] md:max-h-[92svh] md:min-h-0 md:w-[430px] md:overflow-hidden md:rounded-[2.5rem] md:border md:shadow-2xl">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] bg-black/80 px-4 backdrop-blur-xl">
           <div className="flex items-center gap-2">
             <AppLogo size={32} />
-            <span className="font-bold tracking-tight">Gym Tracker</span>
+            <span className="text-[15px] font-semibold tracking-[-0.02em]">Gym Tracker</span>
           </div>
           <UserMenu
             displayName={profile.display_name}
