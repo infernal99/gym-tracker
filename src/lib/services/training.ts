@@ -46,19 +46,37 @@ function resolveRestDay<T extends { id: string; is_rest_day: boolean }>(
 // counting session is completed.
 export async function getNextDayInSequence(userId: string, templateId: string) {
   const supabase = await createClient();
-  const { data: days } = await supabase
-    .from("workout_template_days")
-    .select("*")
-    .eq("template_id", templateId)
-    .order("day_order");
+  // All four lookups go out together. Only some are needed on any given day
+  // (a pinned weekday never reaches the anchor or the last session), but they
+  // used to run one after another, and these small extra reads cost far less
+  // than three more round trips in front of the home screen.
+  const [{ data: days }, { data: slots }, { data: profile }, { data: lastSession }] =
+    await Promise.all([
+      supabase
+        .from("workout_template_days")
+        .select("*")
+        .eq("template_id", templateId)
+        .order("day_order"),
+      supabase
+        .from("workout_template_weekday_slots")
+        .select("weekday, day_id")
+        .eq("template_id", templateId),
+      supabase.from("profiles").select("sequence_anchor_day_id").eq("id", userId).single(),
+      supabase
+        .from("workout_sessions")
+        .select("template_day_id")
+        .eq("user_id", userId)
+        .eq("template_id", templateId)
+        .eq("counts_toward_sequence", true)
+        .not("completed_at", "is", null)
+        .order("completed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
   if (!days || days.length === 0) return { day: null, nextTrainingDay: null };
 
   const todayWeekday = (new Date().getDay() + 6) % 7; // Monday = 0
-  const { data: slots } = await supabase
-    .from("workout_template_weekday_slots")
-    .select("weekday, day_id")
-    .eq("template_id", templateId);
 
   const slotByWeekday = new Map((slots ?? []).map((s) => [s.weekday, s.day_id]));
   const dayById = new Map(days.map((d) => [d.id, d]));
@@ -84,27 +102,10 @@ export async function getNextDayInSequence(userId: string, templateId: string) {
     // day_order sequence below as a last resort rather than showing nothing.
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("sequence_anchor_day_id")
-    .eq("id", userId)
-    .single();
-
   if (profile?.sequence_anchor_day_id) {
     const anchored = days.find((d) => d.id === profile.sequence_anchor_day_id);
     if (anchored) return resolveRestDay(days, anchored);
   }
-
-  const { data: lastSession } = await supabase
-    .from("workout_sessions")
-    .select("template_day_id")
-    .eq("user_id", userId)
-    .eq("template_id", templateId)
-    .eq("counts_toward_sequence", true)
-    .not("completed_at", "is", null)
-    .order("completed_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
 
   const lastIndex = lastSession?.template_day_id
     ? days.findIndex((d) => d.id === lastSession.template_day_id)

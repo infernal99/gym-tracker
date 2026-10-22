@@ -26,9 +26,9 @@ function greetingForHour(hour: number) {
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  // Only the daily challenge needs to know which day is planned, so only it
-  // waits on stats — everything else starts right away instead of queueing
-  // behind it.
+  // Everything starts at once. The daily challenge needs today's planned
+  // exercises, which stats works out, so it gets them as a promise and runs
+  // its own history query in the meantime instead of queueing behind stats.
   const statsPromise = getDashboardStats(profile.id, profile.active_template_id);
   const [stats, trainingDays, weeklySummary, insights, dailyChallenge, pendingShares] =
     await Promise.all([
@@ -36,8 +36,9 @@ export default async function DashboardPage() {
       profile.active_template_id ? listTrainingDays(profile.active_template_id) : Promise.resolve([]),
       getWeeklySummary(profile.id),
       getInsights(profile.id),
-      statsPromise.then((s) =>
-        getDailyChallenge(profile.id, s.pendingDay?.is_rest_day ? null : (s.pendingDay?.id ?? null)),
+      getDailyChallenge(
+        profile.id,
+        statsPromise.then((s) => s.pendingDayExerciseIds),
       ),
       listPendingShares(profile.id),
     ]);

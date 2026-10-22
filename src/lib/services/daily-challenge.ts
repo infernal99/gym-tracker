@@ -42,27 +42,21 @@ type ExerciseHistory = {
 // And the suggestion is always "one more rep at the same weight", never a
 // heavier bar: the point is to give the session a reference, not to push
 // somebody into a load they haven't earned.
+// `plannedExerciseIds` — what's on the plan for today, which the challenge
+// prefers (a challenge about an exercise you aren't going to touch is
+// noise). It's taken as a promise so the history query below, the heavy one,
+// starts right away instead of waiting for the home screen to work out
+// which day it is.
 export async function getDailyChallenge(
   userId: string,
-  templateDayId: string | null,
+  plannedExerciseIds: Promise<string[]>,
 ): Promise<DailyChallenge | null> {
   const supabase = await createClient();
-
-  // Prefer what's actually on the plan for today — a challenge about an
-  // exercise you aren't going to touch is noise.
-  let plannedExerciseIds: string[] = [];
-  if (templateDayId) {
-    const { data: dayExercises } = await supabase
-      .from("workout_template_exercises")
-      .select("exercise_id")
-      .eq("template_day_id", templateDayId);
-    plannedExerciseIds = (dayExercises ?? []).map((e) => e.exercise_id);
-  }
 
   const since = new Date();
   since.setDate(since.getDate() - 120);
 
-  let query = supabase
+  const query = supabase
     .from("workout_sessions")
     .select(
       `completed_at,
@@ -73,9 +67,10 @@ export async function getDailyChallenge(
     .gte("completed_at", since.toISOString())
     .order("completed_at", { ascending: false });
 
-  const [{ data }, { data: activeGoals }] = await Promise.all([
+  const [{ data }, { data: activeGoals }, planned] = await Promise.all([
     query,
     supabase.from("goals").select("exercise_id").eq("user_id", userId).eq("status", "active"),
+    plannedExerciseIds,
   ]);
 
   const sessions = (data ?? []) as unknown as SessionRow[];
@@ -104,7 +99,7 @@ export async function getDailyChallenge(
 
   const candidates = [...histories.values()].filter((h) => {
     if (h.sessions.length < 2) return false; // needs something to compare against
-    return plannedExerciseIds.length === 0 || plannedExerciseIds.includes(h.exercise.id);
+    return planned.length === 0 || planned.includes(h.exercise.id);
   });
   if (candidates.length === 0) return null;
 

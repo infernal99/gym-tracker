@@ -89,14 +89,14 @@ export async function getDashboardStats(userId: string, activeTemplateId: string
   const volumeChangePct =
     volumeLastWeek > 0 ? ((volumeThisWeek - volumeLastWeek) / volumeLastWeek) * 100 : null;
 
-  let pendingDayExerciseCount = 0;
+  let pendingDayExerciseIds: string[] = [];
   let pendingDaySetCount = 0;
   if (sequence.day && !sequence.day.is_rest_day) {
     const { data: dayExercises } = await supabase
       .from("workout_template_exercises")
-      .select("target_sets")
+      .select("exercise_id, target_sets")
       .eq("template_day_id", sequence.day.id);
-    pendingDayExerciseCount = dayExercises?.length ?? 0;
+    pendingDayExerciseIds = (dayExercises ?? []).map((e) => e.exercise_id);
     pendingDaySetCount = (dayExercises ?? []).reduce((s, r) => s + r.target_sets, 0);
   }
 
@@ -112,7 +112,9 @@ export async function getDashboardStats(userId: string, activeTemplateId: string
     activeSession,
     activeTemplateName: activeTemplateRow.data?.name ?? null,
     pendingDay: sequence.day,
-    pendingDayExerciseCount,
+    pendingDayExerciseCount: pendingDayExerciseIds.length,
+    // Handed to the daily challenge so it doesn't fetch the same rows again.
+    pendingDayExerciseIds,
     pendingDaySetCount,
     nextTrainingDayIfResting: sequence.nextTrainingDay,
   };
