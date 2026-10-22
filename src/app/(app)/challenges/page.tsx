@@ -30,9 +30,11 @@ export default async function ChallengesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="space-y-3">
         <h1 className="text-2xl font-bold tracking-tight">Retos</h1>
-        <div className="flex gap-2">
+        {/* Under the title rather than beside it: two labelled buttons don't
+            fit next to a heading in a phone-width frame. */}
+        <div className="grid grid-cols-2 gap-2 [&>*]:w-full">
           <CreateDuelDialog friends={friendOptions} exercises={exerciseOptions} />
           <CreateChallengeDialog exercises={exerciseOptions} />
         </div>

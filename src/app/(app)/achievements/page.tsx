@@ -1,6 +1,7 @@
 import { requireProfile } from "@/lib/services/profile";
 import { listAchievementsWithProgress } from "@/lib/services/achievements";
 import { Card } from "@/components/ui/card";
+import { AchievementIcon } from "@/components/achievements/achievement-icon";
 
 const categoryLabels: Record<string, string> = {
   consistency: "Constancia",
@@ -33,15 +34,19 @@ export default async function AchievementsPage() {
             <Card
               key={a.id}
               className={`flex-row items-center gap-4 p-4 ${
-                unlocked ? "border-primary/30 bg-primary/5" : ""
+                unlocked ? "" : "bg-card/60"
               }`}
             >
+              {/* Unlocked: a white medallion with a solid glyph, lit like the
+                  primary buttons. Locked: an outline on flat grey. */}
               <div
-                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl ${
-                  unlocked ? "bg-primary/15" : "bg-muted grayscale opacity-50"
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
+                  unlocked
+                    ? "btn-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground shadow-[inset_0_1px_2px_oklch(0_0_0/40%)]"
                 }`}
               >
-                {a.icon}
+                <AchievementIcon code={a.code} unlocked={unlocked} className="h-6 w-6" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className={`truncate font-semibold ${unlocked ? "" : "text-muted-foreground"}`}>

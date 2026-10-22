@@ -55,7 +55,7 @@ export function CreateDuelDialog({
     return (
       <Button variant="outline" disabled>
         <Swords className="h-4 w-4" />
-        Necesitas amigos para retar
+        Sin amigos aún
       </Button>
     );
   }
