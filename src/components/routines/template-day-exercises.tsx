@@ -6,6 +6,7 @@ import { matchesExerciseQuery } from "@/lib/exercise-search";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import {
   addTemplateExerciseAction,
+  createAndAddTemplateExerciseAction,
   removeTemplateExerciseAction,
   updateTemplateExerciseAction,
   reorderTemplateExercisesAction,
@@ -27,6 +28,7 @@ type DayExercise = {
 };
 
 type ExerciseOption = { id: string; name: string; primary_muscle_group_id: string | null };
+type MuscleGroupOption = { id: string; name: string };
 
 function ExerciseRow({
   exercise,
@@ -163,16 +165,21 @@ function AddExerciseForm({
   dayId,
   templateId,
   exercises,
+  muscleGroups,
   dayMuscleGroupIds,
 }: {
   dayId: string;
   templateId: string;
   exercises: ExerciseOption[];
+  muscleGroups: MuscleGroupOption[];
   dayMuscleGroupIds: string[];
 }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<ExerciseOption | null>(null);
   const [open, setOpen] = useState(false);
+  // "Crear ejercicio": the exercise isn't in the library, so this form
+  // makes it (name + muscle group) and adds it to the day in one go.
+  const [creating, setCreating] = useState(false);
   const [showAll, setShowAll] = useState(dayMuscleGroupIds.length === 0);
 
   // Scoped to the day's own muscle tags by default (a "Piernas" day should
@@ -190,7 +197,7 @@ function AddExerciseForm({
       );
 
   const matches =
-    selected || !open
+    selected || creating || !open
       ? []
       : query.trim()
         ? exercises.filter((e) => matchesExerciseQuery(e.name, query)).slice(0, 8)
@@ -198,16 +205,75 @@ function AddExerciseForm({
 
   return (
     <form
-      action={addTemplateExerciseAction.bind(null, dayId, templateId)}
+      action={
+        creating
+          ? createAndAddTemplateExerciseAction.bind(null, dayId, templateId)
+          : addTemplateExerciseAction.bind(null, dayId, templateId)
+      }
       className="mt-3 space-y-2"
       onSubmit={() => {
         setQuery("");
         setSelected(null);
+        setCreating(false);
       }}
     >
       <input type="hidden" name="exerciseId" value={selected?.id ?? ""} />
 
-      {!selected ? (
+      {creating ? (
+        <div className="space-y-3 rounded-xl border bg-surface p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">Nuevo ejercicio</p>
+            <button
+              type="button"
+              onClick={() => setCreating(false)}
+              aria-label="Cancelar"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground" htmlFor={`new-ex-${dayId}`}>
+              Nombre
+            </label>
+            <Input
+              id={`new-ex-${dayId}`}
+              name="name"
+              defaultValue={query.trim()}
+              placeholder="Ej: Press Arnold"
+              required
+              minLength={2}
+              maxLength={80}
+              autoFocus
+            />
+          </div>
+          {/* The muscle group is what files it under a category in the
+              stats and the body map, so it's required. Defaults to the
+              day's first muscle, which is usually the right one. */}
+          <fieldset className="space-y-1.5">
+            <legend className="mb-1.5 text-xs text-muted-foreground">Categoría</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {muscleGroups.map((mg, i) => (
+                <label key={mg.id} className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="muscleGroupId"
+                    value={mg.id}
+                    required
+                    defaultChecked={
+                      dayMuscleGroupIds.length > 0 ? mg.id === dayMuscleGroupIds[0] : i === 0
+                    }
+                    className="peer sr-only"
+                  />
+                  <span className="block rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50">
+                    {mg.name}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+      ) : !selected ? (
         <div>
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -229,6 +295,28 @@ function AddExerciseForm({
               {showAll ? "Mostrar solo los músculos de este día" : "Ver todos los ejercicios"}
             </button>
           )}
+          <button
+            type="button"
+            // Same reason as the results list below: act before the
+            // input's blur closes things.
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              setCreating(true);
+              setOpen(false);
+            }}
+            className="mt-2 flex w-full items-center gap-2 rounded-xl border border-dashed px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+          >
+            <Plus className="h-4 w-4 shrink-0" />
+            <span className="truncate">
+              {query.trim() ? (
+                <>
+                  Crear ejercicio «<span className="text-foreground">{query.trim()}</span>»
+                </>
+              ) : (
+                "¿No está? Crear ejercicio"
+              )}
+            </span>
+          </button>
           {matches.length > 0 && (
             // A normal block below the input (not absolutely positioned)
             // so it can't get clipped by an ancestor's overflow-hidden —
@@ -271,14 +359,14 @@ function AddExerciseForm({
         </div>
       )}
 
-      {selected && (
+      {(selected || creating) && (
         <>
           <div className="grid grid-cols-2 gap-2">
             <ExerciseFieldsGrid />
           </div>
           <Button type="submit" size="sm" className="w-full">
             <Plus className="h-3.5 w-3.5" />
-            Añadir
+            {creating ? "Crear y añadir" : "Añadir"}
           </Button>
         </>
       )}
@@ -291,12 +379,14 @@ export function TemplateDayExercises({
   templateId,
   dayExercises,
   exercises,
+  muscleGroups,
   dayMuscleGroupIds = [],
 }: {
   dayId: string;
   templateId: string;
   dayExercises: DayExercise[];
   exercises: ExerciseOption[];
+  muscleGroups: MuscleGroupOption[];
   dayMuscleGroupIds?: string[];
 }) {
   const [items, setItems] = useState(() =>
@@ -380,6 +470,7 @@ export function TemplateDayExercises({
           dayId={dayId}
           templateId={templateId}
           exercises={exercises}
+          muscleGroups={muscleGroups}
           dayMuscleGroupIds={dayMuscleGroupIds}
         />
       </details>

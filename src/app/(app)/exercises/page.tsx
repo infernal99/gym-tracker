@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Dumbbell, Star } from "lucide-react";
+import { ChevronRight, Dumbbell, Sparkles, Star } from "lucide-react";
 import {
   listExercises,
   listMuscleGroups,
@@ -59,8 +59,13 @@ export default async function ExercisesPage({
   const visibleExercises = onlyFavorites
     ? exercises.filter((ex) => favoriteIds.has(ex.id))
     : exercises;
-  const myExercises = visibleExercises.filter((ex) => usedExerciseIds.has(ex.id));
-  const otherExercises = visibleExercises.filter((ex) => !usedExerciseIds.has(ex.id));
+  // Your own exercises get their own section, ahead of everything else, so
+  // one you made from inside a routine is easy to find again. RLS already
+  // limits custom rows to the person who made them.
+  const createdExercises = visibleExercises.filter((ex) => ex.is_custom);
+  const libraryExercises = visibleExercises.filter((ex) => !ex.is_custom);
+  const myExercises = libraryExercises.filter((ex) => usedExerciseIds.has(ex.id));
+  const otherExercises = libraryExercises.filter((ex) => !usedExerciseIds.has(ex.id));
 
   // The full library is ~600 exercises, and every row mounts a thumbnail, an
   // info dialog and a favourite button — enough to make the page stutter on a
@@ -163,6 +168,16 @@ export default async function ExercisesPage({
         </Card>
       ) : (
         <div className="space-y-6">
+          {createdExercises.length > 0 && (
+            <div className="space-y-1">
+              <h2 className="flex items-center gap-1.5 px-1 text-sm font-medium text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5" />
+                Creados por ti
+              </h2>
+              <ExerciseList exercises={createdExercises} favoriteIds={favoriteIds} />
+            </div>
+          )}
+
           {myExercises.length > 0 && (
             <div className="space-y-1">
               <h2 className="flex items-center gap-1.5 px-1 text-sm font-medium text-muted-foreground">

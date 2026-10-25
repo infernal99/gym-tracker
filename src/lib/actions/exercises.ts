@@ -5,19 +5,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/services/profile";
+import { createCustomExercise } from "@/lib/services/exercises";
 import { createExerciseSchema } from "@/lib/validation/exercises";
 import type { ActionResult } from "@/lib/actions/auth";
-
-function slugify(name: string) {
-  const base = name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  const suffix = Math.random().toString(36).slice(2, 8);
-  return `${base || "ejercicio"}-${suffix}`;
-}
 
 export async function createExerciseAction(
   _prev: ActionResult,
@@ -37,26 +27,18 @@ export async function createExerciseAction(
   }
 
   const profile = await requireProfile();
-  const supabase = await createClient();
   const d = parsed.data;
 
-  const { data, error } = await supabase
-    .from("exercises")
-    .insert({
-      name: d.name,
-      slug: slugify(d.name),
-      primary_muscle_group_id: d.muscleGroupId,
-      equipment_id: d.equipmentId || null,
-      difficulty: d.difficulty,
-      movement_type: d.movementType,
-      description: d.description || null,
-      is_custom: true,
-      created_by: profile.id,
-    })
-    .select("slug")
-    .single();
+  const data = await createCustomExercise(profile.id, {
+    name: d.name,
+    muscleGroupId: d.muscleGroupId,
+    equipmentId: d.equipmentId,
+    difficulty: d.difficulty,
+    movementType: d.movementType,
+    description: d.description,
+  });
 
-  if (error || !data) {
+  if (!data) {
     return { error: "No se pudo crear el ejercicio" };
   }
 

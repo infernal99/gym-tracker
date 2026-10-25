@@ -6,6 +6,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/services/profile";
 import { findUserFork } from "@/lib/services/routines";
+import { createCustomExercise } from "@/lib/services/exercises";
+import { createExerciseSchema } from "@/lib/validation/exercises";
 import { templateSchema, daySchema, templateExerciseSchema } from "@/lib/validation/routines";
 import { REST_DAY_SENTINEL } from "@/lib/routines-constants";
 import type { Database } from "@/types/database.types";
@@ -578,6 +580,29 @@ export async function addTemplateExerciseAction(
   revalidatePath(`/routines/${templateId}`);
   revalidatePath(`/routines/${templateId}/setup`);
   revalidatePath("/my-routine");
+}
+
+// "Crear ejercicio" from inside a routine day: for the exercise that isn't
+// in the library. Makes it as the user's own exercise — so it also shows
+// up under Ejercicios, and its muscle group feeds the stats like any other
+// — and drops it straight into the day with the sets/reps entered.
+export async function createAndAddTemplateExerciseAction(
+  dayId: string,
+  templateId: string,
+  formData: FormData,
+) {
+  const parsed = createExerciseSchema
+    .pick({ name: true, muscleGroupId: true })
+    .safeParse({ name: formData.get("name"), muscleGroupId: formData.get("muscleGroupId") });
+  if (!parsed.success) return;
+
+  const profile = await requireProfile();
+  const exercise = await createCustomExercise(profile.id, parsed.data);
+  if (!exercise) return;
+
+  formData.set("exerciseId", exercise.id);
+  await addTemplateExerciseAction(dayId, templateId, formData);
+  revalidatePath("/exercises");
 }
 
 export async function updateTemplateExerciseAction(

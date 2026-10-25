@@ -5,6 +5,50 @@ import type { Database } from "@/types/database.types";
 
 type MovementType = Database["public"]["Enums"]["movement_type"];
 
+function slugify(name: string) {
+  const base = name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const suffix = Math.random().toString(36).slice(2, 8);
+  return `${base || "ejercicio"}-${suffix}`;
+}
+
+// A user's own exercise — only they can see it (exercises_select RLS).
+// Shared by the "+" on Ejercicios and by "Crear ejercicio" inside a
+// routine day, so both make exactly the same kind of row.
+export async function createCustomExercise(
+  userId: string,
+  input: {
+    name: string;
+    muscleGroupId: string;
+    equipmentId?: string | null;
+    difficulty?: ExerciseDifficulty;
+    movementType?: MovementType;
+    description?: string | null;
+  },
+) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("exercises")
+    .insert({
+      name: input.name,
+      slug: slugify(input.name),
+      primary_muscle_group_id: input.muscleGroupId,
+      equipment_id: input.equipmentId || null,
+      difficulty: input.difficulty ?? "intermediate",
+      movement_type: input.movementType ?? "compound",
+      description: input.description || null,
+      is_custom: true,
+      created_by: userId,
+    })
+    .select("id, slug")
+    .single();
+  return data;
+}
+
 export async function listMuscleGroups() {
   const supabase = await createClient();
   const { data } = await supabase.from("muscle_groups").select("*").order("name");
